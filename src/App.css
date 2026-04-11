@@ -159,39 +159,39 @@ main {
   flex: 1 1 auto;
   height: 0;
   min-height: 0;
-  overflow: hidden;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
   padding: 0;
-  display: flex;
-  flex-direction: column;
 }
 
 .day-view-container {
-  flex: 1 1 auto;
-  min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  min-height: 100%;
 }
 
 .day-card {
   box-sizing: border-box;
-  flex: 1 1 auto;
-  min-height: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
   border-top: 3px solid var(--c, #3b82f6);
-  overflow: hidden;
 }
 
 .day-navigation {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 20px calc(max(16px, env(safe-area-inset-bottom)) + 12px);
-  background: linear-gradient(180deg, rgba(8, 8, 15, 0), rgba(8, 8, 15, 0.95));
+  padding: 12px 20px calc(max(16px, env(safe-area-inset-bottom)) + 8px);
+  background: rgba(8, 8, 15, 0.95);
   border-top: 1px solid var(--line);
+  z-index: 10;
 }
 
 .nav-button {
@@ -231,12 +231,7 @@ main {
 
 .card-scroll {
   box-sizing: border-box;
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  padding: 16px 22px 24px 22px;
+  padding: 16px 22px calc(max(16px, env(safe-area-inset-bottom)) + 96px) 22px;
 }
 
 .today-badge {
@@ -263,9 +258,9 @@ main {
 }
 
 .day-name {
-  font-size: 38px;
+  font-size: 26px;
   font-weight: 900;
-  letter-spacing: -2px;
+  letter-spacing: -1px;
   line-height: 1;
   margin: 0 0 3px;
   color: var(--text);
@@ -508,77 +503,6 @@ main {
   }
 }
 
-/* Week View Styles */
-.week-view main {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.week-card {
-  display: flex;
-  flex-direction: column;
-  padding: 16px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--line);
-  cursor: pointer;
-  transition: all 0.2s;
-  border-left: 4px solid var(--c, #3b82f6);
-}
-
-.week-card:hover {
-  background: rgba(255, 255, 255, 0.06);
-  transform: translateY(-2px);
-}
-
-.week-card.today {
-  background: rgba(255, 255, 255, 0.08);
-  border-left-color: #facc15;
-}
-
-.week-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-bottom: 10px;
-}
-
-.week-card-date {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.week-card-day {
-  font-size: 11px;
-  color: var(--c, #3b82f6);
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-weight: 800;
-}
-
-.week-card-items {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.week-card-item {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
-  line-height: 1.4;
-}
-
-.week-card.today .week-card-item {
-  color: rgba(255, 255, 255, 0.75);
-}
-
-.week-card-empty {
-  font-size: 12px;
-  color: var(--muted);
-  font-style: italic;
-}
 
 @media (max-width: 390px) {
   .sections-rest {
@@ -621,12 +545,8 @@ main {
     color: rgba(0, 0, 0, 0.72);
   }
 
-  .dot {
-    background: rgba(0, 0, 0, 0.18);
-  }
-
-  .dot.active {
-    background: #111111;
+  .day-navigation {
+    background: rgba(245, 245, 247, 0.95);
   }
 }
 
