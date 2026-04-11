@@ -3,7 +3,6 @@ import type { MenuData, MenuDay, MenuItem } from './types';
 const SCHOOL_ID = 'BENTONMIDDLE';
 const API_BASE_URL = 'https://api.mealviewer.com/api/v4/school';
 const CACHE_KEY = 'bms_lunch_cache_v1';
-const CACHE_FRESHNESS_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 interface CacheEntry {
   raw: unknown;
@@ -270,9 +269,6 @@ function processData(
 
 function isCacheFresh(fetchedAt: number): boolean {
   if (!Number.isFinite(fetchedAt)) return false;
-  const elapsed = Date.now() - fetchedAt;
-  if (elapsed >= CACHE_FRESHNESS_MS) return false;
-
   const cachedDate = new Date(fetchedAt).toDateString();
   const todayDate = new Date().toDateString();
   return cachedDate === todayDate;
