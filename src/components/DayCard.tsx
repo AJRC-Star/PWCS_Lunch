@@ -30,41 +30,33 @@ export const DayCard: React.FC<Props> = ({ day }) => {
 
   if (day.no_information_provided) {
     return (
-      <article className="day-card">
-        <div className="card-scroll">
-          <div className="day-head">
-            <div>
-              {day.today && <span className="today-badge">Today</span>}
-              <span className="day-weekday">{weekday}</span>
-              <span className="day-name">{shortDate}</span>
-            </div>
-          </div>
-          <div className="empty-state">
-            <h2>No menu yet</h2>
-            <p className="sub">Menu not posted yet. Check back later today.</p>
-          </div>
+      <div className="day-card">
+        <div className="day-head">
+          {day.today && <span className="today-badge">Today</span>}
+          <span className="day-weekday">{weekday}</span>
+          <span className="day-name">{shortDate}</span>
         </div>
-      </article>
+        <div className="empty-state">
+          <h2>No menu yet</h2>
+          <p className="sub">Check back later today.</p>
+        </div>
+      </div>
     );
   }
 
   if (day.no_school) {
     return (
-      <article className="day-card">
-        <div className="card-scroll">
-          <div className="day-head">
-            <div>
-              {day.today && <span className="today-badge">Today</span>}
-              <span className="day-weekday">{weekday}</span>
-              <span className="day-name">{shortDate}</span>
-            </div>
-          </div>
-          <div className="empty-state">
-            <h2>No school</h2>
-            <p className="sub">Nothing posted because there is no school.</p>
-          </div>
+      <div className="day-card">
+        <div className="day-head">
+          {day.today && <span className="today-badge">Today</span>}
+          <span className="day-weekday">{weekday}</span>
+          <span className="day-name">{shortDate}</span>
         </div>
-      </article>
+        <div className="empty-state">
+          <h2>No school</h2>
+          <p className="sub">Nothing posted because there is no school.</p>
+        </div>
+      </div>
     );
   }
 
@@ -75,49 +67,40 @@ export const DayCard: React.FC<Props> = ({ day }) => {
     : sections.slice();
 
   return (
-    <article className={`day-card ${day.today ? 'today' : ''}`}>
-      <div className="card-scroll">
-        <div className="day-head">
-          <div>
-            {day.today && <span className="today-badge">Today</span>}
-            <span className="day-weekday">{weekday}</span>
-            <span className="day-name">{shortDate}</span>
-          </div>
-        </div>
-
-        {entreeSection && (
-          <div
-            className={`entree-block ${entreeSection.items.length >= 3 ? 'featured' : 'compact'}`}
-          >
-            <div className="sec-label">{getCategoryEmoji('Entree')} Entree</div>
-            <ul>
-              {entreeSection.items.map((item, idx) => (
-                <li key={idx}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="sections-rest">
-          {restSections.map((section, idx) => {
-            const itemCount = section.items.length;
-            const isWide = itemCount >= 4 || section.title === 'Fruit' || section.title === 'Sides';
-            return (
-              <div
-                key={idx}
-                className={`section-block ${isWide ? 'wide' : 'compact'}`}
-              >
-                <div className="sec-label">{getCategoryEmoji(section.title)} {section.title}</div>
-                <ul>
-                  {section.items.map((item, itemIdx) => (
-                    <li key={itemIdx}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
+    <div className="day-card">
+      <div className="day-head">
+        {day.today && <span className="today-badge">Today</span>}
+        <span className="day-weekday">{weekday}</span>
+        <span className="day-name">{shortDate}</span>
       </div>
-    </article>
+
+      {entreeSection && (
+        <div className={`entree-block ${entreeSection.items.length >= 3 ? 'featured' : 'compact'}`}>
+          <div className="sec-label">{getCategoryEmoji('Entree')} Entree</div>
+          <ul>
+            {entreeSection.items.map((item, idx) => (
+              <li key={idx}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <div className="sections-rest">
+        {restSections.map((section, idx) => {
+          const itemCount = section.items.length;
+          const isWide = itemCount >= 4 || section.title === 'Fruit' || section.title === 'Sides';
+          return (
+            <div key={idx} className={`section-block ${isWide ? 'wide' : 'compact'}`}>
+              <div className="sec-label">{getCategoryEmoji(section.title)} {section.title}</div>
+              <ul>
+                {section.items.map((item, itemIdx) => (
+                  <li key={itemIdx}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 };
