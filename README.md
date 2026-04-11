@@ -1,98 +1,74 @@
 # BMS Lunch Menu
 
-A mobile-first web app that displays the school lunch menu for Benton Middle School, powered by the MealViewer API.
+A mobile-first web app that displays the school lunch menu for Benton Middle School. Designed to feel like a native app — no page scrolling, fluid layout, instant navigation.
+
+**Live:** https://ajrc-star.github.io/PWCS_Lunch/
 
 ## Features
 
-- 📱 Mobile-optimized design
-- 🎨 Dark and light mode support
-- 💾 Smart caching with 4-hour freshness + day-aware updates
-- ⚡ Instant loading with skeleton screens
-- 🔄 Background data refresh while viewing preview
-- 📍 Sticky navigation with dot indicators
-- 🎯 Scroll-snap navigation between days
+- 📱 Full-screen native app feel — menu fills the screen, no page scroll
+- 🗓 Horizontal day-selector tabs for quick navigation across the week
+- 🍗 Automatic menu categorization (Entree, Sides, Fruit, Grains, Drink, etc.)
+- 💾 Smart caching — shows cached menu instantly, refreshes in the background
+- ⚡ Skeleton loading screens while data loads
+- 🌙 Dark and light mode (follows system preference)
+- 📐 Fluid layout — scales to any screen size with no device-specific breakpoints
 
 ## Tech Stack
 
-- **React 18** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool
-- **CSS3** - Styling with CSS Grid and Flexbox
-
-## Development
-
-### Prerequisites
-
-- Node.js 18+
-- npm or yarn
-
-### Setup
-
-```bash
-npm install
-```
-
-### Development Server
-
-```bash
-npm run dev
-```
-
-Open [http://localhost:5173](http://localhost:5173) in your browser.
-
-### Build for Production
-
-```bash
-npm run build
-```
-
-The static files are generated in the `dist` directory.
-
-### Deploy to GitHub Pages
-
-```bash
-npm run deploy
-```
-
-This builds the project and pushes the compiled files to the `gh-pages` branch.
+- **React 18** — UI framework
+- **TypeScript** — type safety
+- **Vite** — build tool and dev server
+- **CSS3** — fluid sizing with `clamp()`, `dvh`, and CSS Grid/Flexbox
+- **gh-pages** — GitHub Pages deployment
 
 ## API
 
-The app fetches menu data from:
-- **Base URL:** `https://api.mealviewer.com/api/v4/school`
-- **School ID:** `BENTONMIDDLE`
-- **Range:** 21 days of menu data
+Menu data is pulled from the MealViewer public API:
+
+```
+https://api.mealviewer.com/api/v4/school/BENTONMIDDLE/{startDate}/{endDate}
+```
+
+The app fetches 21 days of data starting from today. Items are categorized by `item_Type` field with name-based regex fallback for robustness.
 
 ## Caching
 
-The app uses `localStorage` to cache:
-- Raw API responses (4-hour freshness)
-- Processed menu data for offline access
+The app uses `localStorage` to cache raw API responses:
 
-Cache is considered stale if:
-- More than 4 hours have elapsed, OR
-- The cached date differs from today's date
+- **Fresh:** served from network, cache saved
+- **Preview:** stale cache shown immediately, fresh data fetched in background
+- **Offline:** stale cache served with an offline warning banner
 
-## Menu Categories
+Cache is considered stale if more than 4 hours have elapsed **or** the cached date is from a different calendar day.
 
-Menu items are automatically categorized as:
-- Entree
-- Sides
-- Fruit
-- Grains
-- Drink
-- Condiments
-- Dessert
-- Other (fallback)
+## Development
 
-Categorization is based on item type and name patterns for robustness.
+```bash
+npm install       # install dependencies
+npm run dev       # start dev server at http://localhost:5173
+npm run build     # build for production → dist/
+npm run deploy    # build + push to gh-pages branch
+```
+
+Requires Node.js 18+.
+
+## Project Structure
+
+```
+src/
+  api.ts                  # MealViewer API client, caching, data normalization
+  types.ts                # TypeScript interfaces (MenuData, MenuDay, MenuItem)
+  App.tsx                 # Root component — data loading and layout shell
+  App.css                 # All styles — fluid, no device breakpoints
+  components/
+    DayTabs.tsx           # Horizontal scrollable day-selector chip row
+    DayCard.tsx           # Full-screen menu display for a single day
+    SkeletonLoader.tsx    # Animated placeholder shown during load
+```
 
 ## Browser Support
 
-- All modern browsers supporting ES2020
 - iOS Safari 13+
-- Android Chrome/Firefox
-
-## License
-
-MIT
+- Android Chrome / Firefox
+- All modern desktop browsers (layout is capped at 480px, centered)
