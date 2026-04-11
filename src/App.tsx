@@ -1,19 +1,14 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { getData } from './api';
 import type { MenuData } from './types';
 import { DayCard } from './components/DayCard';
-import { WeekView } from './components/WeekView';
 import { SkeletonLoader } from './components/SkeletonLoader';
-import { Navigation } from './components/Navigation';
 import './App.css';
 
 function App() {
   const [data, setData] = useState<MenuData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [dayCounter, setDayCounter] = useState(0);
-  const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
-  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
-  const contentRef = useRef<HTMLDivElement>(null);
+  const [currentDayIndex, setCurrentDayIndex] = useState(0);
 
   useEffect(() => {
     let isMounted = true;
@@ -71,49 +66,6 @@ function App() {
     };
   }, []);
 
-  // Update day counter on scroll
-  useEffect(() => {
-    if (data?.days && contentRef.current && viewMode === 'day') {
-      const container = contentRef.current;
-      const cards = container.querySelectorAll('.day-card');
-      let idx = 0;
-      const probe = container.scrollTop + 12;
-
-      for (let i = 0; i < cards.length; i++) {
-        const card = cards[i] as HTMLElement;
-        if (card.offsetTop <= probe) {
-          idx = i;
-        } else {
-          break;
-        }
-      }
-
-      setDayCounter(idx + 1);
-    }
-  }, [data, viewMode]);
-
-  // Scroll to selected day when switching from week view to day view
-  useEffect(() => {
-    if (viewMode === 'day' && contentRef.current) {
-      const container = contentRef.current;
-
-      // Use requestAnimationFrame to ensure DOM is fully updated
-      const rafId = requestAnimationFrame(() => {
-        const cards = container.querySelectorAll('.day-card');
-        const targetCard = cards[selectedDayIndex] as HTMLElement | undefined;
-
-        if (targetCard) {
-          // Scroll to position the target card at the top of the viewport
-          container.scrollTo({
-            top: targetCard.offsetTop,
-            behavior: 'smooth',
-          });
-        }
-      });
-
-      return () => cancelAnimationFrame(rafId);
-    }
-  }, [viewMode, selectedDayIndex]);
 
   const showError = data?.error;
   const days = data?.days || [];
@@ -135,50 +87,46 @@ function App() {
                 ? '⚠️ Offline — showing cached menu'
                 : `Updated ${data?.meta?.lastUpdated || '—'}`}
             </div>
-            {days.length > 0 && viewMode === 'day' && (
+            {days.length > 0 && (
               <span id="day-counter">
-                {dayCounter} / {days.length}
+                {currentDayIndex + 1} / {days.length}
               </span>
             )}
           </div>
         </div>
-        {days.length > 0 && (
-          <div className="header-controls">
-            <div className="view-toggle">
+      </header>
+
+      <main id="content">
+        {loading && <SkeletonLoader />}
+        {!loading && days.length > 0 && (
+          <div className="day-view-container">
+            <DayCard day={days[currentDayIndex]} />
+            <div className="day-navigation">
               <button
-                className={viewMode === 'day' ? 'active' : ''}
-                onClick={() => setViewMode('day')}
+                className="nav-button prev-button"
+                onClick={() => setCurrentDayIndex(Math.max(0, currentDayIndex - 1))}
+                disabled={currentDayIndex === 0}
               >
-                Day
+                ← Prev
               </button>
+              <span className="day-info">
+                {new Date(days[currentDayIndex].dateObj).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </span>
               <button
-                className={viewMode === 'week' ? 'active' : ''}
-                onClick={() => setViewMode('week')}
+                className="nav-button next-button"
+                onClick={() =>
+                  setCurrentDayIndex(Math.min(days.length - 1, currentDayIndex + 1))
+                }
+                disabled={currentDayIndex === days.length - 1}
               >
-                Week
+                Next →
               </button>
             </div>
           </div>
-        )}
-      </header>
-
-      <main id="content" ref={contentRef} className={viewMode === 'week' ? 'week-view' : ''}>
-        {loading && <SkeletonLoader />}
-        {!loading && days.length > 0 && viewMode === 'day' && (
-          <>
-            {days.map((day, idx) => (
-              <DayCard key={idx} day={day} />
-            ))}
-          </>
-        )}
-        {!loading && days.length > 0 && viewMode === 'week' && (
-          <WeekView
-            days={days}
-            onDayClick={(dayIndex) => {
-              setSelectedDayIndex(dayIndex);
-              setViewMode('day');
-            }}
-          />
         )}
         {!loading && days.length === 0 && !data?.error && (
           <article className="day-card">
@@ -201,10 +149,6 @@ function App() {
           </article>
         )}
       </main>
-
-      {!loading && days.length > 0 && viewMode === 'day' && (
-        <Navigation totalDays={days.length} containerRef={contentRef} />
-      )}
     </>
   );
 }
