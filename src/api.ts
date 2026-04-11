@@ -16,6 +16,20 @@ function formatISODate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+function getNextSchoolDay(todayISO: string): string {
+  const dateObj = new Date(`${todayISO}T12:00:00`);
+  const dayOfWeek = dateObj.getDay();
+
+  // If today is Sunday (0) or Saturday (6), advance to Monday
+  if (dayOfWeek === 0) {
+    dateObj.setDate(dateObj.getDate() + 1); // Sunday -> Monday
+  } else if (dayOfWeek === 6) {
+    dateObj.setDate(dateObj.getDate() + 2); // Saturday -> Monday
+  }
+
+  return formatISODate(dateObj);
+}
+
 function formatMealViewerDate(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -229,7 +243,10 @@ function processData(
     };
   }
 
-  const todayISO = formatISODate(new Date());
+  let todayISO = formatISODate(new Date());
+  // If today is a weekend, advance to the next school day
+  todayISO = getNextSchoolDay(todayISO);
+
   const schedules = Array.isArray((raw as Record<string, unknown>).menuSchedules)
     ? ((raw as Record<string, unknown>).menuSchedules as unknown[])
     : [];
