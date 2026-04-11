@@ -30,9 +30,9 @@ function App() {
             ),
           ]);
 
-          if (isMounted && freshData) {
+          if (isMounted && freshData !== null) {
             const fresh = freshData as MenuData;
-            if (fresh.meta.source !== 'cache') {
+            if (fresh?.meta?.source !== 'cache') {
               setData(fresh);
             }
           }

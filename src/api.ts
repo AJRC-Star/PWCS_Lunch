@@ -123,7 +123,10 @@ function categorizeMealViewerItem(food: Record<string, unknown>): string {
 }
 
 function normalizeMealViewerDay(schedule: Record<string, unknown>, todayISO: string): MenuDay | null {
-  const rawDate = (schedule?.dateInformation as Record<string, unknown>)?.dateFull ?? null;
+  const dateInfo = schedule?.dateInformation;
+  const rawDate = (dateInfo !== null && typeof dateInfo === 'object')
+    ? (dateInfo as Record<string, unknown>).dateFull ?? null
+    : null;
   const iso = rawDate ? String(rawDate).split('T')[0] : null;
   if (!iso) return null;
 
