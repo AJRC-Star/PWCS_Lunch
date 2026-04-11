@@ -14,19 +14,26 @@ export const Navigation: React.FC<Props> = ({ totalDays, containerRef }) => {
 
     const handleScroll = () => {
       const cards = container.querySelectorAll('.day-card');
-      let idx = 0;
-      const probe = container.scrollTop + 12;
+      if (cards.length === 0) return;
+
+      // Find which card is closest to the top of the viewport
+      let closestIdx = 0;
+      let closestDistance = Infinity;
+
+      const viewportTop = container.scrollTop + container.clientHeight / 2;
 
       for (let i = 0; i < cards.length; i++) {
         const card = cards[i] as HTMLElement;
-        if (card.offsetTop <= probe) {
-          idx = i;
-        } else {
-          break;
+        const cardCenter = card.offsetTop + card.clientHeight / 2;
+        const distance = Math.abs(viewportTop - cardCenter);
+
+        if (distance < closestDistance) {
+          closestDistance = distance;
+          closestIdx = i;
         }
       }
 
-      setCurrentIndex(idx);
+      setCurrentIndex(closestIdx);
     };
 
     container.addEventListener('scroll', handleScroll, { passive: true });
