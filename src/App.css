@@ -235,8 +235,7 @@ main {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 16px 22px
-    calc(max(16px, env(safe-area-inset-bottom)) + 16px);
+  padding: 16px 22px 140px 22px;
 }
 
 .today-badge {
