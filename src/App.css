@@ -177,7 +177,7 @@ main.week-view {
 
 .day-card {
   scroll-snap-align: start;
-  scroll-snap-stop: always;
+  scroll-snap-stop: normal;
   box-sizing: border-box;
   height: 100%;
   min-height: 100%;
