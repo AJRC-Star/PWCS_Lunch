@@ -5,6 +5,21 @@ interface Props {
   day: MenuDay;
 }
 
+const CATEGORY_EMOJI: Record<string, string> = {
+  Entree: '🍗',
+  Sides: '🥗',
+  Fruit: '🍎',
+  Grains: '🍞',
+  Drink: '🥛',
+  Condiments: '🧂',
+  Dessert: '🍦',
+  Other: '🍱',
+};
+
+function getCategoryEmoji(title: string): string {
+  return CATEGORY_EMOJI[title] || '🍽️';
+}
+
 export const DayCard: React.FC<Props> = ({ day }) => {
   const dayObj = new Date(day.dateObj);
   const weekday = dayObj.toLocaleDateString('en-US', { weekday: 'long' });
@@ -74,7 +89,7 @@ export const DayCard: React.FC<Props> = ({ day }) => {
           <div
             className={`entree-block ${entreeSection.items.length >= 3 ? 'featured' : 'compact'}`}
           >
-            <div className="sec-label">Entree</div>
+            <div className="sec-label">{getCategoryEmoji('Entree')} Entree</div>
             <ul>
               {entreeSection.items.map((item, idx) => (
                 <li key={idx}>{item}</li>
@@ -92,7 +107,7 @@ export const DayCard: React.FC<Props> = ({ day }) => {
                 key={idx}
                 className={`section-block ${isWide ? 'wide' : 'compact'}`}
               >
-                <div className="sec-label">{section.title}</div>
+                <div className="sec-label">{getCategoryEmoji(section.title)} {section.title}</div>
                 <ul>
                   {section.items.map((item, itemIdx) => (
                     <li key={itemIdx}>{item}</li>

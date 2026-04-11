@@ -79,6 +79,45 @@ header h1 {
   letter-spacing: -0.5px;
 }
 
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.view-toggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  padding: 4px;
+  border: 1px solid var(--line);
+}
+
+.view-toggle button {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.view-toggle button.active {
+  background: var(--c, #3b82f6);
+  color: #000;
+  font-weight: 900;
+}
+
+.view-toggle button:hover:not(.active) {
+  color: var(--text);
+}
+
 .caption {
   font-size: 11px;
   color: var(--muted);
@@ -127,6 +166,13 @@ main {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: none;
   padding: 0;
+  transition: all 0.3s ease-out;
+}
+
+main.week-view {
+  scroll-snap-type: none;
+  padding: 12px;
+  gap: 12px;
 }
 
 .day-card {
@@ -226,12 +272,15 @@ main {
 }
 
 .entree-block .sec-label {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--c, #3b82f6);
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  margin-bottom: 6px;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .entree-block ul {
@@ -257,12 +306,19 @@ main {
 }
 
 .sec-label {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--muted);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 2px;
-  margin: 0 0 5px;
+  letter-spacing: 1px;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sec-label::first-letter {
+  /* emoji styling handled naturally */
 }
 
 .section-block {
@@ -410,6 +466,78 @@ main {
   to {
     background-position: -200% 0;
   }
+}
+
+/* Week View Styles */
+.week-view main {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.week-card {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 4px solid var(--c, #3b82f6);
+}
+
+.week-card:hover {
+  background: rgba(255, 255, 255, 0.06);
+  transform: translateY(-2px);
+}
+
+.week-card.today {
+  background: rgba(255, 255, 255, 0.08);
+  border-left-color: #facc15;
+}
+
+.week-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+
+.week-card-date {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.week-card-day {
+  font-size: 11px;
+  color: var(--c, #3b82f6);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 800;
+}
+
+.week-card-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.week-card-item {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.4;
+}
+
+.week-card.today .week-card-item {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.week-card-empty {
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
 }
 
 @media (max-width: 390px) {

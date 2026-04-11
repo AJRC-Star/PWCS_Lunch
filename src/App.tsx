@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react';
 import { getData } from './api';
 import type { MenuData } from './types';
 import { DayCard } from './components/DayCard';
+import { WeekView } from './components/WeekView';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import { Navigation } from './components/Navigation';
 import './App.css';
@@ -10,6 +11,7 @@ function App() {
   const [data, setData] = useState<MenuData | null>(null);
   const [loading, setLoading] = useState(true);
   const [dayCounter, setDayCounter] = useState(0);
+  const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -108,23 +110,44 @@ function App() {
                 ? '⚠️ Offline — showing cached menu'
                 : `Updated ${data?.meta?.lastUpdated || '—'}`}
             </div>
-            {days.length > 0 && (
+            {days.length > 0 && viewMode === 'day' && (
               <span id="day-counter">
                 {dayCounter} / {days.length}
               </span>
             )}
           </div>
         </div>
+        {days.length > 0 && (
+          <div className="header-controls">
+            <div className="view-toggle">
+              <button
+                className={viewMode === 'day' ? 'active' : ''}
+                onClick={() => setViewMode('day')}
+              >
+                Day
+              </button>
+              <button
+                className={viewMode === 'week' ? 'active' : ''}
+                onClick={() => setViewMode('week')}
+              >
+                Week
+              </button>
+            </div>
+          </div>
+        )}
       </header>
 
-      <main id="content" ref={contentRef}>
+      <main id="content" ref={contentRef} className={viewMode === 'week' ? 'week-view' : ''}>
         {loading && <SkeletonLoader />}
-        {!loading && days.length > 0 && (
+        {!loading && days.length > 0 && viewMode === 'day' && (
           <>
             {days.map((day, idx) => (
               <DayCard key={idx} day={day} />
             ))}
           </>
+        )}
+        {!loading && days.length > 0 && viewMode === 'week' && (
+          <WeekView days={days} onDayClick={() => setViewMode('day')} />
         )}
         {!loading && days.length === 0 && !data?.error && (
           <article className="day-card">
@@ -148,7 +171,7 @@ function App() {
         )}
       </main>
 
-      {!loading && days.length > 0 && (
+      {!loading && days.length > 0 && viewMode === 'day' && (
         <Navigation totalDays={days.length} containerRef={contentRef} />
       )}
     </>
