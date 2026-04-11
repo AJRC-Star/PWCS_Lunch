@@ -12,6 +12,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [dayCounter, setDayCounter] = useState(0);
   const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
+  const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -70,8 +71,9 @@ function App() {
     };
   }, []);
 
+  // Update day counter on scroll
   useEffect(() => {
-    if (data?.days && contentRef.current) {
+    if (data?.days && contentRef.current && viewMode === 'day') {
       const container = contentRef.current;
       const cards = container.querySelectorAll('.day-card');
       let idx = 0;
@@ -88,7 +90,25 @@ function App() {
 
       setDayCounter(idx + 1);
     }
-  }, [data]);
+  }, [data, viewMode]);
+
+  // Scroll to selected day when switching from week view to day view
+  useEffect(() => {
+    if (viewMode === 'day' && contentRef.current) {
+      const container = contentRef.current;
+      const cards = container.querySelectorAll('.day-card');
+      const targetCard = cards[selectedDayIndex] as HTMLElement | undefined;
+
+      if (targetCard) {
+        setTimeout(() => {
+          container.scrollTo({
+            top: targetCard.offsetTop,
+            behavior: 'smooth',
+          });
+        }, 0);
+      }
+    }
+  }, [viewMode]);
 
   const showError = data?.error;
   const days = data?.days || [];
@@ -147,7 +167,13 @@ function App() {
           </>
         )}
         {!loading && days.length > 0 && viewMode === 'week' && (
-          <WeekView days={days} onDayClick={() => setViewMode('day')} />
+          <WeekView
+            days={days}
+            onDayClick={(dayIndex) => {
+              setSelectedDayIndex(dayIndex);
+              setViewMode('day');
+            }}
+          />
         )}
         {!loading && days.length === 0 && !data?.error && (
           <article className="day-card">
