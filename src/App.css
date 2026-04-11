@@ -127,11 +127,16 @@ header h1 {
 /* ── Main content — plain block, browser scrolls it ── */
 main {
   padding: 0;
+  /* Stretch so short-content days fill the screen */
+  min-height: calc(100dvh - 140px);
+  display: flex;
+  flex-direction: column;
 }
 
 /* ── Day card ── */
 .day-card {
-  padding: 20px 20px 40px;
+  flex: 1;
+  padding: 20px 20px max(32px, env(safe-area-inset-bottom));
   border-top: 3px solid var(--c);
 }
 
@@ -320,9 +325,29 @@ main {
 }
 
 /* ── Responsive ── */
-@media (max-width: 390px) {
+
+/* iPhone SE and smaller (≤375px) — tighten spacing */
+@media (max-width: 375px) {
+  .day-chip { padding: 6px 10px; }
+  .chip-day { font-size: 14px; }
+  .day-card { padding: 16px 16px max(24px, env(safe-area-inset-bottom)); }
+  .entree-block li { font-size: 16px; }
+  .sections-rest { gap: 8px; }
   .sections-rest { grid-template-columns: 1fr; }
   .section-block.wide { grid-column: span 1; }
+}
+
+/* Standard iPhone 12–15 (376px–414px) — default styles apply */
+
+/* iPhone Pro Max and large phones (≥415px) — more breathing room */
+@media (min-width: 415px) {
+  .day-card { padding: 24px 24px max(40px, env(safe-area-inset-bottom)); }
+  .day-name { font-size: 30px; }
+  .entree-block { padding: 16px 18px; margin-bottom: 16px; }
+  .entree-block li { font-size: 20px; }
+  .sections-rest { gap: 14px; }
+  .section-block { padding: 14px; }
+  .section-block li { font-size: 14px; }
 }
 
 /* ── Light mode ── */
