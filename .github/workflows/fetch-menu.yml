@@ -39,10 +39,8 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
           git add public/menu-data.json
-          git commit -m "Update menu data via GitHub Actions
-
-Auto-fetched from MealViewer API
-Fetch time: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          FETCH_TIME=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
+          git commit -m "Update menu data via GitHub Actions - $FETCH_TIME"
           git push
 
       - name: Notify on failure
