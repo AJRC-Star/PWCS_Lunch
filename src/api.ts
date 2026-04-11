@@ -242,13 +242,13 @@ function processData(
 
   const days = (schedules as Array<Record<string, unknown>>)
     .map((schedule) => normalizeMealViewerDay(schedule, todayISO))
-    .filter(Boolean)
-    .filter((day) => day && !day.weekend && !day.no_school && day.iso >= todayISO)
+    .filter((day): day is MenuDay => day !== null)
+    .filter((day) => !day.weekend && !day.no_school && day.iso >= todayISO)
     .sort((a, b) => {
       if (a.today && !b.today) return -1;
       if (!a.today && b.today) return 1;
       return String(a.iso).localeCompare(String(b.iso));
-    }) as MenuDay[];
+    });
 
   return {
     days,
@@ -260,7 +260,7 @@ function processData(
       }),
       isOffline: source === 'offline',
       isPreview: source === 'preview',
-      schoolName: (raw as Record<string, unknown>)?.schoolName || SCHOOL_ID,
+      schoolName: String((raw as Record<string, unknown>)?.schoolName || SCHOOL_ID),
     },
   };
 }

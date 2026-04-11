@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { getData } from './api';
 import type { MenuData } from './types';
 import { DayCard } from './components/DayCard';
