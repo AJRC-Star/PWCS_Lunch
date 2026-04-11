@@ -1,0 +1,16 @@
+<svg viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="192" height="192" fill="#3b82f6" rx="40"/>
+
+  <!-- Hamburger icon -->
+  <g transform="translate(48, 48)">
+    <!-- Top bun -->
+    <ellipse cx="48" cy="30" rx="32" ry="16" fill="#d97706"/>
+    <!-- Beef patty -->
+    <rect x="16" y="45" width="64" height="18" fill="#92400e" rx="4"/>
+    <!-- Cheese slice -->
+    <rect x="16" y="63" width="64" height="14" fill="#fbbf24" rx="2"/>
+    <!-- Bottom bun -->
+    <ellipse cx="48" cy="86" rx="32" ry="16" fill="#d97706"/>
+  </g>
+</svg>

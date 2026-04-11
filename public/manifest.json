@@ -1,0 +1,21 @@
+{
+  "name": "BMS Lunch Menu",
+  "short_name": "BMS Lunch",
+  "description": "School lunch menu for Benton Middle School",
+  "start_url": "/PWCS_Lunch/",
+  "scope": "/PWCS_Lunch/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#3b82f6",
+  "background_color": "#08080f",
+  "icons": [
+    {
+      "src": "/PWCS_Lunch/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["food", "lifestyle"]
+}
+
