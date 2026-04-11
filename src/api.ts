@@ -304,25 +304,37 @@ function saveCache(raw: unknown): number {
 }
 
 async function fetchData(): Promise<unknown> {
-  const start = new Date();
-  const end = new Date(start);
-  end.setDate(end.getDate() + 21);
+  try {
+    // Try to fetch pre-fetched menu data (updated daily by GitHub Actions)
+    const response = await fetch('/PWCS_Lunch/menu-data.json');
+    if (!response.ok) {
+      throw new Error(`Failed to load menu data: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.raw;
+  } catch (error) {
+    // Fallback to live API if pre-fetched data isn't available
+    console.warn('Could not load pre-fetched menu data, falling back to live API', error);
+    const start = new Date();
+    const end = new Date(start);
+    end.setDate(end.getDate() + 21);
 
-  const range = [formatMealViewerDate(start), formatMealViewerDate(end)].join('/');
-  const url = `${API_BASE_URL}/${SCHOOL_ID}/${range}`;
+    const range = [formatMealViewerDate(start), formatMealViewerDate(end)].join('/');
+    const url = `${API_BASE_URL}/${SCHOOL_ID}/${range}`;
 
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+
+    return response.json();
   }
-
-  return response.json();
 }
 
 export async function getData(allowPreview = false): Promise<MenuData> {

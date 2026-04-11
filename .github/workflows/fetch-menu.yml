@@ -1,0 +1,52 @@
+name: Fetch Menu Data
+
+on:
+  schedule:
+    # Run at 6 AM Eastern time every day (11 AM UTC)
+    - cron: '0 11 * * *'
+  # Also allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  fetch-menu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Fetch menu data
+        run: node scripts/fetch-menu.js
+
+      - name: Check if data changed
+        id: check-changes
+        run: |
+          if git diff --quiet public/menu-data.json; then
+            echo "No changes detected"
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "Data has changed"
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push if changed
+        if: steps.check-changes.outputs.changed == 'true'
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add public/menu-data.json
+          git commit -m "Update menu data via GitHub Actions
+
+Auto-fetched from MealViewer API
+Fetch time: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+          git push
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Menu data fetch failed!"
+          exit 1
