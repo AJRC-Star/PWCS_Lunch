@@ -96,19 +96,24 @@ function App() {
   useEffect(() => {
     if (viewMode === 'day' && contentRef.current) {
       const container = contentRef.current;
-      const cards = container.querySelectorAll('.day-card');
-      const targetCard = cards[selectedDayIndex] as HTMLElement | undefined;
 
-      if (targetCard) {
-        setTimeout(() => {
+      // Use requestAnimationFrame to ensure DOM is fully updated
+      const rafId = requestAnimationFrame(() => {
+        const cards = container.querySelectorAll('.day-card');
+        const targetCard = cards[selectedDayIndex] as HTMLElement | undefined;
+
+        if (targetCard) {
+          // Scroll to position the target card at the top of the viewport
           container.scrollTo({
             top: targetCard.offsetTop,
             behavior: 'smooth',
           });
-        }, 0);
-      }
+        }
+      });
+
+      return () => cancelAnimationFrame(rafId);
     }
-  }, [viewMode]);
+  }, [viewMode, selectedDayIndex]);
 
   const showError = data?.error;
   const days = data?.days || [];
