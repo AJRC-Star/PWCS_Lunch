@@ -1,10 +1,46 @@
 <svg viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+      <stop offset="0%" stop-color="#4f8cff" />
+      <stop offset="100%" stop-color="#2457d6" />
+    </linearGradient>
+    <linearGradient id="bunTop" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff3d6" />
+      <stop offset="100%" stop-color="#f2c57a" />
+    </linearGradient>
+    <linearGradient id="bunBottom" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f6cf87" />
+      <stop offset="100%" stop-color="#e5ab4d" />
     </linearGradient>
   </defs>
-  <rect width="192" height="192" fill="url(#bgGrad)" rx="45"/>
-  <text x="96" y="120" font-size="100" text-anchor="middle" dominant-baseline="middle">🍔</text>
+
+  <rect width="192" height="192" rx="45" fill="url(#bgGrad)" />
+
+  <g transform="translate(30 36)">
+    <path
+      d="M22 54c0-23 21-38 44-38s44 15 44 38v6H22z"
+      fill="url(#bunTop)"
+    />
+    <g fill="#fff8ea" opacity="0.9">
+      <ellipse cx="44" cy="38" rx="4" ry="2.5" transform="rotate(-18 44 38)" />
+      <ellipse cx="60" cy="30" rx="4" ry="2.5" transform="rotate(12 60 30)" />
+      <ellipse cx="76" cy="39" rx="4" ry="2.5" transform="rotate(-10 76 39)" />
+      <ellipse cx="91" cy="31" rx="4" ry="2.5" transform="rotate(18 91 31)" />
+      <ellipse cx="55" cy="46" rx="4" ry="2.5" transform="rotate(-8 55 46)" />
+      <ellipse cx="84" cy="47" rx="4" ry="2.5" transform="rotate(16 84 47)" />
+    </g>
+    <path
+      d="M24 64c8 7 18 11 32 11 15 0 25-5 34-10 9 5 18 10 32 10v8c0 6-5 11-11 11H35c-6 0-11-5-11-11z"
+      fill="#6ed46a"
+    />
+    <path
+      d="M22 78h88c7 0 13 6 13 13s-6 13-13 13H22c-7 0-13-6-13-13s6-13 13-13z"
+      fill="#59392a"
+    />
+    <path
+      d="M24 100c11 6 21 9 31 9 12 0 22-4 31-9 9 5 18 9 31 9v6c0 10-8 18-18 18H42c-10 0-18-8-18-18z"
+      fill="url(#bunBottom)"
+    />
+    <rect x="27" y="60" width="80" height="6" rx="3" fill="#f7d87b" />
+  </g>
 </svg>
