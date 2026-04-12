@@ -3,45 +3,36 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { normalizeMenuResponse, SCHOOL_ID } from '../shared/menu-core.js';
+import { normalizeMenuResponse, SCHOOL_ID, formatMealViewerDate } from '../shared/menu-core.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const API_BASE_URL = 'https://api.mealviewer.com/api/v4/school';
 
-function formatMealViewerDate(date) {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${month}-${day}-${year}`;
-}
-
-async function fetchData() {
-  const start = new Date();
-  const end = new Date(start);
-  end.setDate(end.getDate() + 21);
-
-  const range = [formatMealViewerDate(start), formatMealViewerDate(end)].join('/');
+async function fetchData(): Promise<Record<string, unknown>> {
+  // Use school-timezone dates so the fetch range is correct regardless of
+  // where the GitHub Actions runner is located.
+  const startStr = formatMealViewerDate(0);
+  const endStr = formatMealViewerDate(21);
+  const range = [startStr, endStr].join('/');
   const url = `${API_BASE_URL}/${SCHOOL_ID}/${range}`;
 
   console.log(`Fetching menu data from: ${url}`);
 
   const response = await fetch(url, {
     method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: { 'Content-Type': 'application/json' },
   });
 
   if (!response.ok) {
     throw new Error(`API error: ${response.status}`);
   }
 
-  return response.json();
+  return response.json() as Promise<Record<string, unknown>>;
 }
 
-async function main() {
+async function main(): Promise<void> {
   try {
     console.log('Starting menu data fetch...');
     const rawData = await fetchData();
@@ -53,7 +44,7 @@ async function main() {
     const stats = fs.statSync(outputPath);
     console.log(`✓ Normalized menu data saved to ${outputPath}`);
     console.log(`  Size: ${stats.size} bytes (~${(stats.size / 1024).toFixed(1)} KB)`);
-    console.log(`  Schedules: ${Array.isArray(rawData.menuSchedules) ? rawData.menuSchedules.length : 0} → Days: ${normalizedData.days.length}`);
+    console.log(`  Schedules: ${Array.isArray(rawData.menuSchedules) ? (rawData.menuSchedules as unknown[]).length : 0} → Days: ${normalizedData.days.length}`);
   } catch (error) {
     console.error('✗ Failed to fetch fresh menu data:', error instanceof Error ? error.message : error);
     process.exit(1);
