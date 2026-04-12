@@ -52,7 +52,7 @@ npm test          # run regression tests
 npm run build     # build for production → dist/
 ```
 
-Requires Node.js 18+.
+Requires Node.js 20.19+ locally. GitHub Actions runs Node.js 22.
 
 Deployment is automated via GitHub Actions:
 - **Menu data:** `scripts/fetch-menu.js` runs daily at 6 AM ET, fetches latest data, and pushes to `main`
