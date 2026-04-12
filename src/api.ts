@@ -258,21 +258,57 @@ async function fetchData(): Promise<MenuData> {
     if (!response.ok) {
       throw new Error(`Failed to load menu data: ${response.status}`);
     }
-    const normalized = await response.json();
-    // Ensure the data has the correct structure
-    if (normalized.days && Array.isArray(normalized.days) && normalized.meta) {
+    const data = await response.json();
+
+    // Handle both new normalized format and old format with .raw
+    const toProcess = data.days ? data : data.raw;
+
+    // If already normalized, return directly
+    if (data.days && Array.isArray(data.days) && data.meta) {
       return {
-        days: normalized.days,
+        days: data.days,
         meta: {
           source: 'fresh',
           lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           isOffline: false,
           isPreview: false,
-          schoolName: normalized.meta.schoolName || SCHOOL_ID,
+          schoolName: data.meta.schoolName || SCHOOL_ID,
         },
       };
     }
-    throw new Error('Invalid menu data format');
+
+    // Otherwise process the raw format
+    if (!toProcess || typeof toProcess !== 'object') {
+      throw new Error('Invalid menu data format');
+    }
+
+    let todayISO = getTodayISO();
+    todayISO = getNextSchoolDay(todayISO);
+
+    const schedules = Array.isArray((toProcess as Record<string, unknown>).menuSchedules)
+      ? ((toProcess as Record<string, unknown>).menuSchedules as unknown[])
+      : [];
+
+    const days = (schedules as Array<Record<string, unknown>>)
+      .map((schedule) => normalizeMealViewerDay(schedule, todayISO))
+      .filter((day): day is MenuDay => day !== null)
+      .filter((day) => !day.weekend && !day.no_school && day.iso >= todayISO)
+      .sort((a, b) => {
+        if (a.today && !b.today) return -1;
+        if (!a.today && b.today) return 1;
+        return String(a.iso).localeCompare(String(b.iso));
+      });
+
+    return {
+      days,
+      meta: {
+        source: 'fresh',
+        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isOffline: false,
+        isPreview: false,
+        schoolName: String((toProcess as Record<string, unknown>)?.schoolName || SCHOOL_ID),
+      },
+    };
   } catch (error) {
     // Fallback to live API if pre-fetched data isn't available
     console.warn('Could not load pre-fetched menu data, falling back to live API', error);
@@ -295,7 +331,8 @@ async function fetchData(): Promise<MenuData> {
     }
 
     const raw = await response.json();
-    // Process raw API data into normalized format
+
+    // Process raw API data into normalized format using same logic as static file path
     let todayISO = getTodayISO();
     todayISO = getNextSchoolDay(todayISO);
 
