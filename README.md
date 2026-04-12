@@ -9,7 +9,7 @@ A mobile-first web app that displays the school lunch menu for Benton Middle Sch
 - 📱 Full-screen native app feel — menu fills the screen, no page scroll
 - 🗓 Horizontal day-selector tabs for quick navigation across the week
 - 🍗 Automatic menu categorization (Entree, Sides, Fruit, Grains, Drink, etc.)
-- 💾 Smart caching — shows cached menu instantly, refreshes in the background
+- 💾 Smart caching — shows cached menu instantly when available, then refreshes in the background
 - ⚡ Skeleton loading screens while data loads
 - 🌙 Dark and light mode (follows system preference)
 - 📐 Fluid layout — scales to any screen size with no device-specific breakpoints
@@ -37,12 +37,8 @@ The app fetches 21 days of data starting from today. Items are categorized by `i
 Menu data is pre-normalized and cached for offline access:
 
 - **Network available:** Latest data fetched from pre-built `menu-data.json` (updated daily by GitHub Actions) or live API fallback
-- **Preview mode:** Shows cached data immediately, re-fetches fresh data in background (max 10s timeout)
+- **Preview mode:** Shows cached data immediately when available, then re-fetches fresh data in the background
 - **Offline:** Shows cached data with warning banner
-
-Cache is refreshed if:
-- More than 4 hours have elapsed since last fetch
-- User explicitly triggers a refresh
 
 Data is normalized server-side in `scripts/fetch-menu.js` to reduce payload from ~5MB → ~8KB.
 
@@ -51,6 +47,8 @@ Data is normalized server-side in `scripts/fetch-menu.js` to reduce payload from
 ```bash
 npm install       # install dependencies
 npm run dev       # start dev server at http://localhost:5173
+npm run typecheck # TypeScript validation
+npm test          # run regression tests
 npm run build     # build for production → dist/
 ```
 
@@ -58,7 +56,9 @@ Requires Node.js 18+.
 
 Deployment is automated via GitHub Actions:
 - **Menu data:** `scripts/fetch-menu.js` runs daily at 6 AM ET, fetches latest data, and pushes to `main`
-- **Site deployment:** Any push to `main` triggers build and deployment to `gh-pages`
+- **Failures:** If menu ingestion breaks, the scheduled workflow fails so the issue is visible in GitHub Actions
+- **CI:** Pushes to `main` and pull requests run install, typecheck, tests, and build
+- **Site deployment:** `main` deploys to `gh-pages` only after validation passes
 
 ## Project Structure
 

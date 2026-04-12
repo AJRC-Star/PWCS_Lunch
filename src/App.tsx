@@ -16,22 +16,35 @@ function App() {
 
     const loadData = async () => {
       try {
-        // Show cached data immediately
         const cachedData = await getCachedData();
+        const hasCachedDays = cachedData.days.length > 0;
+
         if (isMounted) {
-          setData(cachedData);
-          setLoading(false);
+          setData(hasCachedDays ? cachedData : null);
+          setLoading(!hasCachedDays);
         }
 
-        // Fetch fresh data in background with 10-second timeout
+        const freshRequest = getFreshData();
         const freshData = await Promise.race([
-          getFreshData(),
+          freshRequest,
           new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
         ]);
 
-        // Update if fresh data arrived and is different from cache
-        if (isMounted && freshData !== null && freshData.meta.source !== 'preview') {
-          setData(freshData);
+        if (freshData !== null) {
+          if (isMounted) {
+            setData(freshData);
+            setLoading(false);
+          }
+
+          return;
+        }
+
+        if (!hasCachedDays) {
+          const eventualData = await freshRequest;
+          if (isMounted) {
+            setData(eventualData);
+            setLoading(false);
+          }
         }
       } catch {
         if (isMounted) {
@@ -51,7 +64,7 @@ function App() {
       }
     };
 
-    loadData();
+    void loadData();
     return () => { isMounted = false; };
   }, []);
 

@@ -22,7 +22,12 @@ export const DayTabs: React.FC<Props> = ({ days, selectedIndex, onSelect }) => {
     const containerWidth = container.offsetWidth;
     const scrollLeft = chipLeft - containerWidth / 2 + chipWidth / 2;
 
-    container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+    if (typeof container.scrollTo === 'function') {
+      container.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+      return;
+    }
+
+    container.scrollLeft = scrollLeft;
   }, [selectedIndex]);
 
   return (
