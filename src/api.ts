@@ -8,6 +8,13 @@ interface CacheEntry {
   fetchedAt: number;
 }
 
+function getMenuDataUrl(): string {
+  // GitHub Pages fixes cache headers at the platform level, so we version the
+  // mutable JSON URL client-side to avoid stale menu data in Safari/iOS.
+  const currentHour = new Date().toISOString().slice(0, 13);
+  return `${import.meta.env.BASE_URL}menu-data.json?v=${encodeURIComponent(currentHour)}`;
+}
+
 function formatMealViewerDate(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -39,7 +46,7 @@ function saveCache(data: MenuData): number {
 async function fetchData(): Promise<MenuData> {
   try {
     // Try to fetch pre-normalized menu data (updated daily by GitHub Actions)
-    const response = await fetch(import.meta.env.BASE_URL + 'menu-data.json');
+    const response = await fetch(getMenuDataUrl());
     if (!response.ok) {
       throw new Error(`Failed to load menu data: ${response.status}`);
     }
