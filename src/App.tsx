@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getData } from './api';
+import { getCachedData, getFreshData } from './api';
 import type { MenuData } from './types';
 import { DayCard } from './components/DayCard';
 import { DayTabs } from './components/DayTabs';
@@ -16,24 +16,22 @@ function App() {
 
     const loadData = async () => {
       try {
-        const initialData = await getData(true);
+        // Show cached data immediately
+        const cachedData = await getCachedData();
         if (isMounted) {
-          setData(initialData);
+          setData(cachedData);
           setLoading(false);
         }
 
-        if (initialData.meta.isPreview) {
-          const freshData = await Promise.race([
-            getData(false),
-            new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
-          ]);
+        // Fetch fresh data in background with 10-second timeout
+        const freshData = await Promise.race([
+          getFreshData(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
+        ]);
 
-          if (isMounted && freshData !== null) {
-            const fresh = freshData as MenuData;
-            if (fresh?.meta?.source !== 'cache') {
-              setData(fresh);
-            }
-          }
+        // Update if fresh data arrived and is different from cache
+        if (isMounted && freshData !== null && freshData.meta.source !== 'preview') {
+          setData(freshData);
         }
       } catch {
         if (isMounted) {
@@ -58,6 +56,11 @@ function App() {
   }, []);
 
   const days = data?.days || [];
+
+  // Clamp selectedIndex when days array changes
+  useEffect(() => {
+    setSelectedIndex((i) => Math.min(i, Math.max(days.length - 1, 0)));
+  }, [days.length]);
 
   return (
     <div id="app">
@@ -91,7 +94,7 @@ function App() {
 
       <main>
         {loading && <SkeletonLoader />}
-        {!loading && days.length > 0 && (
+        {!loading && days.length > 0 && days[selectedIndex] && (
           <DayCard day={days[selectedIndex]} />
         )}
         {!loading && days.length === 0 && (

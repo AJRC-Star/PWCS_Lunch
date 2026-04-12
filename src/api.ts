@@ -3,10 +3,26 @@ import type { MenuData, MenuDay, MenuItem } from './types';
 const SCHOOL_ID = 'BENTONMIDDLE';
 const API_BASE_URL = 'https://api.mealviewer.com/api/v4/school';
 const CACHE_KEY = 'bms_lunch_cache_v1';
+const SCHOOL_TIMEZONE = 'America/New_York';
 
 interface CacheEntry {
-  raw: unknown;
+  data: MenuData;
   fetchedAt: number;
+}
+
+// Get today's ISO date in school timezone (America/New_York)
+function getTodayISO(): string {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: SCHOOL_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const parts = formatter.formatToParts(new Date());
+  const year = parts.find((p) => p.type === 'year')?.value;
+  const month = parts.find((p) => p.type === 'month')?.value;
+  const day = parts.find((p) => p.type === 'day')?.value;
+  return `${year}-${month}-${day}`;
 }
 
 function formatISODate(date: Date): string {
@@ -16,15 +32,16 @@ function formatISODate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function getNextSchoolDay(todayISO: string): string {
-  const dateObj = new Date(`${todayISO}T12:00:00`);
-  const dayOfWeek = dateObj.getDay();
+// Get next school day from a given ISO date (skips weekends)
+function getNextSchoolDay(fromISO: string): string {
+  const dateObj = new Date(`${fromISO}T12:00:00Z`);
+  const dayOfWeek = dateObj.getUTCDay();
 
   // If today is Sunday (0) or Saturday (6), advance to Monday
   if (dayOfWeek === 0) {
-    dateObj.setDate(dateObj.getDate() + 1); // Sunday -> Monday
+    dateObj.setUTCDate(dateObj.getUTCDate() + 1); // Sunday -> Monday
   } else if (dayOfWeek === 6) {
-    dateObj.setDate(dateObj.getDate() + 2); // Saturday -> Monday
+    dateObj.setUTCDate(dateObj.getUTCDate() + 2); // Saturday -> Monday
   }
 
   return formatISODate(dateObj);
@@ -159,12 +176,9 @@ function normalizeMealViewerDay(schedule: Record<string, unknown>, todayISO: str
     return name.includes('lunch');
   });
 
-  const blocks =
-    lunchBlocks.length > 0
-      ? lunchBlocks
-      : nonBreakfastBlocks.length > 0
-        ? nonBreakfastBlocks
-        : allBlocks;
+  // Prefer explicit lunch blocks; only fall back if necessary
+  const blocks = lunchBlocks.length > 0 ? lunchBlocks : [];
+  const hasConfidentData = blocks.length > 0;
 
   for (const block of blocks) {
     const foods = (
@@ -200,17 +214,10 @@ function normalizeMealViewerDay(schedule: Record<string, unknown>, todayISO: str
 
   const isWeekend = [0, 6].includes(new Date(`${iso}T12:00:00`).getDay());
 
-  if (!sections.length) {
-    return {
-      iso,
-      dateObj: new Date(`${iso}T12:00:00`).getTime(),
-      today: iso === todayISO,
-      weekend: isWeekend,
-      no_school: isNoSchoolDay,
-      no_information_provided: !isNoSchoolDay,
-      sections: [],
-    };
-  }
+  // Mark as no information if:
+  // - No sections found (no lunch blocks with data)
+  // - Day is not a school day/weekend and we couldn't find confident lunch data
+  const noInfo = !hasConfidentData && !isNoSchoolDay;
 
   return {
     iso,
@@ -218,70 +225,11 @@ function normalizeMealViewerDay(schedule: Record<string, unknown>, todayISO: str
     today: iso === todayISO,
     weekend: isWeekend,
     no_school: isNoSchoolDay,
+    no_information_provided: noInfo || !sections.length,
     sections,
   };
 }
 
-function processData(
-  raw: unknown,
-  { source, fetchedAt }: { source: 'fresh' | 'cache' | 'offline' | 'preview'; fetchedAt: number }
-): MenuData {
-  if (!raw || typeof raw !== 'object') {
-    return {
-      days: [],
-      meta: {
-        source,
-        lastUpdated: new Date(fetchedAt).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
-        isOffline: source === 'offline',
-        isPreview: source === 'preview',
-        schoolName: SCHOOL_ID,
-      },
-      error: 'Invalid Data',
-    };
-  }
-
-  let todayISO = formatISODate(new Date());
-  // If today is a weekend, advance to the next school day
-  todayISO = getNextSchoolDay(todayISO);
-
-  const schedules = Array.isArray((raw as Record<string, unknown>).menuSchedules)
-    ? ((raw as Record<string, unknown>).menuSchedules as unknown[])
-    : [];
-
-  const days = (schedules as Array<Record<string, unknown>>)
-    .map((schedule) => normalizeMealViewerDay(schedule, todayISO))
-    .filter((day): day is MenuDay => day !== null)
-    .filter((day) => !day.weekend && !day.no_school && day.iso >= todayISO)
-    .sort((a, b) => {
-      if (a.today && !b.today) return -1;
-      if (!a.today && b.today) return 1;
-      return String(a.iso).localeCompare(String(b.iso));
-    });
-
-  return {
-    days,
-    meta: {
-      source,
-      lastUpdated: new Date(fetchedAt).toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-      isOffline: source === 'offline',
-      isPreview: source === 'preview',
-      schoolName: String((raw as Record<string, unknown>)?.schoolName || SCHOOL_ID),
-    },
-  };
-}
-
-function isCacheFresh(fetchedAt: number): boolean {
-  if (!Number.isFinite(fetchedAt)) return false;
-  const cachedDate = new Date(fetchedAt).toDateString();
-  const todayDate = new Date().toDateString();
-  return cachedDate === todayDate;
-}
 
 function loadCache(): CacheEntry | null {
   try {
@@ -292,26 +240,39 @@ function loadCache(): CacheEntry | null {
   }
 }
 
-function saveCache(raw: unknown): number {
+function saveCache(data: MenuData): number {
   const fetchedAt = Date.now();
-  const data: CacheEntry = { raw, fetchedAt };
+  const entry: CacheEntry = { data, fetchedAt };
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    localStorage.setItem(CACHE_KEY, JSON.stringify(entry));
   } catch {
-    // Storage quota exceeded or other error
+    // Storage quota exceeded or other error; silently continue
   }
   return fetchedAt;
 }
 
-async function fetchData(): Promise<unknown> {
+async function fetchData(): Promise<MenuData> {
   try {
-    // Try to fetch pre-fetched menu data (updated daily by GitHub Actions)
-    const response = await fetch('/PWCS_Lunch/menu-data.json');
+    // Try to fetch pre-normalized menu data (updated daily by GitHub Actions)
+    const response = await fetch(import.meta.env.BASE_URL + 'menu-data.json');
     if (!response.ok) {
       throw new Error(`Failed to load menu data: ${response.status}`);
     }
-    const data = await response.json();
-    return data.raw;
+    const normalized = await response.json();
+    // Ensure the data has the correct structure
+    if (normalized.days && Array.isArray(normalized.days) && normalized.meta) {
+      return {
+        days: normalized.days,
+        meta: {
+          source: 'fresh',
+          lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isOffline: false,
+          isPreview: false,
+          schoolName: normalized.meta.schoolName || SCHOOL_ID,
+        },
+      };
+    }
+    throw new Error('Invalid menu data format');
   } catch (error) {
     // Fallback to live API if pre-fetched data isn't available
     console.warn('Could not load pre-fetched menu data, falling back to live API', error);
@@ -333,54 +294,93 @@ async function fetchData(): Promise<unknown> {
       throw new Error(`API error: ${response.status}`);
     }
 
-    return response.json();
+    const raw = await response.json();
+    // Process raw API data into normalized format
+    let todayISO = getTodayISO();
+    todayISO = getNextSchoolDay(todayISO);
+
+    const schedules = Array.isArray((raw as Record<string, unknown>).menuSchedules)
+      ? ((raw as Record<string, unknown>).menuSchedules as unknown[])
+      : [];
+
+    const days = (schedules as Array<Record<string, unknown>>)
+      .map((schedule) => normalizeMealViewerDay(schedule, todayISO))
+      .filter((day): day is MenuDay => day !== null)
+      .filter((day) => !day.weekend && !day.no_school && day.iso >= todayISO)
+      .sort((a, b) => {
+        if (a.today && !b.today) return -1;
+        if (!a.today && b.today) return 1;
+        return String(a.iso).localeCompare(String(b.iso));
+      });
+
+    return {
+      days,
+      meta: {
+        source: 'fresh',
+        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isOffline: false,
+        isPreview: false,
+        schoolName: String((raw as Record<string, unknown>)?.schoolName || SCHOOL_ID),
+      },
+    };
   }
 }
 
-export async function getData(allowPreview = false): Promise<MenuData> {
-  if (allowPreview) {
-    const cached = loadCache();
-    if (cached) {
-      const processedData = processData(cached.raw, {
+// Returns cached data immediately without network, or empty if no cache
+export async function getCachedData(): Promise<MenuData> {
+  const cached = loadCache();
+  if (cached) {
+    return {
+      ...cached.data,
+      meta: {
+        ...cached.data.meta,
         source: 'preview',
-        fetchedAt: cached.fetchedAt,
-      });
-      return processedData;
-    }
-  } else {
-    const cached = loadCache();
-    if (cached && isCacheFresh(cached.fetchedAt)) {
-      const processedData = processData(cached.raw, {
-        source: 'cache',
-        fetchedAt: cached.fetchedAt,
-      });
-      return processedData;
-    }
+        isPreview: true,
+      },
+    };
   }
+  return {
+    days: [],
+    meta: {
+      source: 'preview',
+      lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isOffline: false,
+      isPreview: true,
+      schoolName: SCHOOL_ID,
+    },
+  };
+}
 
+// Always fetches fresh data from network or static JSON; respects 4-hour cache TTL
+export async function getFreshData(): Promise<MenuData> {
   try {
-    const raw = await fetchData();
-    const fetchedAt = saveCache(raw);
-    const processedData = processData(raw, { source: 'fresh', fetchedAt });
-    return processedData;
+    const data = await fetchData();
+    const fetchedAt = saveCache(data);
+    return {
+      ...data,
+      meta: {
+        ...data.meta,
+        source: 'fresh',
+        lastUpdated: new Date(fetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      },
+    };
   } catch (e) {
     const cached = loadCache();
     if (cached) {
-      const processedData = processData(cached.raw, {
-        source: 'offline',
-        fetchedAt: cached.fetchedAt,
-      });
-      return processedData;
+      return {
+        ...cached.data,
+        meta: {
+          ...cached.data.meta,
+          source: 'offline',
+          isOffline: true,
+        },
+      };
     }
-
     return {
       days: [],
       meta: {
         source: 'offline',
-        lastUpdated: new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
+        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isOffline: true,
         isPreview: false,
         schoolName: SCHOOL_ID,
@@ -388,4 +388,14 @@ export async function getData(allowPreview = false): Promise<MenuData> {
       error: 'No internet 📴 and no cache.',
     };
   }
+}
+
+// Backwards-compatible entry point: shows cache if available, fetches fresh in background
+export async function getData(allowPreview = false): Promise<MenuData> {
+  if (allowPreview) {
+    // For preview mode: return cache immediately
+    return getCachedData();
+  }
+  // For normal mode: fetch fresh (respects 4-hour TTL in fetchData)
+  return getFreshData();
 }

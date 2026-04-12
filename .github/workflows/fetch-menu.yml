@@ -47,13 +47,6 @@ jobs:
           git commit -m "Update menu data via GitHub Actions - $FETCH_TIME"
           git push
 
-      - name: Trigger deploy workflow
-        if: steps.check-changes.outputs.changed == 'true'
-        run: |
-          gh workflow run deploy.yml
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Notify on failure
         if: failure()
         run: |

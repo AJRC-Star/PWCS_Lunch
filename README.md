@@ -32,15 +32,19 @@ https://api.mealviewer.com/api/v4/school/BENTONMIDDLE/{startDate}/{endDate}
 
 The app fetches 21 days of data starting from today. Items are categorized by `item_Type` field with name-based regex fallback for robustness.
 
-## Caching
+## Caching & Data Flow
 
-The app uses `localStorage` to cache raw API responses:
+Menu data is pre-normalized and cached for offline access:
 
-- **Fresh:** served from network, cache saved
-- **Preview:** stale cache shown immediately, fresh data fetched in background
-- **Offline:** stale cache served with an offline warning banner
+- **Network available:** Latest data fetched from pre-built `menu-data.json` (updated daily by GitHub Actions) or live API fallback
+- **Preview mode:** Shows cached data immediately, re-fetches fresh data in background (max 10s timeout)
+- **Offline:** Shows cached data with warning banner
 
-Cache is considered stale if more than 4 hours have elapsed **or** the cached date is from a different calendar day.
+Cache is refreshed if:
+- More than 4 hours have elapsed since last fetch
+- User explicitly triggers a refresh
+
+Data is normalized server-side in `scripts/fetch-menu.js` to reduce payload from ~5MB → ~8KB.
 
 ## Development
 
@@ -48,10 +52,13 @@ Cache is considered stale if more than 4 hours have elapsed **or** the cached da
 npm install       # install dependencies
 npm run dev       # start dev server at http://localhost:5173
 npm run build     # build for production → dist/
-npm run deploy    # build + push to gh-pages branch
 ```
 
 Requires Node.js 18+.
+
+Deployment is automated via GitHub Actions:
+- **Menu data:** `scripts/fetch-menu.js` runs daily at 6 AM ET, fetches latest data, and pushes to `main`
+- **Site deployment:** Any push to `main` triggers build and deployment to `gh-pages`
 
 ## Project Structure
 
