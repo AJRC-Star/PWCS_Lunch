@@ -285,8 +285,11 @@ async function main() {
     console.log(`  Schedules: ${schedules.length} → Days: ${days.length}`);
     process.exit(0);
   } catch (error) {
-    console.error('✗ Failed to fetch menu data:', error.message);
-    process.exit(1);
+    console.warn('⚠ Failed to fetch fresh menu data:', error.message);
+    console.log('Keeping existing menu data...');
+    // Don't fail the workflow if we can't fetch - keep existing data
+    // This allows the app to continue serving stale but better-than-nothing data
+    process.exit(0);
   }
 }
 
