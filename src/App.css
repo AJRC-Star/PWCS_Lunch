@@ -288,6 +288,24 @@ main {
   margin: 0;
 }
 
+.retry-button {
+  margin-top: 18px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--c);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 800;
+  padding: 12px 16px;
+  min-width: 140px;
+  cursor: pointer;
+}
+
+.retry-button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
 /* ── Error banner ── */
 .error-banner {
   position: fixed;

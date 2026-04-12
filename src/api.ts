@@ -8,11 +8,11 @@ interface CacheEntry {
   fetchedAt: number;
 }
 
-function getMenuDataUrl(): string {
+function getMenuDataUrl(cacheBustKey?: string): string {
   // GitHub Pages fixes cache headers at the platform level, so we version the
   // mutable JSON URL client-side to avoid stale menu data in Safari/iOS.
-  const currentHour = new Date().toISOString().slice(0, 13);
-  return `${import.meta.env.BASE_URL}menu-data.json?v=${encodeURIComponent(currentHour)}`;
+  const version = cacheBustKey ?? new Date().toISOString().slice(0, 13);
+  return `${import.meta.env.BASE_URL}menu-data.json?v=${encodeURIComponent(version)}`;
 }
 
 function formatMealViewerDate(date: Date): string {
@@ -43,10 +43,18 @@ function saveCache(data: MenuData): number {
   return fetchedAt;
 }
 
-async function fetchData(): Promise<MenuData> {
+export function clearCachedData(): void {
+  try {
+    localStorage.removeItem(CACHE_KEY);
+  } catch {
+    // Ignore storage access issues and keep going with a fresh network attempt.
+  }
+}
+
+async function fetchData(cacheBustKey?: string): Promise<MenuData> {
   try {
     // Try to fetch pre-normalized menu data (updated daily by GitHub Actions)
-    const response = await fetch(getMenuDataUrl());
+    const response = await fetch(getMenuDataUrl(cacheBustKey));
     if (!response.ok) {
       throw new Error(`Failed to load menu data: ${response.status}`);
     }
@@ -151,9 +159,13 @@ export async function getCachedData(): Promise<MenuData> {
 }
 
 // Always fetches fresh data from network or static JSON; respects 4-hour cache TTL
-export async function getFreshData(): Promise<MenuData> {
+export async function getFreshData(options?: { cacheBustKey?: string; resetCache?: boolean }): Promise<MenuData> {
   try {
-    const data = await fetchData();
+    if (options?.resetCache) {
+      clearCachedData();
+    }
+
+    const data = await fetchData(options?.cacheBustKey);
     const fetchedAt = saveCache(data);
     return {
       ...data,

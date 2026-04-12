@@ -1,9 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import type { MenuData } from './types';
 
 const apiMocks = vi.hoisted(() => ({
+  clearCachedData: vi.fn(),
   getCachedData: vi.fn(),
   getFreshData: vi.fn(),
 }));
@@ -85,5 +87,46 @@ describe('App', () => {
     deferred.resolve(makeMenuData());
 
     expect(await screen.findByText('Pizza')).toBeInTheDocument();
+  });
+
+  it('lets the user force a fresh retry from the empty offline state', async () => {
+    const user = userEvent.setup();
+
+    apiMocks.getCachedData.mockResolvedValue({
+      days: [],
+      meta: {
+        source: 'preview',
+        lastUpdated: '09:59 AM',
+        isOffline: false,
+        isPreview: true,
+        schoolName: 'BENTONMIDDLE',
+      },
+    });
+    apiMocks.getFreshData
+      .mockResolvedValueOnce({
+        days: [],
+        meta: {
+          source: 'offline',
+          lastUpdated: '10:01 AM',
+          isOffline: true,
+          isPreview: false,
+          schoolName: 'BENTONMIDDLE',
+        },
+        error: 'No internet and no cache.',
+      })
+      .mockResolvedValueOnce(makeMenuData());
+
+    render(<App />);
+
+    expect(await screen.findByText('Nothing to show')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /try again/i }));
+
+    expect(apiMocks.clearCachedData).toHaveBeenCalled();
+    expect(apiMocks.getFreshData).toHaveBeenLastCalledWith({
+      cacheBustKey: expect.any(String),
+      resetCache: true,
+    });
+    expect((await screen.findAllByText('Pizza')).length).toBeGreaterThan(0);
   });
 });

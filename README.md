@@ -55,7 +55,7 @@ npm run build     # build for production → dist/
 Requires Node.js 20.19+ locally. GitHub Actions runs Node.js 22.
 
 Deployment is automated via GitHub Actions:
-- **Menu data:** `scripts/fetch-menu.js` runs daily at 6 AM ET, fetches latest data, and pushes to `main`
+- **Menu data:** `scripts/fetch-menu.js` runs weekly on Saturdays at 10:00 UTC, fetches latest data, and pushes to `main`
 - **Failures:** If menu ingestion breaks, the scheduled workflow fails so the issue is visible in GitHub Actions
 - **CI:** Pushes to `main` and pull requests run install, typecheck, tests, and build
 - **Site deployment:** `main` deploys to `gh-pages` only after validation passes

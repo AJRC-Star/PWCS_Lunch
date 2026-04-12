@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getCachedData, getFreshData } from './api';
+import { clearCachedData, getCachedData, getFreshData } from './api';
 import type { MenuData } from './types';
 import { DayCard } from './components/DayCard';
 import { DayTabs } from './components/DayTabs';
@@ -9,57 +9,72 @@ import './App.css';
 function App() {
   const [data, setData] = useState<MenuData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [retrying, setRetrying] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  const setOfflineError = () => {
+    setData({
+      days: [],
+      meta: {
+        source: 'offline',
+        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isOffline: true,
+        isPreview: false,
+        schoolName: 'BENTONMIDDLE',
+      },
+      error: 'No internet and no cache.',
+    });
+    setLoading(false);
+  };
+
+  const hydrateData = async (preferCache: boolean) => {
+    if (preferCache) {
+      const cachedData = await getCachedData();
+      const hasCachedDays = cachedData.days.length > 0;
+
+      setData(hasCachedDays ? cachedData : null);
+      setLoading(!hasCachedDays);
+
+      const freshRequest = getFreshData();
+      const freshData = await Promise.race([
+        freshRequest,
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
+      ]);
+
+      if (freshData !== null) {
+        setData(freshData);
+        setLoading(false);
+        return;
+      }
+
+      if (!hasCachedDays) {
+        const eventualData = await freshRequest;
+        setData(eventualData);
+        setLoading(false);
+      }
+
+      return;
+    }
+
+    const freshData = await getFreshData({
+      cacheBustKey: String(Date.now()),
+      resetCache: true,
+    });
+    setData(freshData);
+    setLoading(false);
+  };
 
   useEffect(() => {
     let isMounted = true;
 
     const loadData = async () => {
       try {
-        const cachedData = await getCachedData();
-        const hasCachedDays = cachedData.days.length > 0;
-
         if (isMounted) {
-          setData(hasCachedDays ? cachedData : null);
-          setLoading(!hasCachedDays);
-        }
-
-        const freshRequest = getFreshData();
-        const freshData = await Promise.race([
-          freshRequest,
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 10000)),
-        ]);
-
-        if (freshData !== null) {
-          if (isMounted) {
-            setData(freshData);
-            setLoading(false);
-          }
-
-          return;
-        }
-
-        if (!hasCachedDays) {
-          const eventualData = await freshRequest;
-          if (isMounted) {
-            setData(eventualData);
-            setLoading(false);
-          }
+          await hydrateData(true);
         }
       } catch {
         if (isMounted) {
-          setData({
-            days: [],
-            meta: {
-              source: 'offline',
-              lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              isOffline: true,
-              isPreview: false,
-              schoolName: 'BENTONMIDDLE',
-            },
-            error: 'No internet and no cache.',
-          });
-          setLoading(false);
+          setOfflineError();
         }
       }
     };
@@ -67,6 +82,20 @@ function App() {
     void loadData();
     return () => { isMounted = false; };
   }, []);
+
+  const handleRetry = async () => {
+    setRetrying(true);
+    setLoading(true);
+    clearCachedData();
+
+    try {
+      await hydrateData(false);
+    } catch {
+      setOfflineError();
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   const days = data?.days || [];
 
@@ -118,6 +147,14 @@ function App() {
                 ? 'Check your internet connection or try again later.'
                 : 'Try again later.'}
             </p>
+            <button
+              className="retry-button"
+              type="button"
+              onClick={handleRetry}
+              disabled={retrying}
+            >
+              {retrying ? 'Refreshing…' : 'Try Again'}
+            </button>
           </div>
         )}
       </main>
