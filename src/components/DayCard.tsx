@@ -28,22 +28,8 @@ export const DayCard: React.FC<Props> = ({ day }) => {
     day: 'numeric',
   });
 
-  if (day.no_information_provided) {
-    return (
-      <div className="day-card">
-        <div className="day-head">
-          {day.today && <span className="today-badge">Today</span>}
-          <span className="day-weekday">{weekday}</span>
-          <span className="day-name">{shortDate}</span>
-        </div>
-        <div className="empty-state">
-          <h2>No menu yet</h2>
-          <p className="sub">Check back later today.</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Check no_school first: a no-school day always has empty sections, so
+  // checking no_information_provided first would swallow the "No school" UI.
   if (day.no_school) {
     return (
       <div className="day-card">
@@ -55,6 +41,22 @@ export const DayCard: React.FC<Props> = ({ day }) => {
         <div className="empty-state">
           <h2>No school</h2>
           <p className="sub">Nothing posted because there is no school.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (day.no_information_provided) {
+    return (
+      <div className="day-card">
+        <div className="day-head">
+          {day.today && <span className="today-badge">Today</span>}
+          <span className="day-weekday">{weekday}</span>
+          <span className="day-name">{shortDate}</span>
+        </div>
+        <div className="empty-state">
+          <h2>No menu yet</h2>
+          <p className="sub">Check back later today.</p>
         </div>
       </div>
     );

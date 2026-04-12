@@ -1,7 +1,9 @@
-import { normalizeMenuResponse, SCHOOL_ID } from '../shared/menu-core.js';
+import { normalizeMenuResponse, SCHOOL_ID, formatMealViewerDate } from '../shared/menu-core.js';
 import type { MenuData } from './types';
+
 const API_BASE_URL = 'https://api.mealviewer.com/api/v4/school';
 const CACHE_KEY = 'bms_lunch_cache_v1';
+const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 
 interface CacheEntry {
   data: MenuData;
@@ -15,18 +17,10 @@ function getMenuDataUrl(cacheBustKey?: string): string {
   return `${import.meta.env.BASE_URL}menu-data.json?v=${encodeURIComponent(version)}`;
 }
 
-function formatMealViewerDate(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const year = date.getFullYear();
-  return `${month}-${day}-${year}`;
-}
-
-
 function loadCache(): CacheEntry | null {
   try {
     const cached = localStorage.getItem(CACHE_KEY);
-    return cached ? JSON.parse(cached) : null;
+    return cached ? (JSON.parse(cached) as CacheEntry) : null;
   } catch {
     return null;
   }
@@ -51,28 +45,30 @@ export function clearCachedData(): void {
   }
 }
 
-async function fetchData(cacheBustKey?: string): Promise<MenuData> {
+async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<MenuData> {
   try {
-    // Try to fetch pre-normalized menu data (updated daily by GitHub Actions)
-    const response = await fetch(getMenuDataUrl(cacheBustKey));
+    // Try to fetch pre-normalized menu data (updated weekdays by GitHub Actions)
+    const response = await fetch(getMenuDataUrl(cacheBustKey), { signal });
     if (!response.ok) {
       throw new Error(`Failed to load menu data: ${response.status}`);
     }
-    const data = await response.json();
+    const data = await response.json() as Record<string, unknown>;
 
     // Handle both new normalized format and old format with .raw
-    const toProcess = data.days ? data : data.raw;
+    const toProcess = (data.days ? data : (data as Record<string, unknown>).raw) as Record<string, unknown>;
 
-    // If already normalized, return directly
+    // If already normalized, return directly, preserving the source timestamp
     if (data.days && Array.isArray(data.days) && data.meta) {
+      const sourceMeta = data.meta as Record<string, unknown>;
       return {
-        days: data.days,
+        days: data.days as MenuData['days'],
         meta: {
           source: 'fresh',
           lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          sourceUpdatedAt: typeof sourceMeta.lastUpdated === 'string' ? sourceMeta.lastUpdated : undefined,
           isOffline: false,
           isPreview: false,
-          schoolName: data.meta.schoolName || SCHOOL_ID,
+          schoolName: (typeof sourceMeta.schoolName === 'string' ? sourceMeta.schoolName : null) ?? SCHOOL_ID,
         },
       };
     }
@@ -82,49 +78,50 @@ async function fetchData(cacheBustKey?: string): Promise<MenuData> {
       throw new Error('Invalid menu data format');
     }
 
-    const normalized = normalizeMenuResponse(toProcess as Record<string, unknown>);
+    const normalized = normalizeMenuResponse(toProcess);
 
     return {
       days: normalized.days,
       meta: {
         source: 'fresh',
         lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        sourceUpdatedAt: normalized.meta.lastUpdated,
         isOffline: false,
         isPreview: false,
         schoolName: normalized.meta.schoolName,
       },
     };
   } catch (error) {
-    // Fallback to live API if pre-fetched data isn't available
-    console.warn('Could not load pre-fetched menu data, falling back to live API', error);
-    const start = new Date();
-    const end = new Date(start);
-    end.setDate(end.getDate() + 21);
+    if ((error as { name?: string }).name === 'AbortError') throw error;
 
-    const range = [formatMealViewerDate(start), formatMealViewerDate(end)].join('/');
+    // Fallback to live API if pre-fetched data isn't available.
+    // Use school-timezone dates to avoid off-by-one-day errors for users or
+    // CI runners whose host clock is in a different timezone.
+    console.warn('Could not load pre-fetched menu data, falling back to live API', error);
+    const startStr = formatMealViewerDate(0);
+    const endStr = formatMealViewerDate(21);
+    const range = [startStr, endStr].join('/');
     const url = `${API_BASE_URL}/${SCHOOL_ID}/${range}`;
 
     const response = await fetch(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
+      signal,
     });
 
     if (!response.ok) {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const raw = await response.json();
-
-    // Process raw API data into normalized format using same logic as static file path
-    const normalized = normalizeMenuResponse(raw as Record<string, unknown>);
+    const raw = await response.json() as Record<string, unknown>;
+    const normalized = normalizeMenuResponse(raw);
 
     return {
       days: normalized.days,
       meta: {
         source: 'fresh',
         lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        sourceUpdatedAt: normalized.meta.lastUpdated,
         isOffline: false,
         isPreview: false,
         schoolName: normalized.meta.schoolName,
@@ -133,16 +130,20 @@ async function fetchData(cacheBustKey?: string): Promise<MenuData> {
   }
 }
 
-// Returns cached data immediately without network, or empty if no cache
+// Returns cached data immediately without network, or empty if no cache.
+// Annotates isStale so the UI can surface a warning when the TTL has elapsed.
 export async function getCachedData(): Promise<MenuData> {
   const cached = loadCache();
   if (cached) {
+    const isStale = Date.now() - cached.fetchedAt > CACHE_TTL_MS;
     return {
       ...cached.data,
       meta: {
         ...cached.data.meta,
         source: 'preview',
         isPreview: true,
+        clientFetchedAt: cached.fetchedAt,
+        isStale,
       },
     };
   }
@@ -158,14 +159,18 @@ export async function getCachedData(): Promise<MenuData> {
   };
 }
 
-// Always fetches fresh data from network or static JSON; respects 4-hour cache TTL
-export async function getFreshData(options?: { cacheBustKey?: string; resetCache?: boolean }): Promise<MenuData> {
+// Fetches fresh data from the network or static JSON and saves it to cache.
+export async function getFreshData(options?: {
+  cacheBustKey?: string;
+  resetCache?: boolean;
+  signal?: AbortSignal;
+}): Promise<MenuData> {
   try {
     if (options?.resetCache) {
       clearCachedData();
     }
 
-    const data = await fetchData(options?.cacheBustKey);
+    const data = await fetchData(options?.signal, options?.cacheBustKey);
     const fetchedAt = saveCache(data);
     return {
       ...data,
@@ -173,9 +178,13 @@ export async function getFreshData(options?: { cacheBustKey?: string; resetCache
         ...data.meta,
         source: 'fresh',
         lastUpdated: new Date(fetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        clientFetchedAt: fetchedAt,
+        isStale: false,
       },
     };
   } catch (e) {
+    if ((e as { name?: string }).name === 'AbortError') throw e;
+
     const cached = loadCache();
     if (cached) {
       return {
@@ -184,6 +193,8 @@ export async function getFreshData(options?: { cacheBustKey?: string; resetCache
           ...cached.data.meta,
           source: 'offline',
           isOffline: true,
+          clientFetchedAt: cached.fetchedAt,
+          isStale: Date.now() - cached.fetchedAt > CACHE_TTL_MS,
         },
       };
     }
@@ -204,9 +215,7 @@ export async function getFreshData(options?: { cacheBustKey?: string; resetCache
 // Backwards-compatible entry point: shows cache if available, fetches fresh in background
 export async function getData(allowPreview = false): Promise<MenuData> {
   if (allowPreview) {
-    // For preview mode: return cache immediately
     return getCachedData();
   }
-  // For normal mode: fetch fresh (respects 4-hour TTL in fetchData)
   return getFreshData();
 }

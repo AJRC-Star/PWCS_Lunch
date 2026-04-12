@@ -1,7 +1,56 @@
 const SCHOOL_ID = 'BENTONMIDDLE';
 const SCHOOL_TIMEZONE = 'America/New_York';
 
-function getFormatter() {
+// ── Internal types ────────────────────────────────────────────────────────────
+
+interface FoodItem {
+  item_Name?: unknown;
+  item_Type?: unknown;
+}
+
+interface CafeteriaLine {
+  foodItemList?: { data?: FoodItem[] };
+}
+
+interface MenuBlock {
+  blockName?: unknown;
+  cafeteriaLineList?: { data?: CafeteriaLine[] };
+}
+
+interface MenuSchedule {
+  dateInformation?: unknown;
+  menuBlocks?: MenuBlock[];
+}
+
+// ── Public types ──────────────────────────────────────────────────────────────
+
+export interface SharedMenuSection {
+  title: string;
+  items: string[];
+  wide?: boolean;
+}
+
+export interface SharedMenuDay {
+  iso: string;
+  dateObj: number;
+  today: boolean;
+  weekend: boolean;
+  no_school: boolean;
+  no_information_provided: boolean;
+  sections: SharedMenuSection[];
+}
+
+export interface SharedMenuResponse {
+  days: SharedMenuDay[];
+  meta: {
+    lastUpdated: string;
+    schoolName: string;
+  };
+}
+
+// ── Date helpers ──────────────────────────────────────────────────────────────
+
+function getFormatter(): Intl.DateTimeFormat {
   return new Intl.DateTimeFormat('en-US', {
     timeZone: SCHOOL_TIMEZONE,
     year: 'numeric',
@@ -10,7 +59,7 @@ function getFormatter() {
   });
 }
 
-function getTodayISO() {
+function getTodayISO(): string {
   const parts = getFormatter().formatToParts(new Date());
   const year = parts.find((part) => part.type === 'year')?.value;
   const month = parts.find((part) => part.type === 'month')?.value;
@@ -18,18 +67,18 @@ function getTodayISO() {
   return `${year}-${month}-${day}`;
 }
 
-function parseISOAtUtcNoon(iso) {
+function parseISOAtUtcNoon(iso: string): Date {
   return new Date(`${iso}T12:00:00Z`);
 }
 
-function formatUTCISODate(date) {
+function formatUTCISODate(date: Date): string {
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, '0');
   const day = String(date.getUTCDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
-function getNextSchoolDay(fromISO) {
+function getNextSchoolDay(fromISO: string): string {
   const date = parseISOAtUtcNoon(fromISO);
   const dayOfWeek = date.getUTCDay();
 
@@ -42,8 +91,26 @@ function getNextSchoolDay(fromISO) {
   return formatUTCISODate(date);
 }
 
-function sectionPriority(title) {
-  const priorities = {
+/**
+ * Returns a MealViewer-formatted date string (MM-DD-YYYY) for the school's
+ * local timezone, optionally offset by a number of calendar days.  This
+ * replaces the previous `new Date()` approach which used the host machine's
+ * timezone and produced off-by-one-day results for users/runners outside ET.
+ */
+function formatMealViewerDate(offsetDays = 0): string {
+  const baseISO = getTodayISO();
+  const date = parseISOAtUtcNoon(baseISO);
+  date.setUTCDate(date.getUTCDate() + offsetDays);
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const year = date.getUTCFullYear();
+  return `${month}-${day}-${year}`;
+}
+
+// ── Menu categorisation ───────────────────────────────────────────────────────
+
+function sectionPriority(title: string): number {
+  const priorities: Record<string, number> = {
     Entree: 0,
     Sides: 1,
     Fruit: 2,
@@ -57,9 +124,9 @@ function sectionPriority(title) {
   return priorities[title] ?? 8;
 }
 
-function uniqueMenuItems(items) {
-  const seen = new Set();
-  const clean = [];
+function uniqueMenuItems(items: string[]): string[] {
+  const seen = new Set<string>();
+  const clean: string[] = [];
 
   for (const item of items || []) {
     const name = String(item ?? '').trim();
@@ -75,7 +142,7 @@ function uniqueMenuItems(items) {
   return clean;
 }
 
-function categorizeMealViewerItem(food) {
+function categorizeMealViewerItem(food: FoodItem): string {
   const rawType = String(food?.item_Type || '').trim().toLowerCase();
   const rawName = String(food?.item_Name || '').trim().toLowerCase();
 
@@ -120,7 +187,7 @@ function categorizeMealViewerItem(food) {
   return 'Other';
 }
 
-function getFoodItemsForBlock(block) {
+function getFoodItemsForBlock(block: MenuBlock): FoodItem[] {
   return (
     block?.cafeteriaLineList?.data?.flatMap(
       (line) => line?.foodItemList?.data || []
@@ -128,11 +195,16 @@ function getFoodItemsForBlock(block) {
   );
 }
 
-function normalizeMealViewerDay(schedule, todayISO) {
+// ── Day normalisation ─────────────────────────────────────────────────────────
+
+function normalizeMealViewerDay(
+  schedule: MenuSchedule,
+  todayISO: string,
+): SharedMenuDay | null {
   const dateInfo = schedule?.dateInformation;
   const rawDate =
     dateInfo !== null && typeof dateInfo === 'object'
-      ? dateInfo.dateFull ?? null
+      ? (dateInfo as Record<string, unknown>).dateFull ?? null
       : null;
   const iso = rawDate ? String(rawDate).split('T')[0] : null;
 
@@ -156,7 +228,7 @@ function normalizeMealViewerDay(schedule, todayISO) {
 
   const blocks = lunchBlocks.length > 0 ? lunchBlocks : nonBreakfastBlocks;
   const hasConfidentData = blocks.some((block) => getFoodItemsForBlock(block).length > 0);
-  const sectionMap = new Map();
+  const sectionMap = new Map<string, string[]>();
 
   for (const block of blocks) {
     for (const food of getFoodItemsForBlock(block)) {
@@ -170,7 +242,7 @@ function normalizeMealViewerDay(schedule, todayISO) {
     }
   }
 
-  const sections = Array.from(sectionMap.entries())
+  const sections: SharedMenuSection[] = Array.from(sectionMap.entries())
     .map(([title, items]) => ({
       title,
       items: uniqueMenuItems(items),
@@ -185,27 +257,49 @@ function normalizeMealViewerDay(schedule, todayISO) {
 
   const date = parseISOAtUtcNoon(iso);
   const isWeekend = [0, 6].includes(date.getUTCDay());
+
+  // Only set no_information_provided when there genuinely is no data AND it is
+  // not a known no-school day.  The previous `|| sections.length === 0` caused
+  // every no-school day (which naturally has empty sections) to be mislabelled
+  // as "No menu yet" instead of "No school".
   const noInfo = !hasConfidentData && !isNoSchoolDay;
 
   return {
     iso,
     dateObj: date.getTime(),
+    // Use the true calendar today for the "Today" badge.  The caller passes
+    // getTodayISO() so that on weekends no day is falsely labelled "Today".
     today: iso === todayISO,
     weekend: isWeekend,
     no_school: isNoSchoolDay,
-    no_information_provided: noInfo || sections.length === 0,
+    no_information_provided: noInfo,
     sections,
   };
 }
 
-function normalizeMenuResponse(rawData, options = {}) {
-  const todayISO = options.todayISO || getNextSchoolDay(getTodayISO());
-  const schedules = Array.isArray(rawData?.menuSchedules) ? rawData.menuSchedules : [];
+// ── Response normalisation ────────────────────────────────────────────────────
+
+function normalizeMenuResponse(
+  rawData: Record<string, unknown>,
+  options: { todayISO?: string } = {},
+): SharedMenuResponse {
+  // Use the true calendar today for the "Today" badge so that on weekends no
+  // future day is incorrectly labelled "Today".  Separately, compute the first
+  // day to display (Monday when called on a weekend) so that past/weekend days
+  // are still excluded from the list.
+  const todayISO = options.todayISO ?? getTodayISO();
+  const displayFromISO = getNextSchoolDay(todayISO);
+
+  const schedules = Array.isArray(rawData?.menuSchedules)
+    ? (rawData.menuSchedules as MenuSchedule[])
+    : [];
 
   const days = schedules
     .map((schedule) => normalizeMealViewerDay(schedule, todayISO))
-    .filter(Boolean)
-    .filter((day) => !day.weekend && !day.no_school && day.iso >= todayISO)
+    .filter((day): day is SharedMenuDay => day !== null)
+    // Keep no_school days in the output so the UI can display "No school"
+    // rather than silently dropping those days from the calendar.
+    .filter((day) => !day.weekend && day.iso >= displayFromISO)
     .sort((a, b) => {
       if (a.today && !b.today) return -1;
       if (!a.today && b.today) return 1;
@@ -216,7 +310,7 @@ function normalizeMenuResponse(rawData, options = {}) {
     days,
     meta: {
       lastUpdated: new Date().toISOString(),
-      schoolName: rawData?.schoolName || SCHOOL_ID,
+      schoolName: (rawData?.schoolName as string) || SCHOOL_ID,
     },
   };
 }
@@ -225,6 +319,7 @@ export {
   SCHOOL_ID,
   SCHOOL_TIMEZONE,
   categorizeMealViewerItem,
+  formatMealViewerDate,
   getNextSchoolDay,
   getTodayISO,
   normalizeMealViewerDay,

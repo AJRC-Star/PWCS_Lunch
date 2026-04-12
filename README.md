@@ -10,6 +10,7 @@ A mobile-first web app that displays the school lunch menu for Benton Middle Sch
 - 🗓 Horizontal day-selector tabs for quick navigation across the week
 - 🍗 Automatic menu categorization (Entree, Sides, Fruit, Grains, Drink, etc.)
 - 💾 Smart caching — shows cached menu instantly when available, then refreshes in the background
+- 🕐 Freshness-aware — displays when the menu data was actually produced, not just when the browser last fetched it; warns when the local cache is stale
 - ⚡ Skeleton loading screens while data loads
 - 🌙 Dark and light mode (follows system preference)
 - 📐 Fluid layout — scales to any screen size with no device-specific breakpoints
@@ -17,7 +18,7 @@ A mobile-first web app that displays the school lunch menu for Benton Middle Sch
 ## Tech Stack
 
 - **React 18** — UI framework
-- **TypeScript** — type safety
+- **TypeScript** — type safety (covers `src/`, `shared/`, and `scripts/`)
 - **Vite** — build tool and dev server
 - **CSS3** — fluid sizing with `clamp()`, `dvh`, and CSS Grid/Flexbox
 - **gh-pages** — GitHub Pages deployment
@@ -30,24 +31,25 @@ Menu data is pulled from the MealViewer public API:
 https://api.mealviewer.com/api/v4/school/BENTONMIDDLE/{startDate}/{endDate}
 ```
 
-The app fetches 21 days of data starting from today. Items are categorized by `item_Type` field with name-based regex fallback for robustness.
+The app fetches 21 days of data starting from today (using the school's local timezone, `America/New_York`). Items are categorized by `item_Type` field with name-based regex fallback for robustness.
 
 ## Caching & Data Flow
 
 Menu data is pre-normalized and cached for offline access:
 
-- **Network available:** Latest data fetched from pre-built `menu-data.json` (updated daily by GitHub Actions) or live API fallback
-- **Preview mode:** Shows cached data immediately when available, then re-fetches fresh data in the background
+- **Network available:** Latest data fetched from pre-built `menu-data.json` (updated on school days by GitHub Actions) or live API fallback
+- **Preview mode:** Shows cached data immediately when available, then re-fetches fresh data in the background. The background fetch is kept alive even when the 10-second UI deadline passes so the session updates without requiring a reload.
 - **Offline:** Shows cached data with warning banner
+- **Staleness:** The 4-hour TTL is enforced on the local cache. The header displays the source timestamp from the data file (when the menu was produced) rather than the browser fetch time.
 
-Data is normalized server-side in `scripts/fetch-menu.js` to reduce payload from ~5MB → ~8KB.
+Data is normalized server-side in `scripts/fetch-menu.ts` to reduce payload from ~5MB → ~8KB.
 
 ## Development
 
 ```bash
 npm install       # install dependencies
 npm run dev       # start dev server at http://localhost:5173
-npm run typecheck # TypeScript validation
+npm run typecheck # TypeScript validation (src/, shared/, scripts/)
 npm test          # run regression tests
 npm run build     # build for production → dist/
 ```
@@ -55,10 +57,12 @@ npm run build     # build for production → dist/
 Requires Node.js 20.19+ locally. GitHub Actions runs Node.js 22.
 
 Deployment is automated via GitHub Actions:
-- **Menu data:** `scripts/fetch-menu.js` runs weekly on Saturdays at 10:00 UTC, fetches latest data, and pushes to `main`
+- **Menu data:** `scripts/fetch-menu.ts` runs on school days (Mon–Fri) at 10:00 UTC and 14:00 UTC, fetches the latest data, and pushes to `main`
 - **Failures:** If menu ingestion breaks, the scheduled workflow fails so the issue is visible in GitHub Actions
 - **CI:** Pushes to `main` and pull requests run install, typecheck, tests, and build
 - **Site deployment:** `main` deploys to `gh-pages` only after validation passes
+
+The deploy base path defaults to `/PWCS_Lunch/` but can be overridden with the `VITE_BASE_PATH` environment variable for alternative deploy targets (custom domains, root paths, etc.).
 
 ## Project Structure
 
@@ -72,6 +76,10 @@ src/
     DayTabs.tsx           # Horizontal scrollable day-selector chip row
     DayCard.tsx           # Full-screen menu display for a single day
     SkeletonLoader.tsx    # Animated placeholder shown during load
+shared/
+  menu-core.ts            # Shared normalization logic (used by app and scripts)
+scripts/
+  fetch-menu.ts           # GitHub Actions menu fetcher
 ```
 
 ## Browser Support
