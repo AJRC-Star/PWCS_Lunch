@@ -325,7 +325,7 @@ main {
 /* ── Skeleton ── */
 .skeleton-card {
   flex: 1;
-  padding: 16px clamp(16px, 4.5vw, 24px);
+  padding: 16px clamp(16px, 4.5vw, 24px) max(20px, env(safe-area-inset-bottom));
 }
 
 .skeleton-line,
