@@ -39,7 +39,7 @@ export const DayTabs: React.FC<Props> = ({ days, selectedIndex, onSelect }) => {
 
         return (
           <button
-            key={idx}
+            key={day.iso}
             ref={(el) => { chipRefs.current[idx] = el; }}
             className={`day-chip ${idx === selectedIndex ? 'active' : ''} ${day.today ? 'today' : ''}`}
             onClick={() => onSelect(idx)}

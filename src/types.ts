@@ -10,14 +10,14 @@ export interface MenuDay {
   today: boolean;
   weekend: boolean;
   no_school: boolean;
-  no_information_provided?: boolean;
+  no_information_provided: boolean;
   sections: MenuItem[];
 }
 
 export interface MenuData {
   days: MenuDay[];
   meta: {
-    source: 'fresh' | 'cache' | 'offline' | 'preview';
+    source: 'fresh' | 'offline' | 'preview';
     /** Human-readable fetch time shown in the header (e.g. "10:32 AM"). */
     lastUpdated: string;
     /**

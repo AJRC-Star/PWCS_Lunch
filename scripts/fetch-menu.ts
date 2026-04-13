@@ -38,6 +38,11 @@ async function main(): Promise<void> {
     const rawData = await fetchData();
     const normalizedData = normalizeMenuResponse(rawData);
 
+    if (normalizedData.days.length === 0) {
+      console.warn('⚠ Normalisation produced 0 days — skipping file write to preserve previous data.');
+      process.exit(1);
+    }
+
     const outputPath = path.join(__dirname, '../public/menu-data.json');
     fs.writeFileSync(outputPath, JSON.stringify(normalizedData));
 

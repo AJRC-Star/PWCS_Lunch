@@ -47,17 +47,14 @@ export function clearCachedData(): void {
 
 async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<MenuData> {
   try {
-    // Try to fetch pre-normalized menu data (updated weekdays by GitHub Actions)
+    // Try to fetch pre-normalized menu data (updated on school days by GitHub Actions)
     const response = await fetch(getMenuDataUrl(cacheBustKey), { signal });
     if (!response.ok) {
       throw new Error(`Failed to load menu data: ${response.status}`);
     }
     const data = await response.json() as Record<string, unknown>;
 
-    // Handle both new normalized format and old format with .raw
-    const toProcess = (data.days ? data : (data as Record<string, unknown>).raw) as Record<string, unknown>;
-
-    // If already normalized, return directly, preserving the source timestamp
+    // If already normalized, return directly, preserving the source timestamp.
     if (data.days && Array.isArray(data.days) && data.meta) {
       const sourceMeta = data.meta as Record<string, unknown>;
       return {
@@ -73,7 +70,8 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
       };
     }
 
-    // Otherwise process the raw format
+    // Handle old format with a .raw wrapper, then normalize.
+    const toProcess = (data.raw ?? data) as Record<string, unknown>;
     if (!toProcess || typeof toProcess !== 'object') {
       throw new Error('Invalid menu data format');
     }
@@ -210,12 +208,4 @@ export async function getFreshData(options?: {
       error: 'No internet 📴 and no cache.',
     };
   }
-}
-
-// Backwards-compatible entry point: shows cache if available, fetches fresh in background
-export async function getData(allowPreview = false): Promise<MenuData> {
-  if (allowPreview) {
-    return getCachedData();
-  }
-  return getFreshData();
 }
