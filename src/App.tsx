@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { clearCachedData, getCachedData, getFreshData } from './api';
 import { SCHOOL_ID } from '../shared/menu-core.js';
 import type { MenuData } from './types';
@@ -29,6 +29,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const retryControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     // AbortController lets us cancel in-flight fetches on unmount and guards
@@ -47,6 +48,7 @@ function App() {
         }
 
         const freshRequest = getFreshData({ signal });
+        let timeoutId: ReturnType<typeof setTimeout> | null = null;
 
         // Race the network against a 10-second UI deadline so cached data is
         // never blocked for more than 10 s.  Crucially, we keep `freshRequest`
@@ -54,8 +56,13 @@ function App() {
         // when the response eventually arrives.
         const timedOut = await Promise.race([
           freshRequest.then(() => false).catch(() => false),
-          new Promise<true>((resolve) => setTimeout(() => resolve(true), 10000)),
+          new Promise<true>((resolve) => {
+            timeoutId = setTimeout(() => resolve(true), 10000);
+          }),
         ]);
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+        }
 
         if (!timedOut) {
           // Fresh data arrived within the deadline — already handled by the
@@ -94,10 +101,18 @@ function App() {
     };
 
     void loadData();
-    return () => { controller.abort(); };
+    return () => {
+      controller.abort();
+      retryControllerRef.current?.abort();
+      retryControllerRef.current = null;
+    };
   }, []);
 
   const handleRetry = async () => {
+    if (retryControllerRef.current) return;
+
+    const controller = new AbortController();
+    retryControllerRef.current = controller;
     setRetrying(true);
     setLoading(true);
     clearCachedData();
@@ -106,24 +121,34 @@ function App() {
       const freshData = await getFreshData({
         cacheBustKey: String(Date.now()),
         resetCache: true,
+        signal: controller.signal,
       });
-      setData(freshData);
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setData(freshData);
+        setLoading(false);
+      }
     } catch {
-      setData({
-        days: [],
-        meta: {
-          source: 'offline',
-          lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isOffline: true,
-          isPreview: false,
-          schoolName: SCHOOL_ID,
-        },
-        error: 'No internet and no cache.',
-      });
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setData({
+          days: [],
+          meta: {
+            source: 'offline',
+            lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isOffline: true,
+            isPreview: false,
+            schoolName: SCHOOL_ID,
+          },
+          error: 'No internet and no cache.',
+        });
+        setLoading(false);
+      }
     } finally {
-      setRetrying(false);
+      if (retryControllerRef.current === controller) {
+        retryControllerRef.current = null;
+      }
+      if (!controller.signal.aborted) {
+        setRetrying(false);
+      }
     }
   };
 

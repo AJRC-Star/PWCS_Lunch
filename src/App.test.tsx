@@ -145,7 +145,40 @@ describe('App', () => {
     expect(apiMocks.getFreshData).toHaveBeenLastCalledWith({
       cacheBustKey: expect.any(String),
       resetCache: true,
+      signal: expect.any(AbortSignal),
     });
+    expect((await screen.findAllByText('Pizza')).length).toBeGreaterThan(0);
+  });
+
+  it('ignores a second retry click while a retry is already in flight', async () => {
+    const user = userEvent.setup();
+    const deferred = createDeferred<MenuData>();
+
+    apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
+    apiMocks.getFreshData
+      .mockResolvedValueOnce({
+        days: [],
+        meta: {
+          source: 'offline',
+          lastUpdated: '10:01 AM',
+          isOffline: true,
+          isPreview: false,
+          schoolName: 'BENTONMIDDLE',
+        },
+        error: 'No internet and no cache.',
+      })
+      .mockReturnValueOnce(deferred.promise);
+
+    render(<App />);
+
+    expect(await screen.findByText('Nothing to show')).toBeInTheDocument();
+    const retryButton = screen.getByRole('button', { name: /try again/i });
+
+    await Promise.all([user.click(retryButton), user.click(retryButton)]);
+
+    expect(apiMocks.getFreshData).toHaveBeenCalledTimes(2);
+
+    deferred.resolve(makeMenuData());
     expect((await screen.findAllByText('Pizza')).length).toBeGreaterThan(0);
   });
 

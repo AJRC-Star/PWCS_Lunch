@@ -9,6 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const API_BASE_URL = 'https://api.mealviewer.com/api/v4/school';
+const MAX_FETCH_ATTEMPTS = 3;
 
 async function fetchData(): Promise<Record<string, unknown>> {
   // Use school-timezone dates so the fetch range is correct regardless of
@@ -32,10 +33,30 @@ async function fetchData(): Promise<Record<string, unknown>> {
   return response.json() as Promise<Record<string, unknown>>;
 }
 
+async function fetchWithRetry(): Promise<Record<string, unknown>> {
+  for (let attempt = 1; attempt <= MAX_FETCH_ATTEMPTS; attempt += 1) {
+    try {
+      return await fetchData();
+    } catch (error) {
+      if (attempt === MAX_FETCH_ATTEMPTS) {
+        throw error;
+      }
+
+      const delayMs = 1000 * 2 ** (attempt - 1);
+      console.warn(
+        `Attempt ${attempt} failed (${error instanceof Error ? error.message : error}). Retrying in ${delayMs}ms...`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  throw new Error('Failed to fetch menu data after retries');
+}
+
 async function main(): Promise<void> {
   try {
     console.log('Starting menu data fetch...');
-    const rawData = await fetchData();
+    const rawData = await fetchWithRetry();
     const normalizedData = normalizeMenuResponse(rawData);
 
     if (normalizedData.days.length === 0) {

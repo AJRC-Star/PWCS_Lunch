@@ -1,4 +1,4 @@
-import { normalizeMenuResponse, SCHOOL_ID, formatMealViewerDate } from '../shared/menu-core.js';
+import { getTodayISO, normalizeMenuResponse, SCHOOL_ID, formatMealViewerDate } from '../shared/menu-core.js';
 import type { MenuData } from './types';
 
 const API_BASE_URL = 'https://api.mealviewer.com/api/v4/school';
@@ -8,6 +8,10 @@ const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 interface CacheEntry {
   data: MenuData;
   fetchedAt: number;
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === 'AbortError';
 }
 
 function getMenuDataUrl(cacheBustKey?: string): string {
@@ -57,8 +61,12 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
     // If already normalized, return directly, preserving the source timestamp.
     if (data.days && Array.isArray(data.days) && data.meta) {
       const sourceMeta = data.meta as Record<string, unknown>;
+      const todayISO = getTodayISO();
       return {
-        days: data.days as MenuData['days'],
+        days: (data.days as MenuData['days']).map((day) => ({
+          ...day,
+          today: day.iso === todayISO,
+        })),
         meta: {
           source: 'fresh',
           lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -90,7 +98,7 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
       },
     };
   } catch (error) {
-    if ((error as { name?: string }).name === 'AbortError') throw error;
+    if (isAbortError(error)) throw error;
 
     // Fallback to live API if pre-fetched data isn't available.
     // Use school-timezone dates to avoid off-by-one-day errors for users or
@@ -181,7 +189,7 @@ export async function getFreshData(options?: {
       },
     };
   } catch (e) {
-    if ((e as { name?: string }).name === 'AbortError') throw e;
+    if (isAbortError(e)) throw e;
 
     const cached = loadCache();
     if (cached) {

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   categorizeMealViewerItem,
   formatMealViewerDate,
+  getNextSchoolDay,
   normalizeMealViewerDay,
   normalizeMenuResponse,
 } from './menu-core.ts';
@@ -244,5 +245,17 @@ describe('menu-core', () => {
       (parseMMDDYYYY(future).getTime() - parseMMDDYYYY(today).getTime()) /
       (1000 * 60 * 60 * 24);
     expect(diffDays).toBe(7);
+  });
+
+  it('getNextSchoolDay clamps Saturday to Monday', () => {
+    expect(getNextSchoolDay('2026-04-11')).toBe('2026-04-13');
+  });
+
+  it('getNextSchoolDay clamps Sunday to Monday', () => {
+    expect(getNextSchoolDay('2026-04-12')).toBe('2026-04-13');
+  });
+
+  it('getNextSchoolDay leaves weekdays unchanged', () => {
+    expect(getNextSchoolDay('2026-04-13')).toBe('2026-04-13');
   });
 });
