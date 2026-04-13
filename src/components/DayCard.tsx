@@ -89,10 +89,8 @@ export const DayCard: React.FC<Props> = ({ day }) => {
 
       <div className="sections-rest">
         {restSections.map((section, idx) => {
-          const itemCount = section.items.length;
-          const isWide = itemCount >= 4 || section.title === 'Fruit' || section.title === 'Sides';
           return (
-            <div key={idx} className={`section-block ${isWide ? 'wide' : 'compact'}`}>
+            <div key={idx} className={`section-block ${section.wide ? 'wide' : 'compact'}`}>
               <div className="sec-label">{getCategoryEmoji(section.title)} {section.title}</div>
               <ul>
                 {section.items.map((item, itemIdx) => (

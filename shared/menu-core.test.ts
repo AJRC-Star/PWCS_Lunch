@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   categorizeMealViewerItem,
+  formatMealViewerDate,
   normalizeMealViewerDay,
   normalizeMenuResponse,
 } from './menu-core.ts';
@@ -220,5 +221,28 @@ describe('menu-core', () => {
     // Stored at UTC noon: hours and minutes in UTC must be 12:00
     expect(d.getUTCHours()).toBe(12);
     expect(d.getUTCMinutes()).toBe(0);
+  });
+
+  // ── formatMealViewerDate ───────────────────────────────────────────────────
+
+  it('formatMealViewerDate(0) returns today in MM-DD-YYYY format', () => {
+    // We cannot control what getTodayISO() returns in the test environment, but
+    // we can verify the output shape and that offsetDays is applied correctly.
+    const today = formatMealViewerDate(0);
+    const future = formatMealViewerDate(7);
+
+    // Both must match MM-DD-YYYY
+    expect(today).toMatch(/^\d{2}-\d{2}-\d{4}$/);
+    expect(future).toMatch(/^\d{2}-\d{2}-\d{4}$/);
+
+    // The 7-day offset must advance the date by exactly 7 days
+    const parseMMDDYYYY = (s: string) => {
+      const [mm, dd, yyyy] = s.split('-').map(Number);
+      return new Date(Date.UTC(yyyy, mm - 1, dd));
+    };
+    const diffDays =
+      (parseMMDDYYYY(future).getTime() - parseMMDDYYYY(today).getTime()) /
+      (1000 * 60 * 60 * 24);
+    expect(diffDays).toBe(7);
   });
 });

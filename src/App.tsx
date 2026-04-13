@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { clearCachedData, getCachedData, getFreshData } from './api';
+import { SCHOOL_ID } from '../shared/menu-core.js';
 import type { MenuData } from './types';
 import { DayCard } from './components/DayCard';
 import { DayTabs } from './components/DayTabs';
@@ -84,7 +85,7 @@ function App() {
             lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isOffline: true,
             isPreview: false,
-            schoolName: 'BENTONMIDDLE',
+            schoolName: SCHOOL_ID,
           },
           error: 'No internet and no cache.',
         });
@@ -116,7 +117,7 @@ function App() {
           lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           isOffline: true,
           isPreview: false,
-          schoolName: 'BENTONMIDDLE',
+          schoolName: SCHOOL_ID,
         },
         error: 'No internet and no cache.',
       });

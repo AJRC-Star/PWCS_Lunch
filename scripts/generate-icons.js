@@ -28,9 +28,8 @@ async function generateIcons() {
     }
 
     console.log('✓ All icons generated successfully');
-    process.exit(0);
   } catch (error) {
-    console.error('✗ Failed to generate icons:', error.message);
+    console.error('✗ Failed to generate icons:', error instanceof Error ? error.message : error);
     process.exit(1);
   }
 }

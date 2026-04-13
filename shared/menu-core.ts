@@ -243,11 +243,14 @@ function normalizeMealViewerDay(
   }
 
   const sections: SharedMenuSection[] = Array.from(sectionMap.entries())
-    .map(([title, items]) => ({
-      title,
-      items: uniqueMenuItems(items),
-      wide: title === 'Entree',
-    }))
+    .map(([title, rawItems]) => {
+      const items = uniqueMenuItems(rawItems);
+      return {
+        title,
+        items,
+        wide: title === 'Entree' || title === 'Sides' || title === 'Fruit' || items.length >= 4,
+      };
+    })
     .filter((section) => section.items.length > 0)
     .sort((a, b) => {
       const priorityDiff = sectionPriority(a.title) - sectionPriority(b.title);
