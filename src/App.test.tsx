@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import type { MenuData } from './types';
 
@@ -89,8 +89,49 @@ function makeEmptyPreview(): MenuData {
 }
 
 describe('App', () => {
+  beforeEach(() => {
+    const storage = new Map<string, string>();
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn((key: string) => storage.get(key) ?? null),
+      setItem: vi.fn((key: string, value: string) => {
+        storage.set(key, value);
+      }),
+      removeItem: vi.fn((key: string) => {
+        storage.delete(key);
+      }),
+      clear: vi.fn(() => {
+        storage.clear();
+      }),
+    });
+    if (!document.querySelector('meta[name="theme-color"]')) {
+      const meta = document.createElement('meta');
+      meta.name = 'theme-color';
+      meta.content = '#3b82f6';
+      document.head.appendChild(meta);
+    }
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: query === '(prefers-color-scheme: light)',
+        media: query,
+        onchange: null,
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn(),
+      })),
+    });
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
+    document.documentElement.removeAttribute('data-theme');
+    document.documentElement.style.colorScheme = '';
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute('content', '#3b82f6');
   });
 
   // ── Existing tests ─────────────────────────────────────────────────────────
@@ -295,5 +336,37 @@ describe('App', () => {
 
     expect(await screen.findByText('No school')).toBeInTheDocument();
     expect(screen.queryByText('No menu yet')).not.toBeInTheDocument();
+  });
+
+  it('lets the user switch theme manually and persists the choice', async () => {
+    apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
+    apiMocks.getFreshData.mockResolvedValue(makeMenuData());
+
+    render(<App />);
+
+    await screen.findByText('Pizza');
+
+    expect(document.documentElement.dataset.theme).toBe('light');
+    expect(window.localStorage.getItem('bms-lunch-theme')).toBe('light');
+
+    await userEvent.click(screen.getByRole('button', { name: /switch to dark mode/i }));
+
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(document.documentElement.style.colorScheme).toBe('dark');
+    expect(window.localStorage.getItem('bms-lunch-theme')).toBe('dark');
+    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#08080f');
+  });
+
+  it('prefers a stored theme choice over the device preference', async () => {
+    window.localStorage.setItem('bms-lunch-theme', 'dark');
+    apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
+    apiMocks.getFreshData.mockResolvedValue(makeMenuData());
+
+    render(<App />);
+
+    await screen.findByText('Pizza');
+
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(screen.getByRole('button', { name: /switch to light mode/i })).toBeInTheDocument();
   });
 });

@@ -7,6 +7,15 @@ import { DayTabs } from './components/DayTabs';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import './App.css';
 
+type Theme = 'light' | 'dark';
+
+const THEME_STORAGE_KEY = 'bms-lunch-theme';
+const THEME_META_SELECTOR = 'meta[name="theme-color"]';
+const THEME_COLORS: Record<Theme, string> = {
+  dark: '#08080f',
+  light: '#f5f5f7',
+};
+
 function formatFreshnessLabel(meta: MenuData['meta']): string {
   if (meta.isOffline) return '⚠️ Offline — showing cached menu';
 
@@ -24,12 +33,35 @@ function formatFreshnessLabel(meta: MenuData['meta']): string {
   return `Updated ${meta.lastUpdated || '—'}${staleWarning}`;
 }
 
+function getInitialTheme(): Theme {
+  if (typeof window === 'undefined') return 'dark';
+
+  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (storedTheme === 'light' || storedTheme === 'dark') {
+    return storedTheme;
+  }
+
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
+
 function App() {
   const [data, setData] = useState<MenuData | null>(null);
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [theme, setTheme] = useState<Theme>(() => getInitialTheme());
   const retryControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+
+    const themeMeta = document.querySelector<HTMLMetaElement>(THEME_META_SELECTOR);
+    if (themeMeta) {
+      themeMeta.setAttribute('content', THEME_COLORS[theme]);
+    }
+  }, [theme]);
 
   useEffect(() => {
     // AbortController lets us cancel in-flight fetches on unmount and guards
@@ -159,6 +191,8 @@ function App() {
     setSelectedIndex((i) => Math.min(i, Math.max(days.length - 1, 0)));
   }, [days.length]);
 
+  const nextTheme = theme === 'dark' ? 'light' : 'dark';
+
   return (
     <div id="app">
       {data?.error && (
@@ -177,6 +211,17 @@ function App() {
             )}
           </div>
         </div>
+        <button
+          className="theme-toggle"
+          type="button"
+          onClick={() => setTheme(nextTheme)}
+          aria-label={`Switch to ${nextTheme} mode`}
+          title={`Switch to ${nextTheme} mode`}
+        >
+          <span className="theme-toggle-icon" aria-hidden="true">
+            {theme === 'dark' ? '☀️' : '🌙'}
+          </span>
+        </button>
       </header>
 
       {!loading && days.length > 0 && (
