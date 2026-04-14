@@ -43,7 +43,7 @@ export interface SharedMenuDay {
 export interface SharedMenuResponse {
   days: SharedMenuDay[];
   meta: {
-    lastUpdated: string;
+    snapshotGeneratedAt: string;
     schoolName: string;
   };
 }
@@ -57,6 +57,16 @@ function getFormatter(): Intl.DateTimeFormat {
     month: '2-digit',
     day: '2-digit',
   });
+}
+
+function formatSchoolDate(
+  iso: string,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  return new Intl.DateTimeFormat('en-US', {
+    ...options,
+    timeZone: SCHOOL_TIMEZONE,
+  }).format(parseISOAtUtcNoon(iso));
 }
 
 function getTodayISO(): string {
@@ -146,6 +156,22 @@ function categorizeMealViewerItem(food: FoodItem): string {
   const rawType = String(food?.item_Type || '').trim().toLowerCase();
   const rawName = String(food?.item_Name || '').trim().toLowerCase();
 
+  // High-confidence name overrides win even when MealViewer assigns an overly
+  // broad item_Type such as Fruit, Side, or Grain.
+  if (/(dessert|cookie|brownie|crisp|cake|pie|pudding|ice cream|shortcake)/.test(rawName)) {
+    return 'Dessert';
+  }
+  if (/(ketchup|ranch|mustard|mayo|sauce|dressing|syrup|packet|cup|dip|gravy|hummus)/.test(rawName)) {
+    return 'Condiments';
+  }
+  if (/(chicken|beef|turkey|pizza|burger|sandwich|quesadilla|wings|lasagna|falafel|meatballs|pupusas|drumstick|sausage|fillet|nuggets|chili)/.test(rawName)) {
+    return 'Entree';
+  }
+  if (/(juice|milk|water)/.test(rawName)) return 'Drink';
+  if (/(apple|orange|pear|peach|berry|berries|mandarin|fruit|pineapple|banana|grape|clementine|kiwi|mango)/.test(rawName)) {
+    return 'Fruit';
+  }
+
   if (rawType.includes('protein') || rawType.includes('entree') || rawType.includes('main')) {
     return 'Entree';
   }
@@ -168,20 +194,11 @@ function categorizeMealViewerItem(food: FoodItem): string {
     return 'Grains';
   }
 
-  if (/(dessert|cookie|brownie|crisp|cake|pie|pudding|ice cream)/.test(rawName)) return 'Dessert';
-  if (/(juice|milk|water)/.test(rawName)) return 'Drink';
-  if (/(apple|orange|pear|peach|berry|berries|mandarin|fruit)/.test(rawName)) return 'Fruit';
-  if (/(ketchup|ranch|mustard|mayo|sauce|dressing|syrup|packet|cup|dip|gravy)/.test(rawName)) {
-    return 'Condiments';
-  }
   if (/(salad|carrot|cucumber|celery|beans|corn|broccoli|tomato|tots|fries|plantains|onions|peppers)/.test(rawName)) {
     return 'Sides';
   }
   if (/(bread|bagel|toast|rice|pasta|macaroni|grain|bun|biscuit|roll|knot|chips|tortilla|pita)/.test(rawName)) {
     return 'Grains';
-  }
-  if (/(chicken|beef|turkey|pizza|burger|sandwich|quesadilla|wings|lasagna|falafel|meatballs|pupusas|drumstick|sausage)/.test(rawName)) {
-    return 'Entree';
   }
 
   return 'Other';
@@ -312,7 +329,7 @@ function normalizeMenuResponse(
   return {
     days,
     meta: {
-      lastUpdated: new Date().toISOString(),
+      snapshotGeneratedAt: new Date().toISOString(),
       schoolName: (rawData?.schoolName as string) || SCHOOL_ID,
     },
   };
@@ -322,6 +339,7 @@ export {
   SCHOOL_ID,
   SCHOOL_TIMEZONE,
   categorizeMealViewerItem,
+  formatSchoolDate,
   formatMealViewerDate,
   getNextSchoolDay,
   getTodayISO,

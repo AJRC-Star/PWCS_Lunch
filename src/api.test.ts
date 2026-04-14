@@ -48,7 +48,7 @@ describe('api', () => {
           },
         ],
         meta: {
-          lastUpdated: '2026-04-13T10:00:00.000Z',
+          snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
           schoolName: 'BENTONMIDDLE',
         },
       }),
@@ -62,6 +62,7 @@ describe('api', () => {
 
       expect(data.days.find((day) => day.iso === '2026-04-13')?.today).toBe(false);
       expect(data.days.find((day) => day.iso === '2026-04-14')?.today).toBe(true);
+      expect(data.meta.snapshotGeneratedAt).toBe('2026-04-13T10:00:00.000Z');
     } finally {
       vi.useRealTimers();
     }

@@ -40,7 +40,7 @@ function makeMenuData(): MenuData {
     meta: {
       source: 'fresh',
       lastUpdated: '10:00 AM',
-      sourceUpdatedAt: '2026-04-13T10:00:00.000Z',
+      snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
       clientFetchedAt: 1744545600000,
       isStale: false,
       isOffline: false,
@@ -267,18 +267,19 @@ describe('App', () => {
 
   // ── Finding 1: freshness label shows source timestamp ─────────────────────
 
-  it('displays the source timestamp in the header when sourceUpdatedAt is present', async () => {
+  it('displays the snapshot timestamp in the header when snapshotGeneratedAt is present', async () => {
     apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
     apiMocks.getFreshData.mockResolvedValue(makeMenuData());
 
     render(<App />);
 
     // Wait until the menu has rendered
-    await screen.findByText(/menu from/i);
+    await screen.findByText(/snapshot generated/i);
 
     const caption = document.querySelector('.caption');
-    // sourceUpdatedAt '2026-04-13T10:00:00.000Z' → "Menu from Apr 13 …"
+    // snapshotGeneratedAt '2026-04-13T10:00:00.000Z' → "Snapshot generated Apr 13 …"
     expect(caption?.textContent).toMatch(/Apr 13/);
+    expect(caption?.textContent).toMatch(/Snapshot generated/);
     expect(caption?.textContent).not.toMatch(/stale/i);
   });
 

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import type { MenuDay } from '../types';
+import { formatSchoolDate } from '../../shared/menu-core.js';
 
 interface Props {
   days: MenuDay[];
@@ -33,9 +34,8 @@ export const DayTabs: React.FC<Props> = ({ days, selectedIndex, onSelect }) => {
   return (
     <div className="day-tabs" ref={scrollRef}>
       {days.map((day, idx) => {
-        const dayObj = new Date(day.dateObj);
-        const weekday = dayObj.toLocaleDateString('en-US', { weekday: 'short' });
-        const dayNum = dayObj.toLocaleDateString('en-US', { day: 'numeric' });
+        const weekday = formatSchoolDate(day.iso, { weekday: 'short' });
+        const dayNum = formatSchoolDate(day.iso, { day: 'numeric' });
 
         return (
           <button

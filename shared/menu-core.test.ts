@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   categorizeMealViewerItem,
+  formatSchoolDate,
   formatMealViewerDate,
   getNextSchoolDay,
   normalizeMealViewerDay,
@@ -58,6 +59,34 @@ describe('menu-core', () => {
     expect(categorizeMealViewerItem({ item_Name: 'Apple Crisp', item_Type: '' })).toBe('Dessert');
     expect(categorizeMealViewerItem({ item_Name: 'Marinara Dipping Sauce', item_Type: '' })).toBe('Condiments');
     expect(categorizeMealViewerItem({ item_Name: 'Meatballs (Halal)', item_Type: '' })).toBe('Entree');
+  });
+
+  it('keeps tricky items in the intended sections when MealViewer raw types are misleading', () => {
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'BENTONMIDDLE',
+        menuSchedules: [
+          makeSchedule('2026-05-01', 'Lunch', [
+            { item_Name: 'Falafel Nuggets', item_Type: 'Main' },
+            { item_Name: 'Marinara Dipping Sauce', item_Type: 'Side' },
+            { item_Name: 'Apple Crisp', item_Type: 'Fruit' },
+            { item_Name: 'Meatballs (Halal)', item_Type: 'Grain' },
+          ]),
+        ],
+      },
+      { todayISO: '2026-05-01' },
+    );
+
+    const sections = Object.fromEntries(
+      result.days[0].sections.map((section) => [section.title, section.items]),
+    );
+
+    expect(sections.Condiments).toContain('Marinara Dipping Sauce');
+    expect(sections.Dessert).toContain('Apple Crisp');
+    expect(sections.Entree).toContain('Meatballs (Halal)');
+    expect(sections.Sides ?? []).not.toContain('Marinara Dipping Sauce');
+    expect(sections.Fruit ?? []).not.toContain('Apple Crisp');
+    expect(sections.Grains ?? []).not.toContain('Meatballs (Halal)');
   });
 
   // ── Finding 4: weekend "Today" label ───────────────────────────────────────
@@ -222,6 +251,23 @@ describe('menu-core', () => {
     // Stored at UTC noon: hours and minutes in UTC must be 12:00
     expect(d.getUTCHours()).toBe(12);
     expect(d.getUTCMinutes()).toBe(0);
+  });
+
+  it('stores snapshotGeneratedAt instead of a source freshness field', () => {
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [makeSchedule('2026-04-13', 'Lunch', PIZZA_ITEMS)],
+      },
+      { todayISO: '2026-04-13' },
+    );
+
+    expect(result.meta.snapshotGeneratedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+  });
+
+  it('formats visible dates in the school timezone from canonical ISO values', () => {
+    expect(formatSchoolDate('2026-04-13', { weekday: 'long' })).toBe('Monday');
+    expect(formatSchoolDate('2026-04-13', { month: 'short', day: 'numeric' })).toBe('Apr 13');
   });
 
   // ── formatMealViewerDate ───────────────────────────────────────────────────

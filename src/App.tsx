@@ -19,14 +19,12 @@ const THEME_COLORS: Record<Theme, string> = {
 function formatFreshnessLabel(meta: MenuData['meta']): string {
   if (meta.isOffline) return '⚠️ Offline — showing cached menu';
 
-  // Show the source timestamp (when the menu data was produced) when available
-  // so users see actual data freshness, not the browser fetch time.
-  if (meta.sourceUpdatedAt) {
-    const d = new Date(meta.sourceUpdatedAt);
+  if (meta.snapshotGeneratedAt) {
+    const d = new Date(meta.snapshotGeneratedAt);
     const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const staleWarning = meta.isStale ? ' · cache may be stale' : '';
-    return `Menu from ${date} ${time}${staleWarning}`;
+    return `Snapshot generated ${date} ${time}${staleWarning}`;
   }
 
   const staleWarning = meta.isStale ? ' · cache may be stale' : '';

@@ -21,11 +21,11 @@ export interface MenuData {
     /** Human-readable fetch time shown in the header (e.g. "10:32 AM"). */
     lastUpdated: string;
     /**
-     * ISO timestamp from the data source (menu-data.json meta or live API
-     * normalisation).  Represents when the underlying menu data was produced,
-     * NOT when the browser fetched it.
+     * ISO timestamp for when the normalized menu snapshot was generated.
+     * This reflects artifact creation time, not an upstream MealViewer
+     * publish timestamp.
      */
-    sourceUpdatedAt?: string;
+    snapshotGeneratedAt?: string;
     /**
      * Unix epoch ms recorded when the browser saved this payload to the local
      * cache.  Used to enforce the 4-hour TTL and to display "cached X ago".

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { MenuDay } from '../types';
+import { formatSchoolDate } from '../../shared/menu-core.js';
 
 interface Props {
   day: MenuDay;
@@ -21,9 +22,8 @@ function getCategoryEmoji(title: string): string {
 }
 
 export const DayCard: React.FC<Props> = ({ day }) => {
-  const dayObj = new Date(day.dateObj);
-  const weekday = dayObj.toLocaleDateString('en-US', { weekday: 'long' });
-  const shortDate = dayObj.toLocaleDateString('en-US', {
+  const weekday = formatSchoolDate(day.iso, { weekday: 'long' });
+  const shortDate = formatSchoolDate(day.iso, {
     month: 'short',
     day: 'numeric',
   });

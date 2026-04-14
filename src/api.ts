@@ -58,7 +58,7 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
     }
     const data = await response.json() as Record<string, unknown>;
 
-    // If already normalized, return directly, preserving the source timestamp.
+    // If already normalized, return directly, preserving the snapshot timestamp.
     if (data.days && Array.isArray(data.days) && data.meta) {
       const sourceMeta = data.meta as Record<string, unknown>;
       const todayISO = getTodayISO();
@@ -70,7 +70,12 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
         meta: {
           source: 'fresh',
           lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          sourceUpdatedAt: typeof sourceMeta.lastUpdated === 'string' ? sourceMeta.lastUpdated : undefined,
+          snapshotGeneratedAt:
+            typeof sourceMeta.snapshotGeneratedAt === 'string'
+              ? sourceMeta.snapshotGeneratedAt
+              : typeof sourceMeta.lastUpdated === 'string'
+                ? sourceMeta.lastUpdated
+                : undefined,
           isOffline: false,
           isPreview: false,
           schoolName: (typeof sourceMeta.schoolName === 'string' ? sourceMeta.schoolName : null) ?? SCHOOL_ID,
@@ -91,7 +96,7 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
       meta: {
         source: 'fresh',
         lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        sourceUpdatedAt: normalized.meta.lastUpdated,
+        snapshotGeneratedAt: normalized.meta.snapshotGeneratedAt,
         isOffline: false,
         isPreview: false,
         schoolName: normalized.meta.schoolName,
@@ -127,7 +132,7 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
       meta: {
         source: 'fresh',
         lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        sourceUpdatedAt: normalized.meta.lastUpdated,
+        snapshotGeneratedAt: normalized.meta.snapshotGeneratedAt,
         isOffline: false,
         isPreview: false,
         schoolName: normalized.meta.schoolName,

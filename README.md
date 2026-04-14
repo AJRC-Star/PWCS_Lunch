@@ -10,7 +10,7 @@ A mobile-first web app that displays the school lunch menu for Benton Middle Sch
 - 🗓 Horizontal day-selector tabs for quick navigation across the week
 - 🍗 Automatic menu categorization (Entree, Sides, Fruit, Grains, Drink, etc.)
 - 💾 Smart caching — shows cached menu instantly when available, then refreshes in the background
-- 🕐 Freshness-aware — displays when the menu data was actually produced, not just when the browser last fetched it; warns when the local cache is stale
+- 🕐 Freshness-aware — shows when the current menu snapshot was generated and warns when the local cache is stale
 - ⚡ Skeleton loading screens while data loads
 - 🌙 Dark and light mode with a manual in-app toggle
 - 📐 Fluid layout — scales to any screen size with no device-specific breakpoints
@@ -40,7 +40,7 @@ Menu data is pre-normalized and cached for offline access:
 - **Network available:** Latest data fetched from pre-built `menu-data.json` (updated on school days by GitHub Actions) or live API fallback
 - **Preview mode:** Shows cached data immediately when available, then re-fetches fresh data in the background. The background fetch is kept alive even when the 10-second UI deadline passes so the session updates without requiring a reload.
 - **Offline:** Shows cached data with warning banner
-- **Staleness:** The 4-hour TTL is enforced on the local cache. The header displays the source timestamp from the data file (when the menu was produced) rather than the browser fetch time.
+- **Staleness:** The 4-hour TTL is enforced on the local cache. The header displays when the current normalized menu snapshot was generated rather than the browser fetch time.
 
 Data is normalized server-side in `scripts/fetch-menu.ts` to reduce payload from ~5MB → ~8KB.
 
