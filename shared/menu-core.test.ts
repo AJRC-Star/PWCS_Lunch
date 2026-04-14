@@ -226,6 +226,40 @@ describe('menu-core', () => {
     expect(day!.no_information_provided).toBe(false);
   });
 
+  it('treats official PWCS closure dates as no-school even when MealViewer has no explicit no-school block', () => {
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [makeSchedule('2026-04-21', 'Lunch', [])],
+      },
+      { todayISO: '2026-04-20' },
+    );
+
+    expect(result.days).toHaveLength(1);
+    expect(result.days[0].iso).toBe('2026-04-21');
+    expect(result.days[0].no_school).toBe(true);
+    expect(result.days[0].no_information_provided).toBe(false);
+  });
+
+  it('inserts official PWCS no-school dates that MealViewer omits within the visible window', () => {
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [
+          makeSchedule('2026-04-20', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-04-22', 'Lunch', PIZZA_ITEMS),
+        ],
+      },
+      { todayISO: '2026-04-20' },
+    );
+
+    const insertedDay = result.days.find((day) => day.iso === '2026-04-21');
+    expect(insertedDay).toBeDefined();
+    expect(insertedDay?.no_school).toBe(true);
+    expect(insertedDay?.no_information_provided).toBe(false);
+    expect(insertedDay?.sections).toEqual([]);
+  });
+
   // ── Finding 6: timezone date range for API ─────────────────────────────────
 
   it('filters out weekend days from normalizeMenuResponse output', () => {

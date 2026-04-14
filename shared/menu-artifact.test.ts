@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { describe, expect, it } from 'vitest';
 import type { SharedMenuResponse } from './menu-core.ts';
+import { getPWCSNoSchoolDatesBetween, isPWCSNoSchoolDate } from './pwcs-calendar.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -53,5 +54,28 @@ describe('published menu artifact', () => {
     expect(placements.get('Apple Crisp')).toBe('Dessert');
     expect(placements.get('Grape Tomatoes')).toBe('Sides');
     expect(placements.get('Crispy Chickpeas, Ranch')).toBe('Sides');
+  });
+
+  it('marks official PWCS closure dates as no-school instead of missing menu data', () => {
+    const artifact = readArtifact();
+    const daysByIso = new Map(artifact.days.map((day) => [day.iso, day]));
+    const firstISO = artifact.days[0]?.iso;
+    const lastISO = artifact.days[artifact.days.length - 1]?.iso;
+
+    if (firstISO && lastISO) {
+      for (const iso of getPWCSNoSchoolDatesBetween(firstISO, lastISO)) {
+        const day = daysByIso.get(iso);
+        expect(day, `expected artifact to include official PWCS no-school date ${iso}`).toBeDefined();
+        expect(day?.no_school).toBe(true);
+        expect(day?.no_information_provided).toBe(false);
+      }
+    }
+
+    for (const day of artifact.days) {
+      if (isPWCSNoSchoolDate(day.iso)) {
+        expect(day.no_school).toBe(true);
+        expect(day.no_information_provided).toBe(false);
+      }
+    }
   });
 });

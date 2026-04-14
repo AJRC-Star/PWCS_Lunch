@@ -9,6 +9,7 @@ import {
   SCHOOL_ID,
   type SharedMenuResponse,
 } from '../shared/menu-core.ts';
+import { getPWCSNoSchoolDatesBetween, isPWCSNoSchoolDate } from '../shared/pwcs-calendar.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -94,6 +95,35 @@ function validateSectionFamilies(data: SharedMenuResponse): void {
   }
 }
 
+function validateOfficialNoSchoolDays(data: SharedMenuResponse): void {
+  const daysByIso = new Map(data.days.map((day) => [day.iso, day]));
+  const firstISO = data.days[0]?.iso;
+  const lastISO = data.days[data.days.length - 1]?.iso;
+  if (!firstISO || !lastISO) {
+    return;
+  }
+
+  for (const iso of getPWCSNoSchoolDatesBetween(firstISO, lastISO)) {
+    const day = daysByIso.get(iso);
+    assert(day, `Artifact is missing official no-school date ${iso}.`);
+    assert(day.no_school, `Official no-school date ${iso} must set no_school=true.`);
+    assert(
+      !day.no_information_provided,
+      `Official no-school date ${iso} must not be marked no_information_provided.`,
+    );
+  }
+
+  for (const day of data.days) {
+    if (isPWCSNoSchoolDate(day.iso)) {
+      assert(day.no_school, `Official no-school date ${day.iso} must set no_school=true.`);
+      assert(
+        !day.no_information_provided,
+        `Official no-school date ${day.iso} must not be marked no_information_provided.`,
+      );
+    }
+  }
+}
+
 function main(): void {
   const artifact = readArtifact();
 
@@ -119,6 +149,7 @@ function main(): void {
 
   validateCuratedCategoryExpectations(artifact);
   validateSectionFamilies(artifact);
+  validateOfficialNoSchoolDays(artifact);
   console.log(`Artifact validation passed for ${artifactPath}`);
 }
 

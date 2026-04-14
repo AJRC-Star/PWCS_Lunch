@@ -1,3 +1,9 @@
+import {
+  countPWCSInstructionalWeekdaysBetween,
+  getPWCSNoSchoolDatesBetween,
+  isPWCSNoSchoolDate,
+} from './pwcs-calendar.ts';
+
 const SCHOOL_ID = 'BENTONMIDDLE';
 const SCHOOL_TIMEZONE = 'America/New_York';
 const MENU_SCHEMA_VERSION = 2;
@@ -114,25 +120,17 @@ function normalizeVisibleSharedDays(days: SharedMenuDay[], todayISO = getTodayIS
     }));
 }
 
-function countWeekdaysBetween(startISO: string, endISO: string): number {
-  const start = parseISOAtUtcNoon(startISO);
-  const end = parseISOAtUtcNoon(endISO);
-
-  if (start > end) {
-    return 0;
-  }
-
-  let count = 0;
-  const cursor = new Date(start);
-  while (cursor <= end) {
-    const dayOfWeek = cursor.getUTCDay();
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-      count += 1;
-    }
-    cursor.setUTCDate(cursor.getUTCDate() + 1);
-  }
-
-  return count;
+function makeNoSchoolDay(iso: string, todayISO: string): SharedMenuDay {
+  const date = parseISOAtUtcNoon(iso);
+  return {
+    iso,
+    dateObj: date.getTime(),
+    today: iso === todayISO,
+    weekend: [0, 6].includes(date.getUTCDay()),
+    no_school: true,
+    no_information_provided: false,
+    sections: [],
+  };
 }
 
 function isPlausibleMenuSnapshot(
@@ -156,7 +154,7 @@ function isPlausibleMenuSnapshot(
     visibleDays.length < minimumDays &&
     (
       visibleDays.length < Math.max(2, minimumDays - 1) ||
-      countWeekdaysBetween(getNextSchoolDay(todayISO), lastVisibleISO) >= minimumDays
+      countPWCSInstructionalWeekdaysBetween(getNextSchoolDay(todayISO), lastVisibleISO) >= minimumDays
     )
   ) {
     return false;
@@ -325,7 +323,8 @@ function normalizeMealViewerDay(
 
   const allBlocks = Array.isArray(schedule.menuBlocks) ? schedule.menuBlocks : [];
   const blockNames = allBlocks.map((block) => String(block?.blockName || '').trim().toLowerCase());
-  const isNoSchoolDay = blockNames.some((name) =>
+  const isOfficialNoSchoolDay = isPWCSNoSchoolDate(iso);
+  const isNoSchoolDay = isOfficialNoSchoolDay || blockNames.some((name) =>
     /no school|holiday|teacher workday|school closed|student holiday/.test(name)
   );
 
@@ -410,17 +409,26 @@ function normalizeMenuResponse(
     ? (rawData.menuSchedules as MenuSchedule[])
     : [];
 
-  const days = schedules
+  const normalizedDays = schedules
     .map((schedule) => normalizeMealViewerDay(schedule, todayISO))
     .filter((day): day is SharedMenuDay => day !== null)
-    // Keep no_school days in the output so the UI can display "No school"
-    // rather than silently dropping those days from the calendar.
-    .filter((day) => !day.weekend && day.iso >= displayFromISO)
-    .sort((a, b) => {
-      if (a.today && !b.today) return -1;
-      if (!a.today && b.today) return 1;
-      return String(a.iso).localeCompare(String(b.iso));
-    });
+    .filter((day) => !day.weekend && day.iso >= displayFromISO);
+
+  const daysByIso = new Map(normalizedDays.map((day) => [day.iso, day]));
+  const lastVisibleISO = normalizedDays[normalizedDays.length - 1]?.iso;
+  if (lastVisibleISO) {
+    for (const noSchoolISO of getPWCSNoSchoolDatesBetween(displayFromISO, lastVisibleISO)) {
+      if (!daysByIso.has(noSchoolISO)) {
+        daysByIso.set(noSchoolISO, makeNoSchoolDay(noSchoolISO, todayISO));
+      }
+    }
+  }
+
+  const days = Array.from(daysByIso.values()).sort((a, b) => {
+    if (a.today && !b.today) return -1;
+    if (!a.today && b.today) return 1;
+    return String(a.iso).localeCompare(String(b.iso));
+  });
 
   return {
     days,
