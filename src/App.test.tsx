@@ -5,7 +5,6 @@ import App from './App';
 import type { MenuData } from './types';
 
 const apiMocks = vi.hoisted(() => ({
-  clearCachedData: vi.fn(),
   getCachedData: vi.fn(),
   getFreshData: vi.fn(),
 }));
@@ -182,10 +181,8 @@ describe('App', () => {
 
     await user.click(screen.getByRole('button', { name: /try again/i }));
 
-    expect(apiMocks.clearCachedData).toHaveBeenCalled();
     expect(apiMocks.getFreshData).toHaveBeenLastCalledWith({
       cacheBustKey: expect.any(String),
-      resetCache: true,
       signal: expect.any(AbortSignal),
     });
     expect((await screen.findAllByText('Pizza')).length).toBeGreaterThan(0);
@@ -349,18 +346,18 @@ describe('App', () => {
     await screen.findByText('Pizza');
 
     expect(document.documentElement.dataset.theme).toBe('light');
-    expect(window.localStorage.getItem('bms-lunch-theme')).toBe('light');
+    expect(window.localStorage.getItem('bms-lunch-theme-preference')).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: /switch to dark mode/i }));
 
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(document.documentElement.style.colorScheme).toBe('dark');
-    expect(window.localStorage.getItem('bms-lunch-theme')).toBe('dark');
+    expect(window.localStorage.getItem('bms-lunch-theme-preference')).toBe('dark');
     expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#08080f');
   });
 
   it('prefers a stored theme choice over the device preference', async () => {
-    window.localStorage.setItem('bms-lunch-theme', 'dark');
+    window.localStorage.setItem('bms-lunch-theme-preference', 'dark');
     apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
     apiMocks.getFreshData.mockResolvedValue(makeMenuData());
 
@@ -370,5 +367,60 @@ describe('App', () => {
 
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(screen.getByRole('button', { name: /switch to light mode/i })).toBeInTheDocument();
+  });
+
+  it('follows system theme changes until the user manually overrides them', async () => {
+    let isLightMode = true;
+    let changeListener: (() => void) | null = null;
+    const mediaQueryList = {
+      get matches() {
+        return isLightMode;
+      },
+      media: '(prefers-color-scheme: light)',
+      onchange: null,
+      addListener: vi.fn((listener: () => void) => {
+        changeListener = listener;
+      }),
+      removeListener: vi.fn(() => {
+        changeListener = null;
+      }),
+      addEventListener: vi.fn((_event: string, listener: () => void) => {
+        changeListener = listener;
+      }),
+      removeEventListener: vi.fn(() => {
+        changeListener = null;
+      }),
+      dispatchEvent: vi.fn(),
+    };
+
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockReturnValue(mediaQueryList),
+    });
+
+    apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
+    apiMocks.getFreshData.mockResolvedValue(makeMenuData());
+
+    render(<App />);
+
+    await screen.findByText('Pizza');
+    expect(document.documentElement.dataset.theme).toBe('light');
+
+    isLightMode = false;
+    await act(async () => {
+      changeListener?.();
+    });
+
+    expect(document.documentElement.dataset.theme).toBe('dark');
+
+    await userEvent.click(screen.getByRole('button', { name: /switch to light mode/i }));
+    expect(window.localStorage.getItem('bms-lunch-theme-preference')).toBe('light');
+
+    isLightMode = false;
+    await act(async () => {
+      changeListener?.();
+    });
+
+    expect(document.documentElement.dataset.theme).toBe('light');
   });
 });

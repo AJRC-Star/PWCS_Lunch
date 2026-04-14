@@ -1,5 +1,7 @@
 const SCHOOL_ID = 'BENTONMIDDLE';
 const SCHOOL_TIMEZONE = 'America/New_York';
+const MENU_SCHEMA_VERSION = 2;
+const MIN_PLAUSIBLE_DAYS = 3;
 
 // ── Internal types ────────────────────────────────────────────────────────────
 
@@ -43,6 +45,7 @@ export interface SharedMenuDay {
 export interface SharedMenuResponse {
   days: SharedMenuDay[];
   meta: {
+    schemaVersion: number;
     snapshotGeneratedAt: string;
     schoolName: string;
   };
@@ -99,6 +102,50 @@ function getNextSchoolDay(fromISO: string): string {
   }
 
   return formatUTCISODate(date);
+}
+
+function normalizeVisibleSharedDays(days: SharedMenuDay[], todayISO = getTodayISO()): SharedMenuDay[] {
+  const displayFromISO = getNextSchoolDay(todayISO);
+  return days
+    .filter((day) => !day.weekend && day.iso >= displayFromISO)
+    .map((day) => ({
+      ...day,
+      today: day.iso === todayISO,
+    }));
+}
+
+function isPlausibleMenuSnapshot(
+  days: SharedMenuDay[],
+  previousDays?: SharedMenuDay[],
+  todayISO = getTodayISO(),
+  minimumDays = MIN_PLAUSIBLE_DAYS,
+): boolean {
+  const visibleDays = normalizeVisibleSharedDays(days, todayISO);
+  if (visibleDays.length < minimumDays) {
+    return false;
+  }
+
+  const uniqueDays = new Set(visibleDays.map((day) => day.iso));
+  if (uniqueDays.size !== visibleDays.length) {
+    return false;
+  }
+
+  if (!previousDays) {
+    return true;
+  }
+
+  const previousVisibleDays = normalizeVisibleSharedDays(previousDays, todayISO);
+  if (previousVisibleDays.length >= minimumDays && visibleDays.length + 2 < previousVisibleDays.length) {
+    return false;
+  }
+
+  const nextNoInfoCount = visibleDays.filter((day) => day.no_information_provided).length;
+  const previousNoInfoCount = previousVisibleDays.filter((day) => day.no_information_provided).length;
+  if (nextNoInfoCount > previousNoInfoCount + 2) {
+    return false;
+  }
+
+  return true;
 }
 
 /**
@@ -329,6 +376,7 @@ function normalizeMenuResponse(
   return {
     days,
     meta: {
+      schemaVersion: MENU_SCHEMA_VERSION,
       snapshotGeneratedAt: new Date().toISOString(),
       schoolName: (rawData?.schoolName as string) || SCHOOL_ID,
     },
@@ -336,6 +384,8 @@ function normalizeMenuResponse(
 }
 
 export {
+  isPlausibleMenuSnapshot,
+  MENU_SCHEMA_VERSION,
   SCHOOL_ID,
   SCHOOL_TIMEZONE,
   categorizeMealViewerItem,

@@ -4,6 +4,8 @@ import {
   formatSchoolDate,
   formatMealViewerDate,
   getNextSchoolDay,
+  isPlausibleMenuSnapshot,
+  MENU_SCHEMA_VERSION,
   normalizeMealViewerDay,
   normalizeMenuResponse,
 } from './menu-core.ts';
@@ -263,11 +265,52 @@ describe('menu-core', () => {
     );
 
     expect(result.meta.snapshotGeneratedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    expect(result.meta.schemaVersion).toBe(MENU_SCHEMA_VERSION);
   });
 
   it('formats visible dates in the school timezone from canonical ISO values', () => {
     expect(formatSchoolDate('2026-04-13', { weekday: 'long' })).toBe('Monday');
     expect(formatSchoolDate('2026-04-13', { month: 'short', day: 'numeric' })).toBe('Apr 13');
+  });
+
+  it('rejects implausibly short snapshots', () => {
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [makeSchedule('2026-04-13', 'Lunch', PIZZA_ITEMS)],
+      },
+      { todayISO: '2026-04-13' },
+    );
+
+    expect(isPlausibleMenuSnapshot(result.days, undefined, '2026-04-13')).toBe(false);
+  });
+
+  it('rejects sharp regressions versus the previous snapshot', () => {
+    const previous = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [
+          makeSchedule('2026-04-13', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-04-14', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-04-15', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-04-16', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-04-17', 'Lunch', PIZZA_ITEMS),
+        ],
+      },
+      { todayISO: '2026-04-13' },
+    );
+    const next = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [
+          makeSchedule('2026-04-13', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-04-14', 'Lunch', PIZZA_ITEMS),
+        ],
+      },
+      { todayISO: '2026-04-13' },
+    );
+
+    expect(isPlausibleMenuSnapshot(next.days, previous.days, '2026-04-13')).toBe(false);
   });
 
   // ── formatMealViewerDate ───────────────────────────────────────────────────

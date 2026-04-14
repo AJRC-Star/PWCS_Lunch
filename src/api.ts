@@ -2,16 +2,20 @@ import {
   formatMealViewerDate,
   getNextSchoolDay,
   getTodayISO,
+  isPlausibleMenuSnapshot,
+  MENU_SCHEMA_VERSION,
   normalizeMenuResponse,
   SCHOOL_ID,
 } from '../shared/menu-core.js';
 import type { MenuData } from './types';
 
 const API_BASE_URL = 'https://api.mealviewer.com/api/v4/school';
-const CACHE_KEY = 'bms_lunch_cache_v1';
+const CACHE_KEY = `bms_lunch_cache_v${MENU_SCHEMA_VERSION}`;
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
+const SNAPSHOT_STALE_AFTER_MS = 8 * 24 * 60 * 60 * 1000; // weekly schedule + safety buffer
 
 interface CacheEntry {
+  version: number;
   data: MenuData;
   fetchedAt: number;
 }
@@ -27,10 +31,71 @@ function getMenuDataUrl(cacheBustKey?: string): string {
   return `${import.meta.env.BASE_URL}menu-data.json?v=${encodeURIComponent(version)}`;
 }
 
+function normalizeVisibleDays(days: MenuData['days'], todayISO = getTodayISO()): MenuData['days'] {
+  const displayFromISO = getNextSchoolDay(todayISO);
+  return days
+    .filter((day) => !day.weekend && day.iso >= displayFromISO)
+    .map((day) => ({
+      ...day,
+      today: day.iso === todayISO,
+    }));
+}
+
+function isSnapshotStale(snapshotGeneratedAt?: string, fallbackFetchedAt?: number): boolean {
+  if (snapshotGeneratedAt) {
+    const generatedAt = Date.parse(snapshotGeneratedAt);
+    if (Number.isFinite(generatedAt)) {
+      return Date.now() - generatedAt > SNAPSHOT_STALE_AFTER_MS;
+    }
+  }
+
+  if (typeof fallbackFetchedAt === 'number') {
+    return Date.now() - fallbackFetchedAt > CACHE_TTL_MS;
+  }
+
+  return false;
+}
+
+function finalizeMenuData(
+  data: MenuData,
+  overrides?: Partial<MenuData['meta']>,
+): MenuData {
+  const visibleDays = normalizeVisibleDays(data.days);
+  const snapshotGeneratedAt = overrides?.snapshotGeneratedAt ?? data.meta.snapshotGeneratedAt;
+  const clientFetchedAt = overrides?.clientFetchedAt ?? data.meta.clientFetchedAt;
+  const isStale = overrides?.isStale ?? isSnapshotStale(snapshotGeneratedAt, clientFetchedAt);
+
+  return {
+    ...data,
+    days: visibleDays,
+    meta: {
+      ...data.meta,
+      ...overrides,
+      schemaVersion: MENU_SCHEMA_VERSION,
+      snapshotGeneratedAt,
+      clientFetchedAt,
+      isStale,
+    },
+  };
+}
+
 function loadCache(): CacheEntry | null {
   try {
     const cached = localStorage.getItem(CACHE_KEY);
-    return cached ? (JSON.parse(cached) as CacheEntry) : null;
+    if (!cached) return null;
+
+    const parsed = JSON.parse(cached) as Partial<CacheEntry>;
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      parsed.version !== MENU_SCHEMA_VERSION ||
+      typeof parsed.fetchedAt !== 'number' ||
+      !parsed.data
+    ) {
+      return null;
+    }
+
+    return parsed as CacheEntry;
   } catch {
     return null;
   }
@@ -38,21 +103,17 @@ function loadCache(): CacheEntry | null {
 
 function saveCache(data: MenuData): number {
   const fetchedAt = Date.now();
-  const entry: CacheEntry = { data, fetchedAt };
+  const entry: CacheEntry = {
+    version: MENU_SCHEMA_VERSION,
+    data: finalizeMenuData(data, { clientFetchedAt: fetchedAt }),
+    fetchedAt,
+  };
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(entry));
   } catch {
     // Storage quota exceeded or other error; silently continue
   }
   return fetchedAt;
-}
-
-export function clearCachedData(): void {
-  try {
-    localStorage.removeItem(CACHE_KEY);
-  } catch {
-    // Ignore storage access issues and keep going with a fresh network attempt.
-  }
 }
 
 async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<MenuData> {
@@ -67,13 +128,19 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
     // If already normalized, return directly, preserving the snapshot timestamp.
     if (data.days && Array.isArray(data.days) && data.meta) {
       const sourceMeta = data.meta as Record<string, unknown>;
-      const todayISO = getTodayISO();
-      return {
+      if (
+        typeof sourceMeta.schemaVersion === 'number' &&
+        sourceMeta.schemaVersion !== MENU_SCHEMA_VERSION
+      ) {
+        throw new Error(`Unsupported menu schema version: ${sourceMeta.schemaVersion}`);
+      }
+      return finalizeMenuData({
         days: (data.days as MenuData['days']).map((day) => ({
           ...day,
-          today: day.iso === todayISO,
         })),
         meta: {
+          schemaVersion:
+            typeof sourceMeta.schemaVersion === 'number' ? sourceMeta.schemaVersion : undefined,
           source: 'fresh',
           lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           snapshotGeneratedAt:
@@ -86,7 +153,7 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
           isPreview: false,
           schoolName: (typeof sourceMeta.schoolName === 'string' ? sourceMeta.schoolName : null) ?? SCHOOL_ID,
         },
-      };
+      });
     }
 
     // Handle old format with a .raw wrapper, then normalize.
@@ -97,9 +164,10 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
 
     const normalized = normalizeMenuResponse(toProcess);
 
-    return {
+    return finalizeMenuData({
       days: normalized.days,
       meta: {
+        schemaVersion: normalized.meta.schemaVersion,
         source: 'fresh',
         lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         snapshotGeneratedAt: normalized.meta.snapshotGeneratedAt,
@@ -107,7 +175,7 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
         isPreview: false,
         schoolName: normalized.meta.schoolName,
       },
-    };
+    });
   } catch (error) {
     if (isAbortError(error)) throw error;
 
@@ -133,9 +201,10 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
     const raw = await response.json() as Record<string, unknown>;
     const normalized = normalizeMenuResponse(raw);
 
-    return {
+    return finalizeMenuData({
       days: normalized.days,
       meta: {
+        schemaVersion: normalized.meta.schemaVersion,
         source: 'fresh',
         lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         snapshotGeneratedAt: normalized.meta.snapshotGeneratedAt,
@@ -143,7 +212,7 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
         isPreview: false,
         schoolName: normalized.meta.schoolName,
       },
-    };
+    });
   }
 }
 
@@ -152,29 +221,16 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
 export async function getCachedData(): Promise<MenuData> {
   const cached = loadCache();
   if (cached) {
-    const isStale = Date.now() - cached.fetchedAt > CACHE_TTL_MS;
-    const todayISO = getTodayISO();
-    const displayFromISO = getNextSchoolDay(todayISO);
-    return {
-      ...cached.data,
-      days: cached.data.days
-        .filter((day) => !day.weekend && day.iso >= displayFromISO)
-        .map((day) => ({
-          ...day,
-          today: day.iso === todayISO,
-        })),
-      meta: {
-        ...cached.data.meta,
-        source: 'preview',
-        isPreview: true,
-        clientFetchedAt: cached.fetchedAt,
-        isStale,
-      },
-    };
+    return finalizeMenuData(cached.data, {
+      source: 'preview',
+      isPreview: true,
+      clientFetchedAt: cached.fetchedAt,
+    });
   }
   return {
     days: [],
     meta: {
+      schemaVersion: MENU_SCHEMA_VERSION,
       source: 'preview',
       lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isOffline: false,
@@ -187,45 +243,47 @@ export async function getCachedData(): Promise<MenuData> {
 // Fetches fresh data from the network or static JSON and saves it to cache.
 export async function getFreshData(options?: {
   cacheBustKey?: string;
-  resetCache?: boolean;
   signal?: AbortSignal;
 }): Promise<MenuData> {
+  const cached = loadCache();
   try {
-    if (options?.resetCache) {
-      clearCachedData();
+    const data = await fetchData(options?.signal, options?.cacheBustKey);
+    if (!isPlausibleMenuSnapshot(data.days, cached?.data.days, getTodayISO(), 1)) {
+      if (cached) {
+        return {
+          ...finalizeMenuData(cached.data, {
+            source: 'preview',
+            isPreview: true,
+            clientFetchedAt: cached.fetchedAt,
+            isStale: true,
+          }),
+          error: 'Latest menu snapshot looked incomplete. Showing the last known good menu.',
+        };
+      }
+      throw new Error('Fetched menu snapshot was incomplete');
     }
 
-    const data = await fetchData(options?.signal, options?.cacheBustKey);
     const fetchedAt = saveCache(data);
-    return {
-      ...data,
-      meta: {
-        ...data.meta,
-        source: 'fresh',
-        lastUpdated: new Date(fetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        clientFetchedAt: fetchedAt,
-        isStale: false,
-      },
-    };
+    return finalizeMenuData(data, {
+      source: 'fresh',
+      lastUpdated: new Date(fetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      clientFetchedAt: fetchedAt,
+    });
   } catch (e) {
     if (isAbortError(e)) throw e;
 
-    const cached = loadCache();
     if (cached) {
-      return {
-        ...cached.data,
-        meta: {
-          ...cached.data.meta,
-          source: 'offline',
-          isOffline: true,
-          clientFetchedAt: cached.fetchedAt,
-          isStale: Date.now() - cached.fetchedAt > CACHE_TTL_MS,
-        },
-      };
+      return finalizeMenuData(cached.data, {
+        source: 'offline',
+        isOffline: true,
+        isPreview: false,
+        clientFetchedAt: cached.fetchedAt,
+      });
     }
     return {
       days: [],
       meta: {
+        schemaVersion: MENU_SCHEMA_VERSION,
         source: 'offline',
         lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         isOffline: true,

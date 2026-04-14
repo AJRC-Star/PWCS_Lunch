@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { clearCachedData, getCachedData, getFreshData } from './api';
+import { getCachedData, getFreshData } from './api';
 import { SCHOOL_ID, SCHOOL_TIMEZONE } from '../shared/menu-core.js';
 import type { MenuData } from './types';
 import { DayCard } from './components/DayCard';
@@ -8,13 +8,18 @@ import { SkeletonLoader } from './components/SkeletonLoader';
 import './App.css';
 
 type Theme = 'light' | 'dark';
+type ThemePreference = Theme | 'system';
 
-const THEME_STORAGE_KEY = 'bms-lunch-theme';
+const THEME_STORAGE_KEY = 'bms-lunch-theme-preference';
 const THEME_META_SELECTOR = 'meta[name="theme-color"]';
 const THEME_COLORS: Record<Theme, string> = {
   dark: '#08080f',
   light: '#f5f5f7',
 };
+
+function getSystemTheme(): Theme {
+  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+}
 
 function formatFreshnessLabel(meta: MenuData['meta']): string {
   if (meta.isOffline) return '⚠️ Offline — showing cached menu';
@@ -39,15 +44,20 @@ function formatFreshnessLabel(meta: MenuData['meta']): string {
   return `Updated ${meta.lastUpdated || '—'}${staleWarning}`;
 }
 
-function getInitialTheme(): Theme {
-  if (typeof window === 'undefined') return 'dark';
+function getInitialThemePreference(): ThemePreference {
+  if (typeof window === 'undefined') return 'system';
 
   const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
   if (storedTheme === 'light' || storedTheme === 'dark') {
     return storedTheme;
   }
 
-  return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  return 'system';
+}
+
+function getInitialTheme(themePreference: ThemePreference): Theme {
+  if (typeof window === 'undefined') return 'dark';
+  return themePreference === 'system' ? getSystemTheme() : themePreference;
 }
 
 function App() {
@@ -55,13 +65,38 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [theme, setTheme] = useState<Theme>(() => getInitialTheme());
+  const [themePreference, setThemePreference] = useState<ThemePreference>(() => getInitialThemePreference());
+  const [theme, setTheme] = useState<Theme>(() => getInitialTheme(getInitialThemePreference()));
   const retryControllerRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (themePreference === 'system') {
+      window.localStorage.removeItem(THEME_STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(THEME_STORAGE_KEY, themePreference);
+    }
+  }, [themePreference]);
+
+  useEffect(() => {
+    if (themePreference === 'system') {
+      setTheme(getSystemTheme());
+      const media = window.matchMedia('(prefers-color-scheme: light)');
+      const onChange = () => setTheme(media.matches ? 'light' : 'dark');
+      if (typeof media.addEventListener === 'function') {
+        media.addEventListener('change', onChange);
+        return () => media.removeEventListener('change', onChange);
+      }
+
+      media.addListener(onChange);
+      return () => media.removeListener(onChange);
+    }
+
+    setTheme(themePreference);
+  }, [themePreference]);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
-    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
 
     const themeMeta = document.querySelector<HTMLMetaElement>(THEME_META_SELECTOR);
     if (themeMeta) {
@@ -152,13 +187,10 @@ function App() {
     const controller = new AbortController();
     retryControllerRef.current = controller;
     setRetrying(true);
-    setLoading(true);
-    clearCachedData();
 
     try {
       const freshData = await getFreshData({
         cacheBustKey: String(Date.now()),
-        resetCache: true,
         signal: controller.signal,
       });
       if (!controller.signal.aborted) {
@@ -220,7 +252,7 @@ function App() {
         <button
           className="theme-toggle"
           type="button"
-          onClick={() => setTheme(nextTheme)}
+          onClick={() => setThemePreference(nextTheme)}
           aria-label={`Switch to ${nextTheme} mode`}
           title={`Switch to ${nextTheme} mode`}
         >

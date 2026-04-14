@@ -9,10 +9,10 @@ A mobile-first web app that displays the school lunch menu for Benton Middle Sch
 - 📱 Full-screen native app feel — menu fills the screen, no page scroll
 - 🗓 Horizontal day-selector tabs for quick navigation across the week
 - 🍗 Automatic menu categorization (Entree, Sides, Fruit, Grains, Drink, etc.)
-- 💾 Smart caching — shows cached menu instantly when available, then refreshes in the background
+- 💾 Smart caching — shows cached menu instantly when available, then refreshes in the background without discarding the last known good snapshot first
 - 🕐 Freshness-aware — shows when the current menu snapshot was generated and warns when the local cache is stale
 - ⚡ Skeleton loading screens while data loads
-- 🌙 Dark and light mode with a manual in-app toggle
+- 🌙 Dark and light mode that follows the device by default, with a manual in-app override
 - 📐 Fluid layout — scales to any screen size with no device-specific breakpoints
 
 ## Tech Stack
@@ -38,9 +38,9 @@ The app fetches 21 days of data starting from today (using the school's local ti
 Menu data is pre-normalized and cached for offline access:
 
 - **Network available:** Latest data fetched from pre-built `menu-data.json` (updated weekly by GitHub Actions) or live API fallback
-- **Preview mode:** Shows cached data immediately when available, then re-fetches fresh data in the background. The background fetch is kept alive even when the 10-second UI deadline passes so the session updates without requiring a reload.
+- **Preview mode:** Shows cached data immediately when available, then re-fetches fresh data in the background. Every read path re-applies the same visible-day filtering so past days never come back after preview mode has already cleaned them up.
 - **Offline:** Shows cached data with warning banner
-- **Staleness:** The 4-hour TTL is enforced on the local cache. The header displays when the current normalized menu snapshot was generated rather than the browser fetch time.
+- **Staleness:** The 4-hour TTL is enforced on the local cache, and the app also warns when the normalized snapshot itself is older than the expected weekly refresh window.
 
 Data is normalized server-side in `scripts/fetch-menu.ts` to reduce payload from ~5MB → ~8KB.
 
@@ -58,7 +58,7 @@ Requires Node.js 20.19+ locally. GitHub Actions runs Node.js 22.
 
 Deployment is automated via GitHub Actions:
 - **Menu data:** `scripts/fetch-menu.ts` runs weekly on Saturday at 10:00 UTC, fetches the latest data, and pushes to `main`
-- **Failures:** If menu ingestion breaks, the scheduled workflow fails so the issue is visible in GitHub Actions
+- **Failures:** If menu ingestion breaks or a new snapshot fails plausibility checks, the scheduled workflow fails so the issue is visible in GitHub Actions
 - **CI:** Pushes to `main` and pull requests run install, typecheck, tests, and build
 - **Site deployment:** validated `main` commits are deployed by the GitHub Pages Actions artifact flow
 

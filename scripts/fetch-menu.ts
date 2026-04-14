@@ -3,13 +3,28 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { normalizeMenuResponse, SCHOOL_ID, formatMealViewerDate } from '../shared/menu-core.ts';
+import {
+  formatMealViewerDate,
+  isPlausibleMenuSnapshot,
+  normalizeMenuResponse,
+  SCHOOL_ID,
+  type SharedMenuResponse,
+} from '../shared/menu-core.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const API_BASE_URL = 'https://api.mealviewer.com/api/v4/school';
 const MAX_FETCH_ATTEMPTS = 3;
+
+function loadPreviousSnapshot(outputPath: string): SharedMenuResponse | null {
+  try {
+    const raw = fs.readFileSync(outputPath, 'utf8');
+    return JSON.parse(raw) as SharedMenuResponse;
+  } catch {
+    return null;
+  }
+}
 
 async function fetchData(): Promise<Record<string, unknown>> {
   // Use school-timezone dates so the fetch range is correct regardless of
@@ -58,13 +73,19 @@ async function main(): Promise<void> {
     console.log('Starting menu data fetch...');
     const rawData = await fetchWithRetry();
     const normalizedData = normalizeMenuResponse(rawData);
+    const outputPath = path.join(__dirname, '../public/menu-data.json');
+    const previousSnapshot = loadPreviousSnapshot(outputPath);
 
     if (normalizedData.days.length === 0) {
       console.warn('⚠ Normalisation produced 0 days — skipping file write to preserve previous data.');
       process.exit(1);
     }
 
-    const outputPath = path.join(__dirname, '../public/menu-data.json');
+    if (!isPlausibleMenuSnapshot(normalizedData.days, previousSnapshot?.days)) {
+      console.warn('⚠ Normalised snapshot failed plausibility checks — preserving previous artifact.');
+      process.exit(1);
+    }
+
     fs.writeFileSync(outputPath, JSON.stringify(normalizedData));
 
     const stats = fs.statSync(outputPath);
