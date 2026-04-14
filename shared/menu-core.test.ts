@@ -313,6 +313,21 @@ describe('menu-core', () => {
     expect(isPlausibleMenuSnapshot(next.days, previous.days, '2026-04-13')).toBe(false);
   });
 
+  it('accepts a shorter snapshot when only two school days remain in the visible range', () => {
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [
+          makeSchedule('2026-04-16', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-04-17', 'Lunch', PIZZA_ITEMS),
+        ],
+      },
+      { todayISO: '2026-04-16' },
+    );
+
+    expect(isPlausibleMenuSnapshot(result.days, undefined, '2026-04-16')).toBe(true);
+  });
+
   // ── formatMealViewerDate ───────────────────────────────────────────────────
 
   it('formatMealViewerDate(0) returns today in MM-DD-YYYY format', () => {

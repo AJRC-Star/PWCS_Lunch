@@ -44,6 +44,14 @@ function formatFreshnessLabel(meta: MenuData['meta']): string {
   return `Updated ${meta.lastUpdated || '—'}${staleWarning}`;
 }
 
+function getEmptyStateMessage(data: MenuData | null): string {
+  if (data?.errorType === 'invalid_snapshot') {
+    return 'The latest published menu snapshot was rejected because it looked invalid or incomplete. Please try again later.';
+  }
+
+  return data?.error ? 'Check your internet connection or try again later.' : 'Try again later.';
+}
+
 function getInitialThemePreference(): ThemePreference {
   if (typeof window === 'undefined') return 'system';
 
@@ -278,11 +286,7 @@ function App() {
         {!loading && days.length === 0 && (
           <div className="empty-state">
             <h2>Nothing to show</h2>
-            <p className="sub">
-              {data?.error
-                ? 'Check your internet connection or try again later.'
-                : 'Try again later.'}
-            </p>
+            <p className="sub">{getEmptyStateMessage(data)}</p>
             <button
               className="retry-button"
               type="button"

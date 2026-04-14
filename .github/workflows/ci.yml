@@ -30,6 +30,9 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Validate artifact
+        run: npm run validate:artifact
+
       - name: Build
         if: github.event_name == 'pull_request'
         run: npm run build

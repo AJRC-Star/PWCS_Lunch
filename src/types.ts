@@ -39,4 +39,5 @@ export interface MenuData {
     schoolName: string;
   };
   error?: string;
+  errorType?: 'offline' | 'invalid_snapshot';
 }

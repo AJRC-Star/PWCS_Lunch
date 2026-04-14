@@ -114,6 +114,27 @@ function normalizeVisibleSharedDays(days: SharedMenuDay[], todayISO = getTodayIS
     }));
 }
 
+function countWeekdaysBetween(startISO: string, endISO: string): number {
+  const start = parseISOAtUtcNoon(startISO);
+  const end = parseISOAtUtcNoon(endISO);
+
+  if (start > end) {
+    return 0;
+  }
+
+  let count = 0;
+  const cursor = new Date(start);
+  while (cursor <= end) {
+    const dayOfWeek = cursor.getUTCDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      count += 1;
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
+  return count;
+}
+
 function isPlausibleMenuSnapshot(
   days: SharedMenuDay[],
   previousDays?: SharedMenuDay[],
@@ -121,12 +142,23 @@ function isPlausibleMenuSnapshot(
   minimumDays = MIN_PLAUSIBLE_DAYS,
 ): boolean {
   const visibleDays = normalizeVisibleSharedDays(days, todayISO);
-  if (visibleDays.length < minimumDays) {
+  const uniqueDays = new Set(visibleDays.map((day) => day.iso));
+  if (uniqueDays.size !== visibleDays.length) {
     return false;
   }
 
-  const uniqueDays = new Set(visibleDays.map((day) => day.iso));
-  if (uniqueDays.size !== visibleDays.length) {
+  const lastVisibleISO = visibleDays[visibleDays.length - 1]?.iso;
+  if (!lastVisibleISO) {
+    return false;
+  }
+
+  if (
+    visibleDays.length < minimumDays &&
+    (
+      visibleDays.length < Math.max(2, minimumDays - 1) ||
+      countWeekdaysBetween(getNextSchoolDay(todayISO), lastVisibleISO) >= minimumDays
+    )
+  ) {
     return false;
   }
 
@@ -135,7 +167,13 @@ function isPlausibleMenuSnapshot(
   }
 
   const previousVisibleDays = normalizeVisibleSharedDays(previousDays, todayISO);
-  if (previousVisibleDays.length >= minimumDays && visibleDays.length + 2 < previousVisibleDays.length) {
+  const previousLastVisibleISO = previousVisibleDays[previousVisibleDays.length - 1]?.iso;
+  if (
+    previousVisibleDays.length >= minimumDays &&
+    visibleDays.length + 2 < previousVisibleDays.length &&
+    previousLastVisibleISO &&
+    countWeekdaysBetween(lastVisibleISO, previousLastVisibleISO) >= minimumDays
+  ) {
     return false;
   }
 

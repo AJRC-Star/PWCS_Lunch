@@ -12,6 +12,7 @@
     "build": "npm run generate-icons && tsc && vite build",
     "test": "vitest run",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.scripts.json --noEmit",
+    "validate:artifact": "npx tsx scripts/validate-menu-artifact.ts",
     "preview": "vite preview"
   },
   "dependencies": {

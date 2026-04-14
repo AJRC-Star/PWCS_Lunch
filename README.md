@@ -31,7 +31,7 @@ Menu data is pulled from the MealViewer public API:
 https://api.mealviewer.com/api/v4/school/BENTONMIDDLE/{startDate}/{endDate}
 ```
 
-The app fetches 21 days of data starting from today (using the school's local timezone, `America/New_York`). Items are categorized by `item_Type` field with name-based regex fallback for robustness.
+The app fetches 21 days of data starting from today (using the school's local timezone, `America/New_York`). Items are categorized with high-confidence name overrides first, then MealViewer `item_Type`, so obviously misleading upstream labels do not silently win.
 
 ## Caching & Data Flow
 
@@ -40,6 +40,7 @@ Menu data is pre-normalized and cached for offline access:
 - **Network available:** Latest data fetched from pre-built `menu-data.json` (updated weekly by GitHub Actions) or live API fallback
 - **Preview mode:** Shows cached data immediately when available, then re-fetches fresh data in the background. Every read path re-applies the same visible-day filtering so past days never come back after preview mode has already cleaned them up.
 - **Offline:** Shows cached data with warning banner
+- **Snapshot validity:** Published artifacts and live fallback snapshots must pass plausibility checks before they replace the last known good menu.
 - **Staleness:** The 4-hour TTL is enforced on the local cache, and the app also warns when the normalized snapshot itself is older than the expected weekly refresh window.
 
 Data is normalized server-side in `scripts/fetch-menu.ts` to reduce payload from ~5MB → ~8KB.
@@ -51,13 +52,14 @@ npm install       # install dependencies
 npm run dev       # start dev server at http://localhost:5173
 npm run typecheck # TypeScript validation (src/, shared/, scripts/)
 npm test          # run regression tests
+npm run validate:artifact # validate the committed menu-data.json against current runtime rules
 npm run build     # build for production → dist/
 ```
 
 Requires Node.js 20.19+ locally. GitHub Actions runs Node.js 22.
 
 Deployment is automated via GitHub Actions:
-- **Menu data:** `scripts/fetch-menu.ts` runs weekly on Saturday at 10:00 UTC, fetches the latest data, and pushes to `main`
+- **Menu data:** `scripts/fetch-menu.ts` runs weekly on Saturday at 10:00 UTC, fetches the latest data, validates the regenerated artifact, and pushes to `main`
 - **Failures:** If menu ingestion breaks or a new snapshot fails plausibility checks, the scheduled workflow fails so the issue is visible in GitHub Actions
 - **CI:** Pushes to `main` and pull requests run install, typecheck, tests, and build
 - **Site deployment:** validated `main` commits are deployed by the GitHub Pages Actions artifact flow

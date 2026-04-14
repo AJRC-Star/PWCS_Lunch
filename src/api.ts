@@ -13,6 +13,9 @@ const API_BASE_URL = 'https://api.mealviewer.com/api/v4/school';
 const CACHE_KEY = `bms_lunch_cache_v${MENU_SCHEMA_VERSION}`;
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 const SNAPSHOT_STALE_AFTER_MS = 8 * 24 * 60 * 60 * 1000; // weekly schedule + safety buffer
+const INVALID_SNAPSHOT_MESSAGE = 'Menu snapshot is unavailable right now. Showing the last known good menu.';
+const INVALID_NO_CACHE_MESSAGE = 'Menu snapshot is invalid right now. Please try again later.';
+const OFFLINE_NO_CACHE_MESSAGE = 'No internet 📴 and no cache.';
 
 interface CacheEntry {
   version: number;
@@ -20,8 +23,22 @@ interface CacheEntry {
   fetchedAt: number;
 }
 
+class SnapshotValidationError extends Error {
+  code: 'invalid_artifact' | 'invalid_snapshot';
+
+  constructor(code: 'invalid_artifact' | 'invalid_snapshot', message: string) {
+    super(message);
+    this.name = 'SnapshotValidationError';
+    this.code = code;
+  }
+}
+
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError';
+}
+
+function isSnapshotValidationError(error: unknown): error is SnapshotValidationError {
+  return error instanceof SnapshotValidationError;
 }
 
 function getMenuDataUrl(cacheBustKey?: string): string {
@@ -79,6 +96,36 @@ function finalizeMenuData(
   };
 }
 
+function buildInvalidSnapshotResult(message: string, cached?: CacheEntry | null): MenuData {
+  if (cached) {
+    return {
+      ...finalizeMenuData(cached.data, {
+        source: 'preview',
+        isPreview: true,
+        clientFetchedAt: cached.fetchedAt,
+        isStale: true,
+      }),
+      error: message,
+      errorType: 'invalid_snapshot',
+    };
+  }
+
+  return {
+    days: [],
+    meta: {
+      schemaVersion: MENU_SCHEMA_VERSION,
+      source: 'fresh',
+      lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isOffline: false,
+      isPreview: false,
+      isStale: true,
+      schoolName: SCHOOL_ID,
+    },
+    error: message,
+    errorType: 'invalid_snapshot',
+  };
+}
+
 function loadCache(): CacheEntry | null {
   try {
     const cached = localStorage.getItem(CACHE_KEY);
@@ -128,27 +175,33 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
     // If already normalized, return directly, preserving the snapshot timestamp.
     if (data.days && Array.isArray(data.days) && data.meta) {
       const sourceMeta = data.meta as Record<string, unknown>;
-      if (
-        typeof sourceMeta.schemaVersion === 'number' &&
-        sourceMeta.schemaVersion !== MENU_SCHEMA_VERSION
-      ) {
-        throw new Error(`Unsupported menu schema version: ${sourceMeta.schemaVersion}`);
+      if (typeof sourceMeta.schemaVersion !== 'number') {
+        throw new SnapshotValidationError(
+          'invalid_artifact',
+          'Published menu snapshot is missing its schema version.',
+        );
+      }
+      if (sourceMeta.schemaVersion !== MENU_SCHEMA_VERSION) {
+        throw new SnapshotValidationError(
+          'invalid_artifact',
+          `Unsupported menu schema version: ${sourceMeta.schemaVersion}`,
+        );
+      }
+      if (typeof sourceMeta.snapshotGeneratedAt !== 'string') {
+        throw new SnapshotValidationError(
+          'invalid_artifact',
+          'Published menu snapshot is missing snapshotGeneratedAt.',
+        );
       }
       return finalizeMenuData({
         days: (data.days as MenuData['days']).map((day) => ({
           ...day,
         })),
         meta: {
-          schemaVersion:
-            typeof sourceMeta.schemaVersion === 'number' ? sourceMeta.schemaVersion : undefined,
+          schemaVersion: sourceMeta.schemaVersion,
           source: 'fresh',
           lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          snapshotGeneratedAt:
-            typeof sourceMeta.snapshotGeneratedAt === 'string'
-              ? sourceMeta.snapshotGeneratedAt
-              : typeof sourceMeta.lastUpdated === 'string'
-                ? sourceMeta.lastUpdated
-                : undefined,
+          snapshotGeneratedAt: sourceMeta.snapshotGeneratedAt,
           isOffline: false,
           isPreview: false,
           schoolName: (typeof sourceMeta.schoolName === 'string' ? sourceMeta.schoolName : null) ?? SCHOOL_ID,
@@ -188,31 +241,39 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
     const range = [startStr, endStr].join('/');
     const url = `${API_BASE_URL}/${SCHOOL_ID}/${range}`;
 
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-      signal,
-    });
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal,
+      });
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const raw = await response.json() as Record<string, unknown>;
+      const normalized = normalizeMenuResponse(raw);
+
+      return finalizeMenuData({
+        days: normalized.days,
+        meta: {
+          schemaVersion: normalized.meta.schemaVersion,
+          source: 'fresh',
+          lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          snapshotGeneratedAt: normalized.meta.snapshotGeneratedAt,
+          isOffline: false,
+          isPreview: false,
+          schoolName: normalized.meta.schoolName,
+        },
+      });
+    } catch (liveError) {
+      if (isAbortError(liveError)) throw liveError;
+      if (isSnapshotValidationError(error)) {
+        throw error;
+      }
+      throw liveError;
     }
-
-    const raw = await response.json() as Record<string, unknown>;
-    const normalized = normalizeMenuResponse(raw);
-
-    return finalizeMenuData({
-      days: normalized.days,
-      meta: {
-        schemaVersion: normalized.meta.schemaVersion,
-        source: 'fresh',
-        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        snapshotGeneratedAt: normalized.meta.snapshotGeneratedAt,
-        isOffline: false,
-        isPreview: false,
-        schoolName: normalized.meta.schoolName,
-      },
-    });
   }
 }
 
@@ -248,19 +309,11 @@ export async function getFreshData(options?: {
   const cached = loadCache();
   try {
     const data = await fetchData(options?.signal, options?.cacheBustKey);
-    if (!isPlausibleMenuSnapshot(data.days, cached?.data.days, getTodayISO(), 1)) {
-      if (cached) {
-        return {
-          ...finalizeMenuData(cached.data, {
-            source: 'preview',
-            isPreview: true,
-            clientFetchedAt: cached.fetchedAt,
-            isStale: true,
-          }),
-          error: 'Latest menu snapshot looked incomplete. Showing the last known good menu.',
-        };
-      }
-      throw new Error('Fetched menu snapshot was incomplete');
+    if (!isPlausibleMenuSnapshot(data.days, cached?.data.days, getTodayISO())) {
+      throw new SnapshotValidationError(
+        'invalid_snapshot',
+        cached ? INVALID_SNAPSHOT_MESSAGE : INVALID_NO_CACHE_MESSAGE,
+      );
     }
 
     const fetchedAt = saveCache(data);
@@ -272,13 +325,21 @@ export async function getFreshData(options?: {
   } catch (e) {
     if (isAbortError(e)) throw e;
 
+    if (isSnapshotValidationError(e)) {
+      return buildInvalidSnapshotResult(e.message, cached);
+    }
+
     if (cached) {
-      return finalizeMenuData(cached.data, {
-        source: 'offline',
-        isOffline: true,
-        isPreview: false,
-        clientFetchedAt: cached.fetchedAt,
-      });
+      return {
+        ...finalizeMenuData(cached.data, {
+          source: 'offline',
+          isOffline: true,
+          isPreview: false,
+          clientFetchedAt: cached.fetchedAt,
+        }),
+        error: 'Offline 📴 — showing the last known good menu.',
+        errorType: 'offline',
+      };
     }
     return {
       days: [],
@@ -290,7 +351,8 @@ export async function getFreshData(options?: {
         isPreview: false,
         schoolName: SCHOOL_ID,
       },
-      error: 'No internet 📴 and no cache.',
+      error: OFFLINE_NO_CACHE_MESSAGE,
+      errorType: 'offline',
     };
   }
 }

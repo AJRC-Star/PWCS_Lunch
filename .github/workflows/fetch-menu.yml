@@ -32,6 +32,9 @@ jobs:
       - name: Fetch menu data
         run: npx tsx scripts/fetch-menu.ts
 
+      - name: Validate menu artifact
+        run: npm run validate:artifact
+
       - name: Check if data changed
         id: check-changes
         run: |
