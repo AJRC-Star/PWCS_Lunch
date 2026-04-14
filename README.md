@@ -31,14 +31,15 @@ Menu data is pulled from the MealViewer public API:
 https://api.mealviewer.com/api/v4/school/BENTONMIDDLE/{startDate}/{endDate}
 ```
 
-The app fetches 21 days of data starting from today (using the school's local timezone, `America/New_York`). Items are categorized with high-confidence name overrides first, then MealViewer `item_Type`, so obviously misleading upstream labels do not silently win.
+The app fetches 21 days of data starting from today (using the school's local timezone, `America/New_York`). Items are categorized with curated high-confidence overrides and token-aware rules before falling back to MealViewer `item_Type`, and the published artifact is validated against semantic sentinel checks instead of only re-running the classifier on itself.
 
 ## Caching & Data Flow
 
 Menu data is pre-normalized and cached for offline access:
 
-- **Network available:** Latest data fetched from pre-built `menu-data.json` (updated weekly by GitHub Actions) or live API fallback
+- **Network available:** Latest data fetched from the published weekly `menu-data.json`
 - **Preview mode:** Shows cached data immediately when available, then re-fetches fresh data in the background. Every read path re-applies the same visible-day filtering so past days never come back after preview mode has already cleaned them up.
+- **Live API fallback:** If the published snapshot is unavailable or invalid, the app can recover from the live MealViewer API for the current session, but it keeps that path visibly marked as degraded instead of silently persisting it as the weekly truth.
 - **Offline:** Shows cached data with warning banner
 - **Snapshot validity:** Published artifacts and live fallback snapshots must pass plausibility checks before they replace the last known good menu.
 - **Staleness:** The 4-hour TTL is enforced on the local cache, and the app also warns when the normalized snapshot itself is older than the expected weekly refresh window.

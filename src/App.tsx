@@ -37,7 +37,8 @@ function formatFreshnessLabel(meta: MenuData['meta']): string {
       timeZone: SCHOOL_TIMEZONE,
     });
     const staleWarning = meta.isStale ? ' · cache may be stale' : '';
-    return `Snapshot generated ${date} ${time}${staleWarning}`;
+    const prefix = meta.source === 'live-fallback' ? 'Live API fallback generated' : 'Published snapshot generated';
+    return `${prefix} ${date} ${time}${staleWarning}`;
   }
 
   const staleWarning = meta.isStale ? ' · cache may be stale' : '';

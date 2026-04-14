@@ -114,7 +114,7 @@ function buildInvalidSnapshotResult(message: string, cached?: CacheEntry | null)
     days: [],
     meta: {
       schemaVersion: MENU_SCHEMA_VERSION,
-      source: 'fresh',
+      source: 'artifact',
       lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isOffline: false,
       isPreview: false,
@@ -199,7 +199,7 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
         })),
         meta: {
           schemaVersion: sourceMeta.schemaVersion,
-          source: 'fresh',
+          source: 'artifact',
           lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           snapshotGeneratedAt: sourceMeta.snapshotGeneratedAt,
           isOffline: false,
@@ -209,26 +209,10 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
       });
     }
 
-    // Handle old format with a .raw wrapper, then normalize.
-    const toProcess = (data.raw ?? data) as Record<string, unknown>;
-    if (!toProcess || typeof toProcess !== 'object') {
-      throw new Error('Invalid menu data format');
-    }
-
-    const normalized = normalizeMenuResponse(toProcess);
-
-    return finalizeMenuData({
-      days: normalized.days,
-      meta: {
-        schemaVersion: normalized.meta.schemaVersion,
-        source: 'fresh',
-        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        snapshotGeneratedAt: normalized.meta.snapshotGeneratedAt,
-        isOffline: false,
-        isPreview: false,
-        schoolName: normalized.meta.schoolName,
-      },
-    });
+    throw new SnapshotValidationError(
+      'invalid_artifact',
+      'Published menu snapshot is not in the normalized schema.',
+    );
   } catch (error) {
     if (isAbortError(error)) throw error;
 
@@ -259,13 +243,17 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
         days: normalized.days,
         meta: {
           schemaVersion: normalized.meta.schemaVersion,
-          source: 'fresh',
+          source: 'live-fallback',
           lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           snapshotGeneratedAt: normalized.meta.snapshotGeneratedAt,
           isOffline: false,
           isPreview: false,
           schoolName: normalized.meta.schoolName,
         },
+        error: isSnapshotValidationError(error)
+          ? 'Published snapshot invalid. Showing live API fallback that may differ from the weekly snapshot.'
+          : 'Published snapshot unavailable. Showing live API fallback that may differ from the weekly snapshot.',
+        errorType: 'live_fallback',
       });
     } catch (liveError) {
       if (isAbortError(liveError)) throw liveError;
@@ -316,12 +304,21 @@ export async function getFreshData(options?: {
       );
     }
 
-    const fetchedAt = saveCache(data);
-    return finalizeMenuData(data, {
-      source: 'fresh',
-      lastUpdated: new Date(fetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      clientFetchedAt: fetchedAt,
-    });
+    const shouldPersist = data.meta.source === 'artifact';
+    const fetchedAt = shouldPersist ? saveCache(data) : Date.now();
+
+    return {
+      ...finalizeMenuData(data, {
+        lastUpdated: new Date(fetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        clientFetchedAt: shouldPersist ? fetchedAt : undefined,
+      }),
+      ...(data.meta.source === 'live-fallback'
+        ? {
+            error: data.error,
+            errorType: 'live_fallback' as const,
+          }
+        : {}),
+    };
   } catch (e) {
     if (isAbortError(e)) throw e;
 

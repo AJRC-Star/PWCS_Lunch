@@ -37,7 +37,7 @@ function makeMenuData(): MenuData {
       },
     ],
     meta: {
-      source: 'fresh',
+      source: 'artifact',
       lastUpdated: '10:00 AM',
       snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
       clientFetchedAt: 1744545600000,
@@ -276,7 +276,7 @@ describe('App', () => {
     const caption = document.querySelector('.caption');
     // 2026-04-13T10:00:00.000Z renders in America/New_York as Apr 13 06:00 AM.
     expect(caption?.textContent).toMatch(/Apr 13/);
-    expect(caption?.textContent).toMatch(/Snapshot generated/);
+    expect(caption?.textContent).toMatch(/Published snapshot generated/);
     expect(caption?.textContent).toMatch(/06:00 AM/);
     expect(caption?.textContent).not.toMatch(/stale/i);
   });
@@ -320,7 +320,7 @@ describe('App', () => {
         },
       ],
       meta: {
-        source: 'fresh',
+        source: 'artifact',
         lastUpdated: '10:00 AM',
         isOffline: false,
         isPreview: false,
@@ -335,6 +335,25 @@ describe('App', () => {
 
     expect(await screen.findByText('No school')).toBeInTheDocument();
     expect(screen.queryByText('No menu yet')).not.toBeInTheDocument();
+  });
+
+  it('surfaces when the app is showing live API fallback data instead of the published snapshot', async () => {
+    apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
+    apiMocks.getFreshData.mockResolvedValue({
+      ...makeMenuData(),
+      meta: {
+        ...makeMenuData().meta,
+        source: 'live-fallback',
+      },
+      error: 'Published snapshot unavailable. Showing live API fallback that may differ from the weekly snapshot.',
+      errorType: 'live_fallback',
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText('Pizza')).toBeInTheDocument();
+    expect(screen.getByText(/Published snapshot unavailable/i)).toBeInTheDocument();
+    expect(document.querySelector('.caption')?.textContent).toMatch(/Live API fallback generated/);
   });
 
   it('lets the user switch theme manually and persists the choice', async () => {

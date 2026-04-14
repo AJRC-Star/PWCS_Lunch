@@ -61,6 +61,12 @@ describe('menu-core', () => {
     expect(categorizeMealViewerItem({ item_Name: 'Apple Crisp', item_Type: '' })).toBe('Dessert');
     expect(categorizeMealViewerItem({ item_Name: 'Marinara Dipping Sauce', item_Type: '' })).toBe('Condiments');
     expect(categorizeMealViewerItem({ item_Name: 'Meatballs (Halal)', item_Type: '' })).toBe('Entree');
+    expect(categorizeMealViewerItem({ item_Name: 'Fruit Juice Cup - Cherry', item_Type: '' })).toBe('Drink');
+    expect(categorizeMealViewerItem({ item_Name: 'Applesauce Cup', item_Type: '' })).toBe('Fruit');
+    expect(categorizeMealViewerItem({ item_Name: 'Spaghetti & Meat Sauce', item_Type: '' })).toBe('Entree');
+    expect(categorizeMealViewerItem({ item_Name: 'Crispy Chicken Sandwich', item_Type: '' })).toBe('Entree');
+    expect(categorizeMealViewerItem({ item_Name: 'Hamburger Bun', item_Type: '' })).toBe('Grains');
+    expect(categorizeMealViewerItem({ item_Name: 'American Cheese Slice', item_Type: '' })).toBe('Condiments');
   });
 
   it('keeps tricky items in the intended sections when MealViewer raw types are misleading', () => {

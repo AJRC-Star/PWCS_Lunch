@@ -18,7 +18,7 @@ export interface MenuData {
   days: MenuDay[];
   meta: {
     schemaVersion?: number;
-    source: 'fresh' | 'offline' | 'preview';
+    source: 'artifact' | 'live-fallback' | 'offline' | 'preview';
     /** Human-readable fetch time shown in the header (e.g. "10:32 AM"). */
     lastUpdated: string;
     /**
@@ -39,5 +39,5 @@ export interface MenuData {
     schoolName: string;
   };
   error?: string;
-  errorType?: 'offline' | 'invalid_snapshot';
+  errorType?: 'offline' | 'invalid_snapshot' | 'live_fallback';
 }

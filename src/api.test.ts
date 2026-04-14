@@ -199,7 +199,7 @@ describe('api', () => {
         ],
         meta: {
           schemaVersion: MENU_SCHEMA_VERSION,
-          source: 'fresh',
+          source: 'artifact',
           lastUpdated: '09:00 AM',
           schoolName: 'BENTONMIDDLE',
         },
@@ -245,7 +245,7 @@ describe('api', () => {
         ],
         meta: {
           schemaVersion: MENU_SCHEMA_VERSION,
-          source: 'fresh',
+          source: 'artifact',
           lastUpdated: '09:00 AM',
           snapshotGeneratedAt: '2026-04-12T10:00:00.000Z',
           schoolName: 'BENTONMIDDLE',
@@ -302,6 +302,149 @@ describe('api', () => {
       const data = await getFreshData();
       expect(data.errorType).toBe('invalid_snapshot');
       expect(data.days).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('shows live API fallback as a degraded source and does not persist it as the weekly artifact cache', async () => {
+    const setItem = vi.fn();
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => null),
+      setItem,
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    });
+
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          schoolName: 'BENTONMIDDLE',
+          menuSchedules: [
+            {
+              dateInformation: { dateFull: '2026-04-13T00:00:00' },
+              menuBlocks: [
+                {
+                  blockName: 'Lunch',
+                  cafeteriaLineList: {
+                    data: [{ foodItemList: { data: [{ item_Name: 'Pizza', item_Type: 'Main' }] } }],
+                  },
+                },
+                {
+                  blockName: 'Lunch',
+                  cafeteriaLineList: {
+                    data: [{ foodItemList: { data: [{ item_Name: 'Garden Salad', item_Type: 'Vegetable' }] } }],
+                  },
+                },
+              ],
+            },
+            {
+              dateInformation: { dateFull: '2026-04-14T00:00:00' },
+              menuBlocks: [
+                {
+                  blockName: 'Lunch',
+                  cafeteriaLineList: {
+                    data: [{ foodItemList: { data: [{ item_Name: 'Pasta', item_Type: 'Main' }] } }],
+                  },
+                },
+              ],
+            },
+            {
+              dateInformation: { dateFull: '2026-04-15T00:00:00' },
+              menuBlocks: [
+                {
+                  blockName: 'Lunch',
+                  cafeteriaLineList: {
+                    data: [{ foodItemList: { data: [{ item_Name: 'Pear Wedges', item_Type: 'Fruit' }] } }],
+                  },
+                },
+              ],
+            },
+          ],
+        }),
+      } as Response);
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-13T14:00:00.000Z'));
+
+    try {
+      const data = await getFreshData();
+      expect(data.meta.source).toBe('live-fallback');
+      expect(data.errorType).toBe('live_fallback');
+      expect(data.error).toMatch(/live API fallback/i);
+      expect(setItem).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('tells the user when live fallback was triggered by an invalid published artifact', async () => {
+    vi.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          days: [],
+          meta: {
+            lastUpdated: '2026-04-13T10:00:00.000Z',
+            schoolName: 'BENTONMIDDLE',
+          },
+        }),
+      } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          schoolName: 'BENTONMIDDLE',
+          menuSchedules: [
+            {
+              dateInformation: { dateFull: '2026-04-13T00:00:00' },
+              menuBlocks: [
+                {
+                  blockName: 'Lunch',
+                  cafeteriaLineList: {
+                    data: [{ foodItemList: { data: [{ item_Name: 'Pizza', item_Type: 'Main' }] } }],
+                  },
+                },
+              ],
+            },
+            {
+              dateInformation: { dateFull: '2026-04-14T00:00:00' },
+              menuBlocks: [
+                {
+                  blockName: 'Lunch',
+                  cafeteriaLineList: {
+                    data: [{ foodItemList: { data: [{ item_Name: 'Garden Salad', item_Type: 'Vegetable' }] } }],
+                  },
+                },
+              ],
+            },
+            {
+              dateInformation: { dateFull: '2026-04-15T00:00:00' },
+              menuBlocks: [
+                {
+                  blockName: 'Lunch',
+                  cafeteriaLineList: {
+                    data: [{ foodItemList: { data: [{ item_Name: 'Pear Wedges', item_Type: 'Fruit' }] } }],
+                  },
+                },
+              ],
+            },
+          ],
+        }),
+      } as Response);
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-13T14:00:00.000Z'));
+
+    try {
+      const data = await getFreshData();
+      expect(data.meta.source).toBe('live-fallback');
+      expect(data.errorType).toBe('live_fallback');
+      expect(data.error).toMatch(/invalid/i);
     } finally {
       vi.useRealTimers();
     }

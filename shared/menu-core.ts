@@ -237,23 +237,39 @@ function uniqueMenuItems(items: string[]): string[] {
   return clean;
 }
 
+const ITEM_CATEGORY_OVERRIDES: Record<string, string> = {
+  'american cheese slice': 'Condiments',
+  'applesauce cup': 'Fruit',
+  'crispy chicken sandwich': 'Entree',
+  'fruit juice cup - cherry': 'Drink',
+  'fruit juice cup - strawberry pomegranate': 'Drink',
+  'hamburger bun': 'Grains',
+  'spaghetti & meat sauce': 'Entree',
+};
+
 function categorizeMealViewerItem(food: FoodItem): string {
   const rawType = String(food?.item_Type || '').trim().toLowerCase();
   const rawName = String(food?.item_Name || '').trim().toLowerCase();
 
+  const override = ITEM_CATEGORY_OVERRIDES[rawName];
+  if (override) {
+    return override;
+  }
+
   // High-confidence name overrides win even when MealViewer assigns an overly
   // broad item_Type such as Fruit, Side, or Grain.
-  if (/(dessert|cookie|brownie|crisp|cake|pie|pudding|ice cream|shortcake)/.test(rawName)) {
+  if (/\b(dessert|cookie|brownie|cake|pie|pudding|shortcake)\b/.test(rawName) || /\bcrisp\b/.test(rawName)) {
     return 'Dessert';
   }
-  if (/(ketchup|ranch|mustard|mayo|sauce|dressing|syrup|packet|cup|dip|gravy|hummus)/.test(rawName)) {
-    return 'Condiments';
-  }
-  if (/(chicken|beef|turkey|pizza|burger|sandwich|quesadilla|wings|lasagna|falafel|meatballs|pupusas|drumstick|sausage|fillet|nuggets|chili)/.test(rawName)) {
+  if (/\b(juice|milk|water)\b/.test(rawName)) return 'Drink';
+  if (/\b(applesauce|applesauce cup)\b/.test(rawName)) return 'Fruit';
+  if (/\b(chicken|beef|turkey|pizza|burger|sandwich|quesadilla|wings|lasagna|falafel|meatballs|pupusas|drumstick|sausage|fillet|nuggets|chili|spaghetti)\b/.test(rawName)) {
     return 'Entree';
   }
-  if (/(juice|milk|water)/.test(rawName)) return 'Drink';
-  if (/(apple|orange|pear|peach|berry|berries|mandarin|fruit|pineapple|banana|grape|clementine|kiwi|mango)/.test(rawName)) {
+  if (/(dipping sauce|bbq sauce|barbecue sauce|gravy|dressing|syrup|packet|dip|hummus|mustard|mayo|ketchup|ranch|marinara sauce)/.test(rawName)) {
+    return 'Condiments';
+  }
+  if (/\b(apple|orange|pear|peach|berry|berries|mandarin|fruit|pineapple|banana|grape|clementine|kiwi|mango)\b/.test(rawName)) {
     return 'Fruit';
   }
 
@@ -279,10 +295,10 @@ function categorizeMealViewerItem(food: FoodItem): string {
     return 'Grains';
   }
 
-  if (/(salad|carrot|cucumber|celery|beans|corn|broccoli|tomato|tots|fries|plantains|onions|peppers)/.test(rawName)) {
+  if (/\b(salad|carrot|cucumber|celery|beans|corn|broccoli|tomato|tots|fries|plantains|onions|peppers|pickle)\b/.test(rawName)) {
     return 'Sides';
   }
-  if (/(bread|bagel|toast|rice|pasta|macaroni|grain|bun|biscuit|roll|knot|chips|tortilla|pita)/.test(rawName)) {
+  if (/\b(bread|bagel|toast|rice|pasta|macaroni|grain|bun|biscuit|roll|knot|chips|tortilla|pita|waffles?)\b/.test(rawName)) {
     return 'Grains';
   }
 
