@@ -37,7 +37,7 @@ The app fetches 21 days of data starting from today (using the school's local ti
 
 Menu data is pre-normalized and cached for offline access:
 
-- **Network available:** Latest data fetched from pre-built `menu-data.json` (updated on school days by GitHub Actions) or live API fallback
+- **Network available:** Latest data fetched from pre-built `menu-data.json` (updated weekly by GitHub Actions) or live API fallback
 - **Preview mode:** Shows cached data immediately when available, then re-fetches fresh data in the background. The background fetch is kept alive even when the 10-second UI deadline passes so the session updates without requiring a reload.
 - **Offline:** Shows cached data with warning banner
 - **Staleness:** The 4-hour TTL is enforced on the local cache. The header displays when the current normalized menu snapshot was generated rather than the browser fetch time.
@@ -57,7 +57,7 @@ npm run build     # build for production → dist/
 Requires Node.js 20.19+ locally. GitHub Actions runs Node.js 22.
 
 Deployment is automated via GitHub Actions:
-- **Menu data:** `scripts/fetch-menu.ts` runs on school days (Mon–Fri) at 10:00 UTC and 14:00 UTC, fetches the latest data, and pushes to `main`
+- **Menu data:** `scripts/fetch-menu.ts` runs weekly on Saturday at 10:00 UTC, fetches the latest data, and pushes to `main`
 - **Failures:** If menu ingestion breaks, the scheduled workflow fails so the issue is visible in GitHub Actions
 - **CI:** Pushes to `main` and pull requests run install, typecheck, tests, and build
 - **Site deployment:** validated `main` commits are deployed by the GitHub Pages Actions artifact flow

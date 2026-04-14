@@ -2,10 +2,10 @@ name: Fetch Menu Data
 
 on:
   schedule:
-    # Run on school days (Mon–Fri) at 10:00 UTC (6 AM ET) and 14:00 UTC (10 AM ET)
-    # so the pre-built snapshot is refreshed at the start of each school day and
-    # again mid-morning once the cafeteria has typically posted the day's menu.
-    - cron: '0 10,14 * * 1-5'
+    # Run once per week on Saturday at 10:00 UTC so the next week's menu
+    # snapshot is refreshed with minimal churn. Manual dispatch remains
+    # available for ad-hoc updates if MealViewer changes midweek.
+    - cron: '0 10 * * 6'
   # Also allow manual trigger
   workflow_dispatch:
 
