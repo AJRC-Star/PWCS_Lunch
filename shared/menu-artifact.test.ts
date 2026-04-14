@@ -33,6 +33,12 @@ describe('published menu artifact', () => {
           if (/\b(applesauce)\b/.test(name)) {
             expect(section.title).toBe('Fruit');
           }
+          if (/\b(grape tomatoes?|tomatoes?)\b/.test(name)) {
+            expect(section.title).not.toBe('Fruit');
+          }
+          if (/\bchickpeas?\b/.test(name)) {
+            expect(section.title).not.toBe('Condiments');
+          }
           if (/\b(meat sauce|spaghetti)\b/.test(name)) {
             expect(section.title).toBe('Entree');
           }
@@ -45,5 +51,7 @@ describe('published menu artifact', () => {
 
     expect(placements.get('Marinara Dipping Sauce')).toBe('Condiments');
     expect(placements.get('Apple Crisp')).toBe('Dessert');
+    expect(placements.get('Grape Tomatoes')).toBe('Sides');
+    expect(placements.get('Crispy Chickpeas, Ranch')).toBe('Sides');
   });
 });

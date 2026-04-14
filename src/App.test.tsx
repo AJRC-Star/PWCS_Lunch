@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 import type { MenuData } from './types';
+import { MENU_SCHEMA_VERSION } from '../shared/menu-core.js';
 
 const apiMocks = vi.hoisted(() => ({
   getCachedData: vi.fn(),
@@ -37,6 +38,7 @@ function makeMenuData(): MenuData {
       },
     ],
     meta: {
+      schemaVersion: MENU_SCHEMA_VERSION,
       source: 'artifact',
       lastUpdated: '10:00 AM',
       snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
@@ -63,6 +65,7 @@ function makeCachedMenuData(): MenuData {
       },
     ],
     meta: {
+      schemaVersion: MENU_SCHEMA_VERSION,
       source: 'preview',
       lastUpdated: '09:00 AM',
       isOffline: false,
@@ -78,6 +81,7 @@ function makeEmptyPreview(): MenuData {
   return {
     days: [],
     meta: {
+      schemaVersion: MENU_SCHEMA_VERSION,
       source: 'preview',
       lastUpdated: '09:59 AM',
       isOffline: false,
@@ -165,6 +169,7 @@ describe('App', () => {
       .mockResolvedValueOnce({
         days: [],
         meta: {
+          schemaVersion: MENU_SCHEMA_VERSION,
           source: 'offline',
           lastUpdated: '10:01 AM',
           isOffline: true,
@@ -197,6 +202,7 @@ describe('App', () => {
       .mockResolvedValueOnce({
         days: [],
         meta: {
+          schemaVersion: MENU_SCHEMA_VERSION,
           source: 'offline',
           lastUpdated: '10:01 AM',
           isOffline: true,
@@ -320,6 +326,7 @@ describe('App', () => {
         },
       ],
       meta: {
+        schemaVersion: MENU_SCHEMA_VERSION,
         source: 'artifact',
         lastUpdated: '10:00 AM',
         isOffline: false,
@@ -337,23 +344,26 @@ describe('App', () => {
     expect(screen.queryByText('No menu yet')).not.toBeInTheDocument();
   });
 
-  it('surfaces when the app is showing live API fallback data instead of the published snapshot', async () => {
+  it('surfaces when the published weekly snapshot is unavailable', async () => {
     apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
     apiMocks.getFreshData.mockResolvedValue({
-      ...makeMenuData(),
+      days: [],
       meta: {
-        ...makeMenuData().meta,
-        source: 'live-fallback',
+        schemaVersion: MENU_SCHEMA_VERSION,
+        source: 'artifact',
+        lastUpdated: '10:00 AM',
+        isOffline: false,
+        isPreview: false,
+        schoolName: 'BENTONMIDDLE',
       },
-      error: 'Published snapshot unavailable. Showing live API fallback that may differ from the weekly snapshot.',
-      errorType: 'live_fallback',
+      error: 'Published weekly menu snapshot unavailable right now. Please try again later.',
+      errorType: 'snapshot_unavailable',
     });
 
     render(<App />);
 
-    expect(await screen.findByText('Pizza')).toBeInTheDocument();
-    expect(screen.getByText(/Published snapshot unavailable/i)).toBeInTheDocument();
-    expect(document.querySelector('.caption')?.textContent).toMatch(/Live API fallback generated/);
+    expect(await screen.findByText('Nothing to show')).toBeInTheDocument();
+    expect(screen.getByText(/Published weekly menu snapshot unavailable/i)).toBeInTheDocument();
   });
 
   it('lets the user switch theme manually and persists the choice', async () => {

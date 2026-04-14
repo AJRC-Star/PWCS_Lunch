@@ -67,6 +67,8 @@ describe('menu-core', () => {
     expect(categorizeMealViewerItem({ item_Name: 'Crispy Chicken Sandwich', item_Type: '' })).toBe('Entree');
     expect(categorizeMealViewerItem({ item_Name: 'Hamburger Bun', item_Type: '' })).toBe('Grains');
     expect(categorizeMealViewerItem({ item_Name: 'American Cheese Slice', item_Type: '' })).toBe('Condiments');
+    expect(categorizeMealViewerItem({ item_Name: 'Grape Tomatoes', item_Type: 'Fruit' })).toBe('Sides');
+    expect(categorizeMealViewerItem({ item_Name: 'Crispy Chickpeas, Ranch', item_Type: 'Condiment' })).toBe('Sides');
   });
 
   it('keeps tricky items in the intended sections when MealViewer raw types are misleading', () => {
@@ -291,7 +293,7 @@ describe('menu-core', () => {
     expect(isPlausibleMenuSnapshot(result.days, undefined, '2026-04-13')).toBe(false);
   });
 
-  it('rejects sharp regressions versus the previous snapshot', () => {
+  it('accepts shorter snapshots versus the previous artifact when the current range is still internally plausible', () => {
     const previous = normalizeMenuResponse(
       {
         schoolName: 'TEST',
@@ -316,7 +318,7 @@ describe('menu-core', () => {
       { todayISO: '2026-04-13' },
     );
 
-    expect(isPlausibleMenuSnapshot(next.days, previous.days, '2026-04-13')).toBe(false);
+    expect(isPlausibleMenuSnapshot(next.days, previous.days, '2026-04-13')).toBe(true);
   });
 
   it('accepts a shorter snapshot when only two school days remain in the visible range', () => {

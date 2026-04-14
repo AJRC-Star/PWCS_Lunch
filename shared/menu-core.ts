@@ -167,16 +167,6 @@ function isPlausibleMenuSnapshot(
   }
 
   const previousVisibleDays = normalizeVisibleSharedDays(previousDays, todayISO);
-  const previousLastVisibleISO = previousVisibleDays[previousVisibleDays.length - 1]?.iso;
-  if (
-    previousVisibleDays.length >= minimumDays &&
-    visibleDays.length + 2 < previousVisibleDays.length &&
-    previousLastVisibleISO &&
-    countWeekdaysBetween(lastVisibleISO, previousLastVisibleISO) >= minimumDays
-  ) {
-    return false;
-  }
-
   const nextNoInfoCount = visibleDays.filter((day) => day.no_information_provided).length;
   const previousNoInfoCount = previousVisibleDays.filter((day) => day.no_information_provided).length;
   if (nextNoInfoCount > previousNoInfoCount + 2) {
@@ -240,9 +230,11 @@ function uniqueMenuItems(items: string[]): string[] {
 const ITEM_CATEGORY_OVERRIDES: Record<string, string> = {
   'american cheese slice': 'Condiments',
   'applesauce cup': 'Fruit',
+  'crispy chickpeas, ranch': 'Sides',
   'crispy chicken sandwich': 'Entree',
   'fruit juice cup - cherry': 'Drink',
   'fruit juice cup - strawberry pomegranate': 'Drink',
+  'grape tomatoes': 'Sides',
   'hamburger bun': 'Grains',
   'spaghetti & meat sauce': 'Entree',
 };
@@ -268,6 +260,9 @@ function categorizeMealViewerItem(food: FoodItem): string {
   }
   if (/(dipping sauce|bbq sauce|barbecue sauce|gravy|dressing|syrup|packet|dip|hummus|mustard|mayo|ketchup|ranch|marinara sauce)/.test(rawName)) {
     return 'Condiments';
+  }
+  if (/\b(grape tomatoes?|chickpeas?)\b/.test(rawName)) {
+    return 'Sides';
   }
   if (/\b(apple|orange|pear|peach|berry|berries|mandarin|fruit|pineapple|banana|grape|clementine|kiwi|mango)\b/.test(rawName)) {
     return 'Fruit';

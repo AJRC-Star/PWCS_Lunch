@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { getCachedData, getFreshData } from './api';
-import { SCHOOL_ID, SCHOOL_TIMEZONE } from '../shared/menu-core.js';
+import { MENU_SCHEMA_VERSION, SCHOOL_ID, SCHOOL_TIMEZONE } from '../shared/menu-core.js';
 import type { MenuData } from './types';
 import { DayCard } from './components/DayCard';
 import { DayTabs } from './components/DayTabs';
@@ -37,8 +37,7 @@ function formatFreshnessLabel(meta: MenuData['meta']): string {
       timeZone: SCHOOL_TIMEZONE,
     });
     const staleWarning = meta.isStale ? ' · cache may be stale' : '';
-    const prefix = meta.source === 'live-fallback' ? 'Live API fallback generated' : 'Published snapshot generated';
-    return `${prefix} ${date} ${time}${staleWarning}`;
+    return `Published snapshot generated ${date} ${time}${staleWarning}`;
   }
 
   const staleWarning = meta.isStale ? ' · cache may be stale' : '';
@@ -48,6 +47,10 @@ function formatFreshnessLabel(meta: MenuData['meta']): string {
 function getEmptyStateMessage(data: MenuData | null): string {
   if (data?.errorType === 'invalid_snapshot') {
     return 'The latest published menu snapshot was rejected because it looked invalid or incomplete. Please try again later.';
+  }
+
+  if (data?.errorType === 'snapshot_unavailable') {
+    return 'The published weekly menu snapshot is unavailable right now. Please try again later.';
   }
 
   return data?.error ? 'Check your internet connection or try again later.' : 'Try again later.';
@@ -170,6 +173,7 @@ function App() {
         setData({
           days: [],
           meta: {
+            schemaVersion: MENU_SCHEMA_VERSION,
             source: 'offline',
             lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isOffline: true,
@@ -211,6 +215,7 @@ function App() {
         setData({
           days: [],
           meta: {
+            schemaVersion: MENU_SCHEMA_VERSION,
             source: 'offline',
             lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isOffline: true,

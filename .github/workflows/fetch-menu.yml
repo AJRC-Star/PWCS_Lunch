@@ -35,6 +35,9 @@ jobs:
       - name: Validate menu artifact
         run: npm run validate:artifact
 
+      - name: Summarize menu artifact
+        run: npx tsx scripts/summarize-menu-artifact.ts >> "$GITHUB_STEP_SUMMARY"
+
       - name: Check if data changed
         id: check-changes
         run: |

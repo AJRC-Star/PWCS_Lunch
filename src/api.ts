@@ -1,20 +1,19 @@
 import {
-  formatMealViewerDate,
   getNextSchoolDay,
   getTodayISO,
   isPlausibleMenuSnapshot,
   MENU_SCHEMA_VERSION,
-  normalizeMenuResponse,
   SCHOOL_ID,
 } from '../shared/menu-core.js';
 import type { MenuData } from './types';
 
-const API_BASE_URL = 'https://api.mealviewer.com/api/v4/school';
 const CACHE_KEY = `bms_lunch_cache_v${MENU_SCHEMA_VERSION}`;
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 const SNAPSHOT_STALE_AFTER_MS = 8 * 24 * 60 * 60 * 1000; // weekly schedule + safety buffer
 const INVALID_SNAPSHOT_MESSAGE = 'Menu snapshot is unavailable right now. Showing the last known good menu.';
 const INVALID_NO_CACHE_MESSAGE = 'Menu snapshot is invalid right now. Please try again later.';
+const SNAPSHOT_UNAVAILABLE_MESSAGE = 'Published weekly menu snapshot unavailable. Showing the last known good menu.';
+const SNAPSHOT_UNAVAILABLE_NO_CACHE_MESSAGE = 'Published weekly menu snapshot unavailable right now. Please try again later.';
 const OFFLINE_NO_CACHE_MESSAGE = 'No internet 📴 and no cache.';
 
 interface CacheEntry {
@@ -33,12 +32,26 @@ class SnapshotValidationError extends Error {
   }
 }
 
+class SnapshotFetchError extends Error {
+  code: 'snapshot_unavailable' | 'offline';
+
+  constructor(code: 'snapshot_unavailable' | 'offline', message: string) {
+    super(message);
+    this.name = 'SnapshotFetchError';
+    this.code = code;
+  }
+}
+
 function isAbortError(error: unknown): boolean {
   return error instanceof DOMException && error.name === 'AbortError';
 }
 
 function isSnapshotValidationError(error: unknown): error is SnapshotValidationError {
   return error instanceof SnapshotValidationError;
+}
+
+function isSnapshotFetchError(error: unknown): error is SnapshotFetchError {
+  return error instanceof SnapshotFetchError;
 }
 
 function getMenuDataUrl(cacheBustKey?: string): string {
@@ -100,8 +113,8 @@ function buildInvalidSnapshotResult(message: string, cached?: CacheEntry | null)
   if (cached) {
     return {
       ...finalizeMenuData(cached.data, {
-        source: 'preview',
-        isPreview: true,
+        source: 'artifact',
+        isPreview: false,
         clientFetchedAt: cached.fetchedAt,
         isStale: true,
       }),
@@ -165,14 +178,15 @@ function saveCache(data: MenuData): number {
 
 async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<MenuData> {
   try {
-    // Try to fetch pre-normalized menu data (updated on school days by GitHub Actions)
     const response = await fetch(getMenuDataUrl(cacheBustKey), { signal });
     if (!response.ok) {
-      throw new Error(`Failed to load menu data: ${response.status}`);
+      throw new SnapshotFetchError(
+        'snapshot_unavailable',
+        `Failed to load published menu snapshot: ${response.status}`,
+      );
     }
     const data = await response.json() as Record<string, unknown>;
 
-    // If already normalized, return directly, preserving the snapshot timestamp.
     if (data.days && Array.isArray(data.days) && data.meta) {
       const sourceMeta = data.meta as Record<string, unknown>;
       if (typeof sourceMeta.schemaVersion !== 'number') {
@@ -215,53 +229,13 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
     );
   } catch (error) {
     if (isAbortError(error)) throw error;
-
-    // Fallback to live API if pre-fetched data isn't available.
-    // Use school-timezone dates to avoid off-by-one-day errors for users or
-    // CI runners whose host clock is in a different timezone.
-    console.warn('Could not load pre-fetched menu data, falling back to live API', error);
-    const startStr = formatMealViewerDate(0);
-    const endStr = formatMealViewerDate(21);
-    const range = [startStr, endStr].join('/');
-    const url = `${API_BASE_URL}/${SCHOOL_ID}/${range}`;
-
-    try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        signal,
-      });
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const raw = await response.json() as Record<string, unknown>;
-      const normalized = normalizeMenuResponse(raw);
-
-      return finalizeMenuData({
-        days: normalized.days,
-        meta: {
-          schemaVersion: normalized.meta.schemaVersion,
-          source: 'live-fallback',
-          lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          snapshotGeneratedAt: normalized.meta.snapshotGeneratedAt,
-          isOffline: false,
-          isPreview: false,
-          schoolName: normalized.meta.schoolName,
-        },
-        error: isSnapshotValidationError(error)
-          ? 'Published snapshot invalid. Showing live API fallback that may differ from the weekly snapshot.'
-          : 'Published snapshot unavailable. Showing live API fallback that may differ from the weekly snapshot.',
-        errorType: 'live_fallback',
-      });
-    } catch (liveError) {
-      if (isAbortError(liveError)) throw liveError;
-      if (isSnapshotValidationError(error)) {
-        throw error;
-      }
-      throw liveError;
+    if (isSnapshotValidationError(error) || isSnapshotFetchError(error)) {
+      throw error;
     }
+    throw new SnapshotFetchError(
+      'offline',
+      error instanceof Error ? error.message : 'Network unavailable while loading menu snapshot.',
+    );
   }
 }
 
@@ -304,26 +278,49 @@ export async function getFreshData(options?: {
       );
     }
 
-    const shouldPersist = data.meta.source === 'artifact';
-    const fetchedAt = shouldPersist ? saveCache(data) : Date.now();
+    const fetchedAt = saveCache(data);
 
-    return {
-      ...finalizeMenuData(data, {
-        lastUpdated: new Date(fetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        clientFetchedAt: shouldPersist ? fetchedAt : undefined,
-      }),
-      ...(data.meta.source === 'live-fallback'
-        ? {
-            error: data.error,
-            errorType: 'live_fallback' as const,
-          }
-        : {}),
-    };
+    return finalizeMenuData(data, {
+      lastUpdated: new Date(fetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      clientFetchedAt: fetchedAt,
+    });
   } catch (e) {
     if (isAbortError(e)) throw e;
 
     if (isSnapshotValidationError(e)) {
       return buildInvalidSnapshotResult(e.message, cached);
+    }
+
+    if (isSnapshotFetchError(e)) {
+      if (cached) {
+        return {
+          ...finalizeMenuData(cached.data, {
+            source: e.code === 'offline' ? 'offline' : 'artifact',
+            isOffline: e.code === 'offline',
+            isPreview: false,
+            clientFetchedAt: cached.fetchedAt,
+            isStale: true,
+          }),
+          error: e.code === 'offline'
+            ? 'Offline 📴 — showing the last known good menu.'
+            : SNAPSHOT_UNAVAILABLE_MESSAGE,
+          errorType: e.code === 'offline' ? 'offline' : 'snapshot_unavailable',
+        };
+      }
+
+      return {
+        days: [],
+        meta: {
+          schemaVersion: MENU_SCHEMA_VERSION,
+          source: e.code === 'offline' ? 'offline' : 'artifact',
+          lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isOffline: e.code === 'offline',
+          isPreview: false,
+          schoolName: SCHOOL_ID,
+        },
+        error: e.code === 'offline' ? OFFLINE_NO_CACHE_MESSAGE : SNAPSHOT_UNAVAILABLE_NO_CACHE_MESSAGE,
+        errorType: e.code === 'offline' ? 'offline' : 'snapshot_unavailable',
+      };
     }
 
     if (cached) {

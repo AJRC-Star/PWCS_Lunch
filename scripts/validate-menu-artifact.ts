@@ -28,9 +28,11 @@ function readArtifact(): SharedMenuResponse {
 const REQUIRED_ARTIFACT_ITEM_SECTIONS: Record<string, string> = {
   'American Cheese Slice': 'Condiments',
   'Applesauce Cup': 'Fruit',
+  'Crispy Chickpeas, Ranch': 'Sides',
   'Crispy Chicken Sandwich': 'Entree',
   'Fruit Juice Cup - Cherry': 'Drink',
   'Fruit Juice Cup - Strawberry Pomegranate': 'Drink',
+  'Grape Tomatoes': 'Sides',
   'Hamburger Bun': 'Grains',
   'Marinara Dipping Sauce': 'Condiments',
   'Spaghetti & Meat Sauce': 'Entree',
@@ -74,6 +76,12 @@ function validateSectionFamilies(data: SharedMenuResponse): void {
         }
         if (/\b(applesauce)\b/.test(name)) {
           assert(section.title === 'Fruit', `"${item}" should be in Fruit, not ${section.title} (${day.iso}).`);
+        }
+        if (/\b(grape tomatoes?|tomatoes?)\b/.test(name)) {
+          assert(section.title !== 'Fruit', `"${item}" should not be in Fruit (${day.iso}).`);
+        }
+        if (/\bchickpeas?\b/.test(name)) {
+          assert(section.title !== 'Condiments', `"${item}" should not be in Condiments (${day.iso}).`);
         }
         if (/\b(meat sauce|spaghetti)\b/.test(name)) {
           assert(section.title === 'Entree', `"${item}" should be in Entree, not ${section.title} (${day.iso}).`);

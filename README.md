@@ -31,7 +31,7 @@ Menu data is pulled from the MealViewer public API:
 https://api.mealviewer.com/api/v4/school/BENTONMIDDLE/{startDate}/{endDate}
 ```
 
-The app fetches 21 days of data starting from today (using the school's local timezone, `America/New_York`). Items are categorized with curated high-confidence overrides and token-aware rules before falling back to MealViewer `item_Type`, and the published artifact is validated against semantic sentinel checks instead of only re-running the classifier on itself.
+The app fetches 21 days of data starting from today (using the school's local timezone, `America/New_York`). Items are categorized with curated high-confidence overrides and token-aware rules before falling back to MealViewer `item_Type`, and the published artifact is validated against semantic sentinel checks based on the committed artifact itself instead of only re-running the classifier on itself.
 
 ## Caching & Data Flow
 
@@ -39,9 +39,9 @@ Menu data is pre-normalized and cached for offline access:
 
 - **Network available:** Latest data fetched from the published weekly `menu-data.json`
 - **Preview mode:** Shows cached data immediately when available, then re-fetches fresh data in the background. Every read path re-applies the same visible-day filtering so past days never come back after preview mode has already cleaned them up.
-- **Live API fallback:** If the published snapshot is unavailable or invalid, the app can recover from the live MealViewer API for the current session, but it keeps that path visibly marked as degraded instead of silently persisting it as the weekly truth.
+- **Snapshot authority:** The published weekly artifact is the only authoritative menu source in the app. If it is unavailable or invalid, the app keeps showing the last known good published snapshot instead of silently switching users onto a second truth source.
 - **Offline:** Shows cached data with warning banner
-- **Snapshot validity:** Published artifacts and live fallback snapshots must pass plausibility checks before they replace the last known good menu.
+- **Snapshot validity:** Published artifacts must pass plausibility checks before they replace the last known good menu.
 - **Staleness:** The 4-hour TTL is enforced on the local cache, and the app also warns when the normalized snapshot itself is older than the expected weekly refresh window.
 
 Data is normalized server-side in `scripts/fetch-menu.ts` to reduce payload from ~5MB → ~8KB.
@@ -60,7 +60,7 @@ npm run build     # build for production → dist/
 Requires Node.js 20.19+ locally. GitHub Actions runs Node.js 22.
 
 Deployment is automated via GitHub Actions:
-- **Menu data:** `scripts/fetch-menu.ts` runs weekly on Saturday at 10:00 UTC, fetches the latest data, validates the regenerated artifact, and pushes to `main`
+- **Menu data:** `scripts/fetch-menu.ts` runs weekly on Saturday at 10:00 UTC, fetches the latest data, validates the regenerated artifact, writes a GitHub Actions summary with range/count health details, and pushes to `main`
 - **Failures:** If menu ingestion breaks or a new snapshot fails plausibility checks, the scheduled workflow fails so the issue is visible in GitHub Actions
 - **CI:** Pushes to `main` and pull requests run install, typecheck, tests, and build
 - **Site deployment:** validated `main` commits are deployed by the GitHub Pages Actions artifact flow
