@@ -277,9 +277,10 @@ describe('App', () => {
     await screen.findByText(/snapshot generated/i);
 
     const caption = document.querySelector('.caption');
-    // snapshotGeneratedAt '2026-04-13T10:00:00.000Z' → "Snapshot generated Apr 13 …"
+    // 2026-04-13T10:00:00.000Z renders in America/New_York as Apr 13 06:00 AM.
     expect(caption?.textContent).toMatch(/Apr 13/);
     expect(caption?.textContent).toMatch(/Snapshot generated/);
+    expect(caption?.textContent).toMatch(/06:00 AM/);
     expect(caption?.textContent).not.toMatch(/stale/i);
   });
 

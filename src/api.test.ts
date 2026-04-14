@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getFreshData } from './api';
+import { getCachedData, getFreshData } from './api';
 
 describe('api', () => {
   beforeEach(() => {
@@ -63,6 +63,59 @@ describe('api', () => {
       expect(data.days.find((day) => day.iso === '2026-04-13')?.today).toBe(false);
       expect(data.days.find((day) => day.iso === '2026-04-14')?.today).toBe(true);
       expect(data.meta.snapshotGeneratedAt).toBe('2026-04-13T10:00:00.000Z');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('recomputes today and drops past cached days when reading preview data', async () => {
+    const cachedPayload = {
+      data: {
+        days: [
+          {
+            iso: '2026-04-13',
+            dateObj: Date.parse('2026-04-13T12:00:00Z'),
+            today: true,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [],
+          },
+          {
+            iso: '2026-04-14',
+            dateObj: Date.parse('2026-04-14T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [],
+          },
+        ],
+        meta: {
+          source: 'fresh',
+          lastUpdated: '09:00 AM',
+          schoolName: 'BENTONMIDDLE',
+        },
+      },
+      fetchedAt: Date.parse('2026-04-13T16:00:00.000Z'),
+    };
+
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => JSON.stringify(cachedPayload)),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    });
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-14T14:00:00.000Z'));
+
+    try {
+      const data = await getCachedData();
+
+      expect(data.days).toHaveLength(1);
+      expect(data.days[0].iso).toBe('2026-04-14');
+      expect(data.days[0].today).toBe(true);
     } finally {
       vi.useRealTimers();
     }

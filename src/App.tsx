@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { clearCachedData, getCachedData, getFreshData } from './api';
-import { SCHOOL_ID } from '../shared/menu-core.js';
+import { SCHOOL_ID, SCHOOL_TIMEZONE } from '../shared/menu-core.js';
 import type { MenuData } from './types';
 import { DayCard } from './components/DayCard';
 import { DayTabs } from './components/DayTabs';
@@ -21,8 +21,16 @@ function formatFreshnessLabel(meta: MenuData['meta']): string {
 
   if (meta.snapshotGeneratedAt) {
     const d = new Date(meta.snapshotGeneratedAt);
-    const date = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const date = d.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      timeZone: SCHOOL_TIMEZONE,
+    });
+    const time = d.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: SCHOOL_TIMEZONE,
+    });
     const staleWarning = meta.isStale ? ' · cache may be stale' : '';
     return `Snapshot generated ${date} ${time}${staleWarning}`;
   }

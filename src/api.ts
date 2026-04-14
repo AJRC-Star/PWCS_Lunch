@@ -1,4 +1,10 @@
-import { getTodayISO, normalizeMenuResponse, SCHOOL_ID, formatMealViewerDate } from '../shared/menu-core.js';
+import {
+  formatMealViewerDate,
+  getNextSchoolDay,
+  getTodayISO,
+  normalizeMenuResponse,
+  SCHOOL_ID,
+} from '../shared/menu-core.js';
 import type { MenuData } from './types';
 
 const API_BASE_URL = 'https://api.mealviewer.com/api/v4/school';
@@ -147,8 +153,16 @@ export async function getCachedData(): Promise<MenuData> {
   const cached = loadCache();
   if (cached) {
     const isStale = Date.now() - cached.fetchedAt > CACHE_TTL_MS;
+    const todayISO = getTodayISO();
+    const displayFromISO = getNextSchoolDay(todayISO);
     return {
       ...cached.data,
+      days: cached.data.days
+        .filter((day) => !day.weekend && day.iso >= displayFromISO)
+        .map((day) => ({
+          ...day,
+          today: day.iso === todayISO,
+        })),
       meta: {
         ...cached.data.meta,
         source: 'preview',
