@@ -89,6 +89,58 @@ describe('api', () => {
     }
   });
 
+  it('marks a published snapshot as stale as soon as it misses the weekly refresh SLA', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        days: [
+          {
+            iso: '2026-04-21',
+            dateObj: Date.parse('2026-04-21T12:00:00Z'),
+            today: true,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [],
+          },
+          {
+            iso: '2026-04-22',
+            dateObj: Date.parse('2026-04-22T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [],
+          },
+          {
+            iso: '2026-04-23',
+            dateObj: Date.parse('2026-04-23T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [],
+          },
+        ],
+        meta: {
+          schemaVersion: MENU_SCHEMA_VERSION,
+          snapshotGeneratedAt: '2026-04-14T10:00:00.000Z',
+          schoolName: 'BENTONMIDDLE',
+        },
+      }),
+    } as Response);
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-21T10:01:00.000Z'));
+
+    try {
+      const data = await getFreshData();
+      expect(data.meta.isStale).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('rejects schema-less normalized artifacts instead of silently treating them as current', async () => {
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce({
@@ -269,6 +321,51 @@ describe('api', () => {
     expect(data.meta.isOffline).toBe(true);
   });
 
+  it('labels cached last-known-good data distinctly when the published snapshot is unavailable', async () => {
+    const cachedPayload = {
+      version: MENU_SCHEMA_VERSION,
+      data: {
+        days: [
+          {
+            iso: '2026-04-15',
+            dateObj: Date.parse('2026-04-15T12:00:00Z'),
+            today: true,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [{ title: 'Entree', items: ['Cached Pizza'], wide: true }],
+          },
+        ],
+        meta: {
+          schemaVersion: MENU_SCHEMA_VERSION,
+          source: 'artifact',
+          lastUpdated: '09:00 AM',
+          snapshotGeneratedAt: '2026-04-12T10:00:00.000Z',
+          schoolName: 'BENTONMIDDLE',
+        },
+      },
+      fetchedAt: Date.parse('2026-04-15T12:00:00.000Z'),
+    };
+
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => JSON.stringify(cachedPayload)),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: false,
+      status: 404,
+    } as Response);
+
+    const data = await getFreshData();
+
+    expect(data.meta.source).toBe('artifact-cache');
+    expect(data.meta.isOffline).toBe(false);
+    expect(data.errorType).toBe('snapshot_unavailable');
+    expect(data.error).toMatch(/weekly menu snapshot unavailable/i);
+  });
+
   it('rejects a one-day published artifact snapshot for first-load users', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
@@ -326,6 +423,63 @@ describe('api', () => {
     expect(setItem).not.toHaveBeenCalled();
   });
 
+  it('uses a high-granularity default cache-bust key so repaired artifacts do not stay sticky within the same hour', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        days: [
+          {
+            iso: '2026-04-13',
+            dateObj: Date.parse('2026-04-13T12:00:00Z'),
+            today: true,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [{ title: 'Entree', items: ['Pizza'], wide: true }],
+          },
+          {
+            iso: '2026-04-14',
+            dateObj: Date.parse('2026-04-14T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [],
+          },
+          {
+            iso: '2026-04-15',
+            dateObj: Date.parse('2026-04-15T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [],
+          },
+        ],
+        meta: {
+          schemaVersion: MENU_SCHEMA_VERSION,
+          snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
+          schoolName: 'BENTONMIDDLE',
+        },
+      }),
+    } as Response);
+
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-04-13T10:00:00.000Z'));
+      await getFreshData();
+      const firstUrl = String(fetchSpy.mock.calls[0][0]);
+
+      vi.setSystemTime(new Date('2026-04-13T10:00:05.000Z'));
+      await getFreshData();
+      const secondUrl = String(fetchSpy.mock.calls[1][0]);
+
+      expect(firstUrl).not.toBe(secondUrl);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('does not mask an invalid published artifact behind a live fallback', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
       ok: true,
@@ -343,5 +497,55 @@ describe('api', () => {
     expect(data.meta.source).toBe('artifact');
     expect(data.errorType).toBe('invalid_snapshot');
     expect(data.error).toMatch(/schema version/i);
+  });
+
+  it('labels cached last-known-good data distinctly when the published snapshot is invalid', async () => {
+    const cachedPayload = {
+      version: MENU_SCHEMA_VERSION,
+      data: {
+        days: [
+          {
+            iso: '2026-04-15',
+            dateObj: Date.parse('2026-04-15T12:00:00Z'),
+            today: true,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [{ title: 'Entree', items: ['Cached Pizza'], wide: true }],
+          },
+        ],
+        meta: {
+          schemaVersion: MENU_SCHEMA_VERSION,
+          source: 'artifact',
+          lastUpdated: '09:00 AM',
+          snapshotGeneratedAt: '2026-04-12T10:00:00.000Z',
+          schoolName: 'BENTONMIDDLE',
+        },
+      },
+      fetchedAt: Date.parse('2026-04-15T12:00:00.000Z'),
+    };
+
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => JSON.stringify(cachedPayload)),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        days: [],
+        meta: {
+          lastUpdated: '2026-04-13T10:00:00.000Z',
+          schoolName: 'BENTONMIDDLE',
+        },
+      }),
+    } as Response);
+
+    const data = await getFreshData();
+
+    expect(data.meta.source).toBe('artifact-cache');
+    expect(data.meta.isOffline).toBe(false);
+    expect(data.errorType).toBe('invalid_snapshot');
   });
 });

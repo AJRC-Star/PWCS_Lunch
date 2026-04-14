@@ -310,6 +310,29 @@ describe('App', () => {
     });
   });
 
+  it('describes cached published snapshot recovery distinctly after a refresh failure', async () => {
+    const recoveredData: MenuData = {
+      ...makeMenuData(),
+      meta: {
+        ...makeMenuData().meta,
+        source: 'artifact-cache',
+        isStale: true,
+      },
+      error: 'Published weekly menu snapshot unavailable. Showing the last known good menu.',
+      errorType: 'snapshot_unavailable',
+    };
+
+    apiMocks.getCachedData.mockResolvedValue(makeCachedMenuData());
+    apiMocks.getFreshData.mockResolvedValue(recoveredData);
+
+    render(<App />);
+
+    expect(await screen.findByText('CachedItem')).toBeInTheDocument();
+    await screen.findByText(/Showing the last known good menu/i);
+    expect(document.querySelector('.caption')?.textContent).toMatch(/Cached published snapshot generated/);
+    expect(document.querySelector('.caption')?.textContent).toMatch(/stale/i);
+  });
+
   // ── Finding 3: no-school card is rendered correctly ───────────────────────
 
   it('renders the No school card for a no_school day', async () => {

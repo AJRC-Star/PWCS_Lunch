@@ -9,7 +9,7 @@ import type { MenuData } from './types';
 
 const CACHE_KEY = `bms_lunch_cache_v${MENU_SCHEMA_VERSION}`;
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
-const SNAPSHOT_STALE_AFTER_MS = 8 * 24 * 60 * 60 * 1000; // weekly schedule + safety buffer
+const SNAPSHOT_STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000; // weekly schedule SLA
 const INVALID_SNAPSHOT_MESSAGE = 'Menu snapshot is unavailable right now. Showing the last known good menu.';
 const INVALID_NO_CACHE_MESSAGE = 'Menu snapshot is invalid right now. Please try again later.';
 const SNAPSHOT_UNAVAILABLE_MESSAGE = 'Published weekly menu snapshot unavailable. Showing the last known good menu.';
@@ -57,7 +57,9 @@ function isSnapshotFetchError(error: unknown): error is SnapshotFetchError {
 function getMenuDataUrl(cacheBustKey?: string): string {
   // GitHub Pages fixes cache headers at the platform level, so we version the
   // mutable JSON URL client-side to avoid stale menu data in Safari/iOS.
-  const version = cacheBustKey ?? new Date().toISOString().slice(0, 13);
+  // Use a full timestamp by default so a repaired artifact can propagate
+  // immediately instead of waiting for the next hour-key rollover.
+  const version = cacheBustKey ?? new Date().toISOString();
   return `${import.meta.env.BASE_URL}menu-data.json?v=${encodeURIComponent(version)}`;
 }
 
@@ -113,7 +115,8 @@ function buildInvalidSnapshotResult(message: string, cached?: CacheEntry | null)
   if (cached) {
     return {
       ...finalizeMenuData(cached.data, {
-        source: 'artifact',
+        source: 'artifact-cache',
+        isOffline: false,
         isPreview: false,
         clientFetchedAt: cached.fetchedAt,
         isStale: true,
@@ -295,7 +298,7 @@ export async function getFreshData(options?: {
       if (cached) {
         return {
           ...finalizeMenuData(cached.data, {
-            source: e.code === 'offline' ? 'offline' : 'artifact',
+            source: e.code === 'offline' ? 'offline' : 'artifact-cache',
             isOffline: e.code === 'offline',
             isPreview: false,
             clientFetchedAt: cached.fetchedAt,
