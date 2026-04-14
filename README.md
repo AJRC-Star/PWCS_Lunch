@@ -12,7 +12,7 @@ A mobile-first web app that displays the school lunch menu for Benton Middle Sch
 - 💾 Smart caching — shows cached menu instantly when available, then refreshes in the background
 - 🕐 Freshness-aware — displays when the menu data was actually produced, not just when the browser last fetched it; warns when the local cache is stale
 - ⚡ Skeleton loading screens while data loads
-- 🌙 Dark and light mode (follows system preference)
+- 🌙 Dark and light mode with a manual in-app toggle
 - 📐 Fluid layout — scales to any screen size with no device-specific breakpoints
 
 ## Tech Stack
@@ -21,7 +21,7 @@ A mobile-first web app that displays the school lunch menu for Benton Middle Sch
 - **TypeScript** — type safety (covers `src/`, `shared/`, and `scripts/`)
 - **Vite** — build tool and dev server
 - **CSS3** — fluid sizing with `clamp()`, `dvh`, and CSS Grid/Flexbox
-- **gh-pages** — GitHub Pages deployment
+- **GitHub Actions + Pages** — production deployment
 
 ## API
 
@@ -60,7 +60,7 @@ Deployment is automated via GitHub Actions:
 - **Menu data:** `scripts/fetch-menu.ts` runs on school days (Mon–Fri) at 10:00 UTC and 14:00 UTC, fetches the latest data, and pushes to `main`
 - **Failures:** If menu ingestion breaks, the scheduled workflow fails so the issue is visible in GitHub Actions
 - **CI:** Pushes to `main` and pull requests run install, typecheck, tests, and build
-- **Site deployment:** `main` deploys to `gh-pages` only after validation passes
+- **Site deployment:** validated `main` commits are deployed by the GitHub Pages Actions artifact flow
 
 The deploy base path defaults to `/PWCS_Lunch/` but can be overridden with the `VITE_BASE_PATH` environment variable for alternative deploy targets (custom domains, root paths, etc.).
 
