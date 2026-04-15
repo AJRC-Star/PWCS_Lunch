@@ -60,8 +60,13 @@ jobs:
           git commit -m "Update menu data via GitHub Actions - $FETCH_TIME"
           git push
 
-      - name: Notify on failure
+      - name: Open issue on failure
         if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "❌ Menu data fetch failed!"
-          exit 1
+          FETCH_TIME=$(date -u +'%Y-%m-%d %H:%M UTC')
+          gh issue create \
+            --title "Menu data fetch failed — ${FETCH_TIME}" \
+            --body "The scheduled menu fetch workflow failed at ${FETCH_TIME}. Students may see stale data until this is resolved. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details." \
+          || echo "⚠ Could not create issue; see workflow logs for failure details."

@@ -421,4 +421,60 @@ describe('menu-core', () => {
   it('getNextSchoolDay leaves weekdays unchanged', () => {
     expect(getNextSchoolDay('2026-04-13')).toBe('2026-04-13');
   });
+
+  // ── D-7: getNextSchoolDay intentionally returns PWCS no-school weekdays ───
+  // The function computes the display cutoff (first non-weekend day ≥ fromISO),
+  // NOT the next instructional day.  No-school weekdays still appear in the UI
+  // as "No school" cards, so they must not be skipped here.
+  it('getNextSchoolDay returns a PWCS no-school weekday unchanged (by design)', () => {
+    // 2026-11-02 is a PWCS no-school Monday; getNextSchoolDay must return it so
+    // the "No school" card appears as the first visible day of the week.
+    expect(getNextSchoolDay('2026-11-02')).toBe('2026-11-02');
+  });
+
+  it('getNextSchoolDay on Sunday before a PWCS no-school Monday returns that Monday', () => {
+    // 2026-11-01 is Sunday; displayFromISO should be 2026-11-02 (no-school Mon).
+    expect(getNextSchoolDay('2026-11-01')).toBe('2026-11-02');
+  });
+
+  // ── D-2: isPlausibleMenuSnapshot near end of school year ─────────────────
+  it('accepts a two-day snapshot in the final week of school when the calendar has only two days left', () => {
+    // 2026-06-11 (Thursday) and 2026-06-12 (Friday) are the last two days of
+    // school.  There are exactly 2 instructional days left so the low count is
+    // calendar-justified and the snapshot must be accepted.
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [
+          makeSchedule('2026-06-11', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-06-12', 'Lunch', PIZZA_ITEMS),
+        ],
+      },
+      { todayISO: '2026-06-11' },
+    );
+
+    expect(isPlausibleMenuSnapshot(result.days, undefined, '2026-06-11')).toBe(true);
+  });
+
+  it('rejects a two-day snapshot with wide gaps when many instructional days are skipped', () => {
+    // Providing only Mon 04/13 and Mon 04/20 (6 instructional days in range,
+    // no PWCS holidays between them) yields 2 visible days despite the gap.
+    // The plausibility check rejects because count (6) >= minimumDays (3) but
+    // only 2 days are present — indicating missing data, not an end-of-year cliff.
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [
+          makeSchedule('2026-04-13', 'Lunch', PIZZA_ITEMS), // Mon
+          makeSchedule('2026-04-20', 'Lunch', PIZZA_ITEMS), // skip Tue-Fri, next Mon
+        ],
+      },
+      { todayISO: '2026-04-13' },
+    );
+
+    // normalizeMenuResponse does not inject days between Apr 13 and Apr 20
+    // because there are no PWCS no-school weekdays in that span.
+    expect(result.days).toHaveLength(2);
+    expect(isPlausibleMenuSnapshot(result.days, undefined, '2026-04-13')).toBe(false);
+  });
 });

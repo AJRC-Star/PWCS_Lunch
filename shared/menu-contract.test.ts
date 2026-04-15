@@ -5,6 +5,7 @@ import {
   isPastExpectedRefresh,
   validateMenuArtifact,
 } from './menu-contract.ts';
+import { PWCS_CALENDAR_COVERAGE_END_ISO } from './pwcs-calendar.ts';
 
 function makeArtifact(overrides: Partial<SharedMenuResponse> = {}): SharedMenuResponse {
   const base: SharedMenuResponse = {
@@ -176,5 +177,30 @@ describe('menu artifact contract', () => {
   it('treats the expected refresh deadline plus grace period as stale', () => {
     expect(isPastExpectedRefresh('2026-04-18T10:00:00.000Z', Date.parse('2026-04-18T11:59:00.000Z'))).toBe(false);
     expect(isPastExpectedRefresh('2026-04-18T10:00:00.000Z', Date.parse('2026-04-18T12:01:00.000Z'))).toBe(true);
+  });
+
+  it('accepts an implausible artifact when enforcePlausibility is disabled', () => {
+    // A single-day artifact would normally fail plausibility, but the cache
+    // loader passes enforcePlausibility:false for previously committed entries.
+    const singleDay = makeArtifact({
+      days: [makeArtifact().days[0]],
+    });
+
+    expect(() =>
+      validateMenuArtifact(singleDay, undefined, { enforcePlausibility: false }),
+    ).not.toThrow();
+  });
+
+  // ── D-1: Calendar coverage advance-warning ────────────────────────────────
+  // This test fails approximately 30 days before the PWCS calendar coverage
+  // cliff, giving a lead-time signal to update pwcs-calendar.ts before the
+  // weekly fetch pipeline breaks silently.
+  it('PWCS_CALENDAR_COVERAGE_END_ISO is at least 30 days in the future', () => {
+    const coverageEnd = Date.parse(`${PWCS_CALENDAR_COVERAGE_END_ISO}T00:00:00Z`);
+    const thirtyDaysFromNow = Date.now() + 30 * 24 * 60 * 60 * 1000;
+    expect(
+      coverageEnd,
+      `PWCS calendar coverage ends ${PWCS_CALENDAR_COVERAGE_END_ISO} — update pwcs-calendar.ts before it expires`,
+    ).toBeGreaterThan(thirtyDaysFromNow);
   });
 });

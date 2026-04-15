@@ -80,7 +80,9 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [retrying, setRetrying] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [themePreference, setThemePreference] = useState<ThemePreference>(() => getInitialThemePreference());
+  const [themePreference, setThemePreference] = useState<ThemePreference>(getInitialThemePreference);
+  // Derive the concrete theme from the same preference: reads localStorage once
+  // via getInitialThemePreference() then converts 'system' to the OS value.
   const [theme, setTheme] = useState<Theme>(() => getInitialTheme(getInitialThemePreference()));
   const retryControllerRef = useRef<AbortController | null>(null);
 
