@@ -13,6 +13,7 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.scripts.json --noEmit",
     "validate:artifact": "npx tsx scripts/validate-menu-artifact.ts",
+    "check:artifact-freshness": "npx tsx scripts/check-artifact-freshness.ts",
     "preview": "vite preview"
   },
   "dependencies": {

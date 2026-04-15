@@ -168,8 +168,14 @@ function loadCache(): CacheEntry | null {
       return null;
     }
 
+    validateMenuArtifact(parsed.data, undefined, { enforcePlausibility: false });
     return parsed as CacheEntry;
   } catch {
+    try {
+      localStorage.removeItem(CACHE_KEY);
+    } catch {
+      // Ignore storage errors while self-healing bad cache entries.
+    }
     return null;
   }
 }

@@ -2,7 +2,9 @@ import {
   isPlausibleMenuSnapshot,
   MENU_SCHEMA_VERSION,
   SCHOOL_ID,
+  type SharedMenuDay,
   type SharedMenuResponse,
+  type SharedMenuSection,
 } from './menu-core.ts';
 import {
   getPWCSNoSchoolDatesBetween,
@@ -14,6 +16,17 @@ const MENU_CACHE_SEMANTIC_VERSION = 3;
 const WEEKLY_REFRESH_DAY_UTC = 6;
 const WEEKLY_REFRESH_HOUR_UTC = 10;
 const WEEKLY_REFRESH_GRACE_MS = 2 * 60 * 60 * 1000;
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const VALID_SECTION_TITLES = new Set([
+  'Entree',
+  'Sides',
+  'Fruit',
+  'Grains',
+  'Drink',
+  'Condiments',
+  'Dessert',
+  'Other',
+]);
 
 const REQUIRED_ARTIFACT_ITEM_SECTIONS: Record<string, string> = {
   'American Cheese Slice': 'Condiments',
@@ -36,42 +49,172 @@ class MenuArtifactValidationError extends Error {
   }
 }
 
+type MenuArtifactValidationOptions = {
+  enforcePlausibility?: boolean;
+};
+
 function assert(condition: unknown, message: string): asserts condition {
   if (!condition) {
     throw new MenuArtifactValidationError(message);
   }
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object';
+}
+
+function parseISOAtUtcNoonMs(iso: string): number {
+  if (!ISO_DATE_RE.test(iso)) {
+    return Number.NaN;
+  }
+
+  const time = Date.parse(`${iso}T12:00:00Z`);
+  if (!Number.isFinite(time)) {
+    return Number.NaN;
+  }
+
+  const parsed = new Date(time);
+  const roundTrip = [
+    parsed.getUTCFullYear(),
+    String(parsed.getUTCMonth() + 1).padStart(2, '0'),
+    String(parsed.getUTCDate()).padStart(2, '0'),
+  ].join('-');
+
+  return roundTrip === iso ? time : Number.NaN;
+}
+
+function validateMenuSection(value: unknown, dayISO: string, sectionIndex: number): SharedMenuSection {
+  assert(isRecord(value), `Artifact day ${dayISO} section ${sectionIndex} is not an object.`);
+
+  const { title, items, wide } = value;
+  assert(typeof title === 'string' && VALID_SECTION_TITLES.has(title), `Artifact day ${dayISO} has invalid section title.`);
+  assert(Array.isArray(items), `Artifact day ${dayISO} section ${title} is missing an items array.`);
+  assert(
+    items.every((item) => typeof item === 'string' && item.trim().length > 0),
+    `Artifact day ${dayISO} section ${title} contains an invalid item.`,
+  );
+  assert(
+    wide === undefined || typeof wide === 'boolean',
+    `Artifact day ${dayISO} section ${title} has invalid wide flag.`,
+  );
+
+  return {
+    title,
+    items,
+    ...(wide === undefined ? {} : { wide }),
+  };
+}
+
+function validateMenuDay(value: unknown, index: number): SharedMenuDay {
+  assert(isRecord(value), `Artifact day ${index} is not an object.`);
+
+  const {
+    iso,
+    dateObj,
+    today,
+    weekend,
+    no_school,
+    no_information_provided: noInformationProvided,
+    sections,
+  } = value;
+
+  assert(typeof iso === 'string', `Artifact day ${index} is missing iso.`);
+  const expectedDateObj = parseISOAtUtcNoonMs(iso);
+  assert(Number.isFinite(expectedDateObj), `Artifact day ${index} has invalid iso ${iso}.`);
+  assert(typeof dateObj === 'number' && Number.isFinite(dateObj), `Artifact day ${iso} has invalid dateObj.`);
+  assert(dateObj === expectedDateObj, `Artifact day ${iso} dateObj must equal UTC noon for iso.`);
+  assert(typeof today === 'boolean', `Artifact day ${iso} has invalid today flag.`);
+  assert(typeof weekend === 'boolean', `Artifact day ${iso} has invalid weekend flag.`);
+  assert(typeof no_school === 'boolean', `Artifact day ${iso} has invalid no_school flag.`);
+  assert(
+    typeof noInformationProvided === 'boolean',
+    `Artifact day ${iso} has invalid no_information_provided flag.`,
+  );
+
+  const expectedWeekend = [0, 6].includes(new Date(expectedDateObj).getUTCDay());
+  assert(weekend === expectedWeekend, `Artifact day ${iso} weekend flag does not match iso.`);
+  assert(
+    !(no_school && noInformationProvided),
+    `Artifact day ${iso} cannot be both no_school and no_information_provided.`,
+  );
+  assert(Array.isArray(sections), `Artifact day ${iso} is missing sections array.`);
+
+  const validatedSections = sections.map((section, sectionIndex) =>
+    validateMenuSection(section, iso, sectionIndex)
+  );
+  const itemCount = validatedSections.reduce((count, section) => count + section.items.length, 0);
+
+  assert(
+    !no_school || itemCount === 0,
+    `Artifact day ${iso} is no_school but still contains menu items.`,
+  );
+  assert(
+    !noInformationProvided || itemCount === 0,
+    `Artifact day ${iso} is no_information_provided but still contains menu items.`,
+  );
+  assert(
+    no_school || noInformationProvided || itemCount > 0,
+    `Artifact day ${iso} is a regular school day with no menu items and no missing-menu flag.`,
+  );
+
+  return {
+    iso,
+    dateObj,
+    today,
+    weekend,
+    no_school,
+    no_information_provided: noInformationProvided,
+    sections: validatedSections,
+  };
+}
+
 function toSharedMenuResponse(value: unknown): SharedMenuResponse {
   assert(value && typeof value === 'object', 'Artifact is not an object.');
   const artifact = value as Partial<SharedMenuResponse>;
+  const meta = artifact.meta as Partial<SharedMenuResponse['meta']> | undefined;
 
   assert(Array.isArray(artifact.days), 'Artifact is missing a days array.');
-  assert(artifact.meta && typeof artifact.meta === 'object', 'Artifact is missing meta.');
+  assert(meta && typeof meta === 'object', 'Artifact is missing meta.');
   assert(
-    artifact.meta.schemaVersion === MENU_SCHEMA_VERSION,
+    meta.schemaVersion === MENU_SCHEMA_VERSION,
     `Artifact schema version must equal ${MENU_SCHEMA_VERSION}.`,
   );
   assert(
-    typeof artifact.meta.snapshotGeneratedAt === 'string' &&
-      artifact.meta.snapshotGeneratedAt.length > 0,
+    typeof meta.snapshotGeneratedAt === 'string' &&
+      meta.snapshotGeneratedAt.length > 0,
     'Artifact is missing snapshotGeneratedAt.',
   );
   assert(
-    typeof artifact.meta.expectedNextRefreshAt === 'string' &&
-      artifact.meta.expectedNextRefreshAt.length > 0,
+    Number.isFinite(Date.parse(meta.snapshotGeneratedAt)),
+    'Artifact snapshotGeneratedAt is not a valid ISO timestamp.',
+  );
+  assert(
+    typeof meta.expectedNextRefreshAt === 'string' &&
+      meta.expectedNextRefreshAt.length > 0,
     'Artifact is missing expectedNextRefreshAt.',
   );
   assert(
-    Number.isFinite(Date.parse(artifact.meta.expectedNextRefreshAt)),
+    Number.isFinite(Date.parse(meta.expectedNextRefreshAt)),
     'Artifact expectedNextRefreshAt is not a valid ISO timestamp.',
   );
   assert(
-    artifact.meta.schoolName === SCHOOL_ID,
+    meta.expectedNextRefreshAt === getExpectedNextRefreshAt(meta.snapshotGeneratedAt),
+    'Artifact expectedNextRefreshAt does not match the weekly refresh schedule.',
+  );
+  assert(
+    meta.schoolName === SCHOOL_ID,
     `Artifact schoolName must equal ${SCHOOL_ID}.`,
   );
 
-  return artifact as SharedMenuResponse;
+  return {
+    days: artifact.days.map((day, index) => validateMenuDay(day, index)),
+    meta: {
+      schemaVersion: meta.schemaVersion,
+      snapshotGeneratedAt: meta.snapshotGeneratedAt,
+      expectedNextRefreshAt: meta.expectedNextRefreshAt,
+      schoolName: meta.schoolName,
+    },
+  };
 }
 
 function validateCuratedCategoryExpectations(data: SharedMenuResponse): void {
@@ -162,12 +305,18 @@ function validateOfficialNoSchoolDays(data: SharedMenuResponse): void {
   }
 }
 
-function validateMenuArtifact(value: unknown, previousDays?: SharedMenuResponse['days']): SharedMenuResponse {
+function validateMenuArtifact(
+  value: unknown,
+  previousDays?: SharedMenuResponse['days'],
+  options: MenuArtifactValidationOptions = {},
+): SharedMenuResponse {
   const artifact = toSharedMenuResponse(value);
-  assert(
-    isPlausibleMenuSnapshot(artifact.days, previousDays),
-    'Artifact failed plausibility validation.',
-  );
+  if (options.enforcePlausibility ?? true) {
+    assert(
+      isPlausibleMenuSnapshot(artifact.days, previousDays),
+      'Artifact failed plausibility validation.',
+    );
+  }
 
   validateCuratedCategoryExpectations(artifact);
   validateSectionFamilies(artifact);

@@ -60,6 +60,62 @@ describe('menu artifact contract', () => {
     expect(validateMenuArtifact(makeArtifact()).days).toHaveLength(3);
   });
 
+  it('rejects artifacts whose refresh deadline does not match the weekly schedule', () => {
+    const base = makeArtifact();
+    const artifact = makeArtifact({
+      meta: {
+        ...base.meta,
+        expectedNextRefreshAt: '2030-01-01T00:00:00.000Z',
+      },
+    });
+
+    expect(() => validateMenuArtifact(artifact)).toThrow(/weekly refresh schedule/i);
+  });
+
+  it('rejects artifacts with invalid snapshot timestamps', () => {
+    const base = makeArtifact();
+    const artifact = makeArtifact({
+      meta: {
+        ...base.meta,
+        snapshotGeneratedAt: 'not-a-date',
+        expectedNextRefreshAt: '2026-04-25T10:00:00.000Z',
+      },
+    });
+
+    expect(() => validateMenuArtifact(artifact)).toThrow(/snapshotGeneratedAt is not a valid/i);
+  });
+
+  it('rejects malformed day records before they can reach the UI', () => {
+    const artifact = makeArtifact({
+      days: [
+        {
+          ...makeArtifact().days[0],
+          iso: '2026-02-31',
+        },
+        makeArtifact().days[1],
+        makeArtifact().days[2],
+      ],
+    });
+
+    expect(() => validateMenuArtifact(artifact)).toThrow(/invalid iso/i);
+  });
+
+  it('rejects regular school days that have no menu items and no missing-menu flag', () => {
+    const artifact = makeArtifact({
+      days: [
+        {
+          ...makeArtifact().days[0],
+          sections: [],
+          no_information_provided: false,
+        },
+        makeArtifact().days[1],
+        makeArtifact().days[2],
+      ],
+    });
+
+    expect(() => validateMenuArtifact(artifact)).toThrow(/regular school day with no menu items/i);
+  });
+
   it('rejects official no-school dates mislabeled as missing menu data', () => {
     const artifact = makeArtifact({
       days: [

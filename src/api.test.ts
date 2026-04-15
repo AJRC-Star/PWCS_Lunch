@@ -3,6 +3,8 @@ import { getCachedData, getFreshData } from './api';
 import { MENU_SCHEMA_VERSION } from '../shared/menu-core.js';
 import { MENU_CACHE_SEMANTIC_VERSION } from '../shared/menu-contract.js';
 
+const TEST_SECTIONS = [{ title: 'Entree', items: ['Pizza'], wide: true }];
+
 describe('api', () => {
   beforeEach(() => {
     const storage = new Map<string, string>();
@@ -37,7 +39,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
           {
             iso: '2026-04-14',
@@ -46,7 +48,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
           {
             iso: '2026-04-15',
@@ -55,7 +57,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
           {
             iso: '2026-04-16',
@@ -64,7 +66,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
         ],
         meta: {
@@ -112,7 +114,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
           {
             iso: '2026-04-23',
@@ -121,7 +123,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
         ],
         meta: {
@@ -177,7 +179,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
           {
             iso: '2026-04-15',
@@ -186,7 +188,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
           {
             iso: '2026-04-16',
@@ -195,7 +197,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
           {
             iso: '2026-04-17',
@@ -204,7 +206,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
         ],
         meta: {
@@ -241,7 +243,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
           {
             iso: '2026-04-14',
@@ -250,13 +252,15 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
         ],
         meta: {
           schemaVersion: MENU_SCHEMA_VERSION,
           source: 'artifact',
           lastUpdated: '09:00 AM',
+          snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
+          expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
           schoolName: 'BENTONMIDDLE',
         },
       },
@@ -322,6 +326,133 @@ describe('api', () => {
     expect(staleSemanticCache.version).not.toBe(MENU_CACHE_SEMANTIC_VERSION);
     expect(data.days).toHaveLength(0);
     expect(data.meta.source).toBe('preview');
+  });
+
+  it('ignores and clears malformed same-version cache before fetching fresh data', async () => {
+    const removeItem = vi.fn();
+    const setItem = vi.fn();
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => JSON.stringify({
+        version: MENU_CACHE_SEMANTIC_VERSION,
+        data: {
+          days: null,
+          meta: {
+            schemaVersion: MENU_SCHEMA_VERSION,
+            source: 'artifact',
+            lastUpdated: '09:00 AM',
+            snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
+            expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
+            schoolName: 'BENTONMIDDLE',
+          },
+        },
+        fetchedAt: Date.parse('2026-04-13T12:00:00.000Z'),
+      })),
+      setItem,
+      removeItem,
+      clear: vi.fn(),
+    });
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        days: [
+          {
+            iso: '2026-04-13',
+            dateObj: Date.parse('2026-04-13T12:00:00Z'),
+            today: true,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: TEST_SECTIONS,
+          },
+          {
+            iso: '2026-04-14',
+            dateObj: Date.parse('2026-04-14T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: TEST_SECTIONS,
+          },
+          {
+            iso: '2026-04-15',
+            dateObj: Date.parse('2026-04-15T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: TEST_SECTIONS,
+          },
+        ],
+        meta: {
+          schemaVersion: MENU_SCHEMA_VERSION,
+          snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
+          expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
+          schoolName: 'BENTONMIDDLE',
+        },
+      }),
+    } as Response);
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-13T14:00:00.000Z'));
+
+    try {
+      const data = await getFreshData();
+
+      expect(removeItem).toHaveBeenCalled();
+      expect(setItem).toHaveBeenCalled();
+      expect(data.meta.source).toBe('artifact');
+      expect(data.days).toHaveLength(3);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('rejects artifacts whose expected refresh deadline would suppress stale warnings', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        days: [
+          {
+            iso: '2026-04-20',
+            dateObj: Date.parse('2026-04-20T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: TEST_SECTIONS,
+          },
+          {
+            iso: '2026-04-21',
+            dateObj: Date.parse('2026-04-21T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: true,
+            no_information_provided: false,
+            sections: [],
+          },
+          {
+            iso: '2026-04-22',
+            dateObj: Date.parse('2026-04-22T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: TEST_SECTIONS,
+          },
+        ],
+        meta: {
+          schemaVersion: MENU_SCHEMA_VERSION,
+          snapshotGeneratedAt: '2026-04-15T10:00:00.000Z',
+          expectedNextRefreshAt: '2030-01-01T00:00:00.000Z',
+          schoolName: 'BENTONMIDDLE',
+        },
+      }),
+    } as Response);
+
+    const data = await getFreshData();
+
+    expect(data.errorType).toBe('invalid_snapshot');
+    expect(data.error).toMatch(/weekly refresh schedule/i);
   });
 
   it('keeps the last known good cached menu when a refresh fails', async () => {
@@ -478,7 +609,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
         ],
         meta: {
@@ -544,7 +675,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
           {
             iso: '2026-04-15',
@@ -553,7 +684,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
         ],
         meta: {
@@ -621,7 +752,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
           {
             iso: '2026-04-23',
@@ -630,7 +761,7 @@ describe('api', () => {
             weekend: false,
             no_school: false,
             no_information_provided: false,
-            sections: [],
+            sections: TEST_SECTIONS,
           },
         ],
         meta: {
