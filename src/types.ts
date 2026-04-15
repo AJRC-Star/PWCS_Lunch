@@ -27,6 +27,8 @@ export interface MenuData {
      * publish timestamp.
      */
     snapshotGeneratedAt?: string;
+    /** ISO timestamp for the next expected weekly snapshot refresh. */
+    expectedNextRefreshAt?: string;
     /**
      * Unix epoch ms recorded when the browser saved this payload to the local
      * cache.  Used to enforce the 4-hour TTL and to display "cached X ago".

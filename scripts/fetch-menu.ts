@@ -10,6 +10,7 @@ import {
   SCHOOL_ID,
   type SharedMenuResponse,
 } from '../shared/menu-core.ts';
+import { getExpectedNextRefreshAt, validateMenuArtifact } from '../shared/menu-contract.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -72,7 +73,11 @@ async function main(): Promise<void> {
   try {
     console.log('Starting menu data fetch...');
     const rawData = await fetchWithRetry();
-    const normalizedData = normalizeMenuResponse(rawData);
+    const snapshotGeneratedAt = new Date().toISOString();
+    const normalizedData = normalizeMenuResponse(rawData, {
+      expectedNextRefreshAt: getExpectedNextRefreshAt(snapshotGeneratedAt),
+    });
+    normalizedData.meta.snapshotGeneratedAt = snapshotGeneratedAt;
     const outputPath = path.join(__dirname, '../public/menu-data.json');
     const previousSnapshot = loadPreviousSnapshot(outputPath);
 
@@ -85,6 +90,8 @@ async function main(): Promise<void> {
       console.warn('⚠ Normalised snapshot failed plausibility checks — preserving previous artifact.');
       process.exit(1);
     }
+
+    validateMenuArtifact(normalizedData, previousSnapshot?.days);
 
     fs.writeFileSync(outputPath, JSON.stringify(normalizedData));
 

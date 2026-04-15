@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getCachedData, getFreshData } from './api';
 import { MENU_SCHEMA_VERSION } from '../shared/menu-core.js';
+import { MENU_CACHE_SEMANTIC_VERSION } from '../shared/menu-contract.js';
 
 describe('api', () => {
   beforeEach(() => {
@@ -69,6 +70,7 @@ describe('api', () => {
         meta: {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
+          expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
           schoolName: 'BENTONMIDDLE',
         },
       }),
@@ -99,7 +101,7 @@ describe('api', () => {
             dateObj: Date.parse('2026-04-21T12:00:00Z'),
             today: true,
             weekend: false,
-            no_school: false,
+            no_school: true,
             no_information_provided: false,
             sections: [],
           },
@@ -125,6 +127,7 @@ describe('api', () => {
         meta: {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-14T10:00:00.000Z',
+          expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
           schoolName: 'BENTONMIDDLE',
         },
       }),
@@ -207,6 +210,7 @@ describe('api', () => {
         meta: {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-12T10:00:00.000Z',
+          expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
           schoolName: 'BENTONMIDDLE',
         },
       }),
@@ -227,7 +231,7 @@ describe('api', () => {
 
   it('recomputes today and drops past cached days when reading preview data', async () => {
     const cachedPayload = {
-      version: MENU_SCHEMA_VERSION,
+      version: MENU_CACHE_SEMANTIC_VERSION,
       data: {
         days: [
           {
@@ -280,9 +284,49 @@ describe('api', () => {
     }
   });
 
+  it('rejects stale same-schema cache entries after a semantic cache version bump', async () => {
+    const staleSemanticCache = {
+      version: MENU_SCHEMA_VERSION,
+      data: {
+        days: [
+          {
+            iso: '2026-04-21',
+            dateObj: Date.parse('2026-04-21T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: true,
+            sections: [],
+          },
+        ],
+        meta: {
+          schemaVersion: MENU_SCHEMA_VERSION,
+          source: 'artifact',
+          lastUpdated: '09:00 AM',
+          snapshotGeneratedAt: '2026-04-14T10:00:00.000Z',
+          schoolName: 'BENTONMIDDLE',
+        },
+      },
+      fetchedAt: Date.parse('2026-04-14T16:00:00.000Z'),
+    };
+
+    vi.stubGlobal('localStorage', {
+      getItem: vi.fn(() => JSON.stringify(staleSemanticCache)),
+      setItem: vi.fn(),
+      removeItem: vi.fn(),
+      clear: vi.fn(),
+    });
+
+    const data = await getCachedData();
+
+    expect(staleSemanticCache.version).not.toBe(MENU_CACHE_SEMANTIC_VERSION);
+    expect(data.days).toHaveLength(0);
+    expect(data.meta.source).toBe('preview');
+  });
+
   it('keeps the last known good cached menu when a refresh fails', async () => {
     const cachedPayload = {
-      version: MENU_SCHEMA_VERSION,
+      version: MENU_CACHE_SEMANTIC_VERSION,
       data: {
         days: [
           {
@@ -300,6 +344,7 @@ describe('api', () => {
           source: 'artifact',
           lastUpdated: '09:00 AM',
           snapshotGeneratedAt: '2026-04-12T10:00:00.000Z',
+          expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
           schoolName: 'BENTONMIDDLE',
         },
       },
@@ -323,7 +368,7 @@ describe('api', () => {
 
   it('labels cached last-known-good data distinctly when the published snapshot is unavailable', async () => {
     const cachedPayload = {
-      version: MENU_SCHEMA_VERSION,
+      version: MENU_CACHE_SEMANTIC_VERSION,
       data: {
         days: [
           {
@@ -341,6 +386,7 @@ describe('api', () => {
           source: 'artifact',
           lastUpdated: '09:00 AM',
           snapshotGeneratedAt: '2026-04-12T10:00:00.000Z',
+          expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
           schoolName: 'BENTONMIDDLE',
         },
       },
@@ -384,6 +430,7 @@ describe('api', () => {
         meta: {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
+          expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
           schoolName: 'BENTONMIDDLE',
         },
       }),
@@ -396,6 +443,59 @@ describe('api', () => {
       const data = await getFreshData();
       expect(data.errorType).toBe('invalid_snapshot');
       expect(data.days).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('marks a snapshot stale after its expected refresh deadline even when it is less than seven days old', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        days: [
+          {
+            iso: '2026-04-20',
+            dateObj: Date.parse('2026-04-20T12:00:00Z'),
+            today: true,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [{ title: 'Entree', items: ['Pizza'], wide: true }],
+          },
+          {
+            iso: '2026-04-21',
+            dateObj: Date.parse('2026-04-21T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: true,
+            no_information_provided: false,
+            sections: [],
+          },
+          {
+            iso: '2026-04-22',
+            dateObj: Date.parse('2026-04-22T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [],
+          },
+        ],
+        meta: {
+          schemaVersion: MENU_SCHEMA_VERSION,
+          snapshotGeneratedAt: '2026-04-15T10:00:00.000Z',
+          expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
+          schoolName: 'BENTONMIDDLE',
+        },
+      }),
+    } as Response);
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-20T13:00:00.000Z'));
+
+    try {
+      const data = await getFreshData();
+      expect(data.meta.isStale).toBe(true);
     } finally {
       vi.useRealTimers();
     }
@@ -459,6 +559,7 @@ describe('api', () => {
         meta: {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
+          expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
           schoolName: 'BENTONMIDDLE',
         },
       }),
@@ -499,9 +600,63 @@ describe('api', () => {
     expect(data.error).toMatch(/schema version/i);
   });
 
+  it('rejects semantically invalid published artifacts at runtime', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        days: [
+          {
+            iso: '2026-04-21',
+            dateObj: Date.parse('2026-04-21T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: true,
+            sections: [],
+          },
+          {
+            iso: '2026-04-22',
+            dateObj: Date.parse('2026-04-22T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [],
+          },
+          {
+            iso: '2026-04-23',
+            dateObj: Date.parse('2026-04-23T12:00:00Z'),
+            today: false,
+            weekend: false,
+            no_school: false,
+            no_information_provided: false,
+            sections: [],
+          },
+        ],
+        meta: {
+          schemaVersion: MENU_SCHEMA_VERSION,
+          snapshotGeneratedAt: '2026-04-18T10:00:00.000Z',
+          expectedNextRefreshAt: '2026-04-25T10:00:00.000Z',
+          schoolName: 'BENTONMIDDLE',
+        },
+      }),
+    } as Response);
+
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-20T14:00:00.000Z'));
+
+    try {
+      const data = await getFreshData();
+      expect(data.errorType).toBe('invalid_snapshot');
+      expect(data.error).toMatch(/official no-school date 2026-04-21/i);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('labels cached last-known-good data distinctly when the published snapshot is invalid', async () => {
     const cachedPayload = {
-      version: MENU_SCHEMA_VERSION,
+      version: MENU_CACHE_SEMANTIC_VERSION,
       data: {
         days: [
           {
@@ -519,6 +674,7 @@ describe('api', () => {
           source: 'artifact',
           lastUpdated: '09:00 AM',
           snapshotGeneratedAt: '2026-04-12T10:00:00.000Z',
+          expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
           schoolName: 'BENTONMIDDLE',
         },
       },

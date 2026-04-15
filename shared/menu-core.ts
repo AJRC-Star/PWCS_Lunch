@@ -53,6 +53,7 @@ export interface SharedMenuResponse {
   meta: {
     schemaVersion: number;
     snapshotGeneratedAt: string;
+    expectedNextRefreshAt: string;
     schoolName: string;
   };
 }
@@ -188,6 +189,12 @@ function formatMealViewerDate(offsetDays = 0): string {
   const day = String(date.getUTCDate()).padStart(2, '0');
   const year = date.getUTCFullYear();
   return `${month}-${day}-${year}`;
+}
+
+function getDefaultExpectedNextRefreshAt(): string {
+  const generatedAt = new Date();
+  generatedAt.setUTCDate(generatedAt.getUTCDate() + 7);
+  return generatedAt.toISOString();
 }
 
 // ── Menu categorisation ───────────────────────────────────────────────────────
@@ -396,7 +403,7 @@ function normalizeMealViewerDay(
 
 function normalizeMenuResponse(
   rawData: Record<string, unknown>,
-  options: { todayISO?: string } = {},
+  options: { expectedNextRefreshAt?: string; todayISO?: string } = {},
 ): SharedMenuResponse {
   // Use the true calendar today for the "Today" badge so that on weekends no
   // future day is incorrectly labelled "Today".  Separately, compute the first
@@ -415,7 +422,10 @@ function normalizeMenuResponse(
     .filter((day) => !day.weekend && day.iso >= displayFromISO);
 
   const daysByIso = new Map(normalizedDays.map((day) => [day.iso, day]));
-  const lastVisibleISO = normalizedDays[normalizedDays.length - 1]?.iso;
+  const lastVisibleISO = normalizedDays.reduce<string | undefined>(
+    (lastISO, day) => (!lastISO || day.iso > lastISO ? day.iso : lastISO),
+    undefined,
+  );
   if (lastVisibleISO) {
     for (const noSchoolISO of getPWCSNoSchoolDatesBetween(displayFromISO, lastVisibleISO)) {
       if (!daysByIso.has(noSchoolISO)) {
@@ -435,6 +445,7 @@ function normalizeMenuResponse(
     meta: {
       schemaVersion: MENU_SCHEMA_VERSION,
       snapshotGeneratedAt: new Date().toISOString(),
+      expectedNextRefreshAt: options.expectedNextRefreshAt ?? getDefaultExpectedNextRefreshAt(),
       schoolName: (rawData?.schoolName as string) || SCHOOL_ID,
     },
   };

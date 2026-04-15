@@ -62,6 +62,8 @@ const PWCS_NO_SCHOOL_RANGES: NoSchoolDateRange[] = [
   { start: '2027-06-21' },
 ];
 
+const PWCS_CALENDAR_COVERAGE_END_ISO = '2027-06-21';
+
 function expandDateRange({ start, end = start }: NoSchoolDateRange): string[] {
   const dates: string[] = [];
   const cursor = parseISOAtUtcNoon(start);
@@ -130,5 +132,6 @@ export {
   countPWCSInstructionalWeekdaysBetween,
   getPWCSNoSchoolDatesBetween,
   isPWCSNoSchoolDate,
+  PWCS_CALENDAR_COVERAGE_END_ISO,
   PWCS_NO_SCHOOL_DATES,
 };

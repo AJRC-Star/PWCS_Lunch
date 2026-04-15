@@ -260,6 +260,23 @@ describe('menu-core', () => {
     expect(insertedDay?.sections).toEqual([]);
   });
 
+  it('inserts official no-school dates using the max visible date rather than raw schedule order', () => {
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [
+          makeSchedule('2026-04-22', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-04-20', 'Lunch', PIZZA_ITEMS),
+        ],
+      },
+      { todayISO: '2026-04-20' },
+    );
+
+    const insertedDay = result.days.find((day) => day.iso === '2026-04-21');
+    expect(insertedDay).toBeDefined();
+    expect(insertedDay?.no_school).toBe(true);
+  });
+
   // ── Finding 6: timezone date range for API ─────────────────────────────────
 
   it('filters out weekend days from normalizeMenuResponse output', () => {

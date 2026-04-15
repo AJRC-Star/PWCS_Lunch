@@ -25,6 +25,7 @@ function main(): void {
   console.log('');
   console.log(`- schemaVersion: ${artifact.meta.schemaVersion}`);
   console.log(`- snapshotGeneratedAt: ${artifact.meta.snapshotGeneratedAt}`);
+  console.log(`- expectedNextRefreshAt: ${artifact.meta.expectedNextRefreshAt}`);
   console.log(`- schoolName: ${artifact.meta.schoolName}`);
   console.log(`- visibleDays: ${visibleDays}`);
   console.log(`- noSchoolDays: ${noSchoolDays}`);

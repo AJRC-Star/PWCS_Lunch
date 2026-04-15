@@ -5,9 +5,14 @@ import {
   MENU_SCHEMA_VERSION,
   SCHOOL_ID,
 } from '../shared/menu-core.js';
+import {
+  isPastExpectedRefresh,
+  MENU_CACHE_SEMANTIC_VERSION,
+  validateMenuArtifact,
+} from '../shared/menu-contract.js';
 import type { MenuData } from './types';
 
-const CACHE_KEY = `bms_lunch_cache_v${MENU_SCHEMA_VERSION}`;
+const CACHE_KEY = `bms_lunch_cache_v${MENU_CACHE_SEMANTIC_VERSION}`;
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 const SNAPSHOT_STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000; // weekly schedule SLA
 const INVALID_SNAPSHOT_MESSAGE = 'Menu snapshot is unavailable right now. Showing the last known good menu.';
@@ -94,8 +99,12 @@ function finalizeMenuData(
 ): MenuData {
   const visibleDays = normalizeVisibleDays(data.days);
   const snapshotGeneratedAt = overrides?.snapshotGeneratedAt ?? data.meta.snapshotGeneratedAt;
+  const expectedNextRefreshAt = overrides?.expectedNextRefreshAt ?? data.meta.expectedNextRefreshAt;
   const clientFetchedAt = overrides?.clientFetchedAt ?? data.meta.clientFetchedAt;
-  const isStale = overrides?.isStale ?? isSnapshotStale(snapshotGeneratedAt, clientFetchedAt);
+  const isStale = overrides?.isStale ??
+    (expectedNextRefreshAt && isPastExpectedRefresh(expectedNextRefreshAt)
+      ? true
+      : isSnapshotStale(snapshotGeneratedAt, clientFetchedAt));
 
   return {
     ...data,
@@ -105,6 +114,7 @@ function finalizeMenuData(
       ...overrides,
       schemaVersion: MENU_SCHEMA_VERSION,
       snapshotGeneratedAt,
+      expectedNextRefreshAt,
       clientFetchedAt,
       isStale,
     },
@@ -151,7 +161,7 @@ function loadCache(): CacheEntry | null {
     if (
       !parsed ||
       typeof parsed !== 'object' ||
-      parsed.version !== MENU_SCHEMA_VERSION ||
+      parsed.version !== MENU_CACHE_SEMANTIC_VERSION ||
       typeof parsed.fetchedAt !== 'number' ||
       !parsed.data
     ) {
@@ -167,7 +177,7 @@ function loadCache(): CacheEntry | null {
 function saveCache(data: MenuData): number {
   const fetchedAt = Date.now();
   const entry: CacheEntry = {
-    version: MENU_SCHEMA_VERSION,
+    version: MENU_CACHE_SEMANTIC_VERSION,
     data: finalizeMenuData(data, { clientFetchedAt: fetchedAt }),
     fetchedAt,
   };
@@ -190,28 +200,11 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
     }
     const data = await response.json() as Record<string, unknown>;
 
-    if (data.days && Array.isArray(data.days) && data.meta) {
-      const sourceMeta = data.meta as Record<string, unknown>;
-      if (typeof sourceMeta.schemaVersion !== 'number') {
-        throw new SnapshotValidationError(
-          'invalid_artifact',
-          'Published menu snapshot is missing its schema version.',
-        );
-      }
-      if (sourceMeta.schemaVersion !== MENU_SCHEMA_VERSION) {
-        throw new SnapshotValidationError(
-          'invalid_artifact',
-          `Unsupported menu schema version: ${sourceMeta.schemaVersion}`,
-        );
-      }
-      if (typeof sourceMeta.snapshotGeneratedAt !== 'string') {
-        throw new SnapshotValidationError(
-          'invalid_artifact',
-          'Published menu snapshot is missing snapshotGeneratedAt.',
-        );
-      }
+    try {
+      const artifact = validateMenuArtifact(data);
+      const sourceMeta = artifact.meta;
       return finalizeMenuData({
-        days: (data.days as MenuData['days']).map((day) => ({
+        days: (artifact.days as MenuData['days']).map((day) => ({
           ...day,
         })),
         meta: {
@@ -219,17 +212,20 @@ async function fetchData(signal?: AbortSignal, cacheBustKey?: string): Promise<M
           source: 'artifact',
           lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           snapshotGeneratedAt: sourceMeta.snapshotGeneratedAt,
+          expectedNextRefreshAt: sourceMeta.expectedNextRefreshAt,
           isOffline: false,
           isPreview: false,
           schoolName: (typeof sourceMeta.schoolName === 'string' ? sourceMeta.schoolName : null) ?? SCHOOL_ID,
         },
       });
+    } catch (validationError) {
+      throw new SnapshotValidationError(
+        'invalid_artifact',
+        validationError instanceof Error
+          ? validationError.message
+          : 'Published menu snapshot failed semantic validation.',
+      );
     }
-
-    throw new SnapshotValidationError(
-      'invalid_artifact',
-      'Published menu snapshot is not in the normalized schema.',
-    );
   } catch (error) {
     if (isAbortError(error)) throw error;
     if (isSnapshotValidationError(error) || isSnapshotFetchError(error)) {

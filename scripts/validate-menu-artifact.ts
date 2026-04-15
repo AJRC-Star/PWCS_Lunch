@@ -3,153 +3,21 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import {
-  isPlausibleMenuSnapshot,
-  MENU_SCHEMA_VERSION,
-  SCHOOL_ID,
-  type SharedMenuResponse,
-} from '../shared/menu-core.ts';
-import { getPWCSNoSchoolDatesBetween, isPWCSNoSchoolDate } from '../shared/pwcs-calendar.ts';
+import { validateMenuArtifact } from '../shared/menu-contract.ts';
+import type { SharedMenuResponse } from '../shared/menu-core.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const artifactPath = path.join(__dirname, '../public/menu-data.json');
-
-function assert(condition: unknown, message: string): asserts condition {
-  if (!condition) {
-    throw new Error(message);
-  }
-}
 
 function readArtifact(): SharedMenuResponse {
   const raw = fs.readFileSync(artifactPath, 'utf8');
   return JSON.parse(raw) as SharedMenuResponse;
 }
 
-const REQUIRED_ARTIFACT_ITEM_SECTIONS: Record<string, string> = {
-  'American Cheese Slice': 'Condiments',
-  'Applesauce Cup': 'Fruit',
-  'Crispy Chickpeas, Ranch': 'Sides',
-  'Crispy Chicken Sandwich': 'Entree',
-  'Fruit Juice Cup - Cherry': 'Drink',
-  'Fruit Juice Cup - Strawberry Pomegranate': 'Drink',
-  'Grape Tomatoes': 'Sides',
-  'Hamburger Bun': 'Grains',
-  'Marinara Dipping Sauce': 'Condiments',
-  'Spaghetti & Meat Sauce': 'Entree',
-  'Strawberry Shortcake': 'Dessert',
-};
-
-function validateCuratedCategoryExpectations(data: SharedMenuResponse): void {
-  const placements = new Map<string, { section: string; iso: string }>();
-
-  for (const day of data.days) {
-    for (const section of day.sections) {
-      for (const item of section.items) {
-        placements.set(item, { section: section.title, iso: day.iso });
-      }
-    }
-  }
-
-  for (const [item, expectedSection] of Object.entries(REQUIRED_ARTIFACT_ITEM_SECTIONS)) {
-    const placement = placements.get(item);
-    if (!placement) {
-      continue;
-    }
-    assert(
-      placement.section === expectedSection,
-      `Artifact category drift: "${item}" is in "${placement.section}" on ${placement.iso}, expected "${expectedSection}".`,
-    );
-  }
-}
-
-function validateSectionFamilies(data: SharedMenuResponse): void {
-  for (const day of data.days) {
-    for (const section of day.sections) {
-      for (const item of section.items) {
-        const name = item.toLowerCase();
-
-        if (/\b(juice|milk|water)\b/.test(name)) {
-          assert(section.title === 'Drink', `"${item}" should be in Drink, not ${section.title} (${day.iso}).`);
-        }
-        if ((/\bshortcake\b/.test(name) || /\bcrisp\b/.test(name)) && !/\bcrispy\b/.test(name)) {
-          assert(section.title === 'Dessert', `"${item}" should be in Dessert, not ${section.title} (${day.iso}).`);
-        }
-        if (/\b(applesauce)\b/.test(name)) {
-          assert(section.title === 'Fruit', `"${item}" should be in Fruit, not ${section.title} (${day.iso}).`);
-        }
-        if (/\b(grape tomatoes?|tomatoes?)\b/.test(name)) {
-          assert(section.title !== 'Fruit', `"${item}" should not be in Fruit (${day.iso}).`);
-        }
-        if (/\bchickpeas?\b/.test(name)) {
-          assert(section.title !== 'Condiments', `"${item}" should not be in Condiments (${day.iso}).`);
-        }
-        if (/\b(meat sauce|spaghetti)\b/.test(name)) {
-          assert(section.title === 'Entree', `"${item}" should be in Entree, not ${section.title} (${day.iso}).`);
-        }
-        if (/\b(bun|roll|bagel|biscuit|pita)\b/.test(name) && !/\bsandwich\b/.test(name)) {
-          assert(section.title !== 'Entree', `"${item}" should not be in Entree (${day.iso}).`);
-        }
-      }
-    }
-  }
-}
-
-function validateOfficialNoSchoolDays(data: SharedMenuResponse): void {
-  const daysByIso = new Map(data.days.map((day) => [day.iso, day]));
-  const firstISO = data.days[0]?.iso;
-  const lastISO = data.days[data.days.length - 1]?.iso;
-  if (!firstISO || !lastISO) {
-    return;
-  }
-
-  for (const iso of getPWCSNoSchoolDatesBetween(firstISO, lastISO)) {
-    const day = daysByIso.get(iso);
-    assert(day, `Artifact is missing official no-school date ${iso}.`);
-    assert(day.no_school, `Official no-school date ${iso} must set no_school=true.`);
-    assert(
-      !day.no_information_provided,
-      `Official no-school date ${iso} must not be marked no_information_provided.`,
-    );
-  }
-
-  for (const day of data.days) {
-    if (isPWCSNoSchoolDate(day.iso)) {
-      assert(day.no_school, `Official no-school date ${day.iso} must set no_school=true.`);
-      assert(
-        !day.no_information_provided,
-        `Official no-school date ${day.iso} must not be marked no_information_provided.`,
-      );
-    }
-  }
-}
-
 function main(): void {
   const artifact = readArtifact();
-
-  assert(Array.isArray(artifact.days), 'Artifact is missing a days array.');
-  assert(artifact.meta && typeof artifact.meta === 'object', 'Artifact is missing meta.');
-  assert(
-    artifact.meta.schemaVersion === MENU_SCHEMA_VERSION,
-    `Artifact schemaVersion must equal ${MENU_SCHEMA_VERSION}.`,
-  );
-  assert(
-    typeof artifact.meta.snapshotGeneratedAt === 'string' &&
-      artifact.meta.snapshotGeneratedAt.length > 0,
-    'Artifact is missing snapshotGeneratedAt.',
-  );
-  assert(
-    artifact.meta.schoolName === SCHOOL_ID,
-    `Artifact schoolName must equal ${SCHOOL_ID}.`,
-  );
-  assert(
-    isPlausibleMenuSnapshot(artifact.days),
-    'Artifact failed plausibility validation.',
-  );
-
-  validateCuratedCategoryExpectations(artifact);
-  validateSectionFamilies(artifact);
-  validateOfficialNoSchoolDays(artifact);
+  validateMenuArtifact(artifact);
   console.log(`Artifact validation passed for ${artifactPath}`);
 }
 
