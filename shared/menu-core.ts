@@ -60,14 +60,14 @@ export interface SharedMenuResponse {
 
 // ── Date helpers ──────────────────────────────────────────────────────────────
 
-function getFormatter(): Intl.DateTimeFormat {
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: SCHOOL_TIMEZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-}
+// Module-level singleton: Intl.DateTimeFormat is expensive to construct and
+// safe for concurrent calls, so we reuse a single instance across all callers.
+const schoolDateFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: SCHOOL_TIMEZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
 
 function formatSchoolDate(
   iso: string,
@@ -80,7 +80,7 @@ function formatSchoolDate(
 }
 
 function getTodayISO(): string {
-  const parts = getFormatter().formatToParts(new Date());
+  const parts = schoolDateFormatter.formatToParts(new Date());
   const year = parts.find((part) => part.type === 'year')?.value;
   const month = parts.find((part) => part.type === 'month')?.value;
   const day = parts.find((part) => part.type === 'day')?.value;
@@ -98,6 +98,15 @@ function formatUTCISODate(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+/**
+ * Returns the display cutoff date — the first weekday on or after fromISO.
+ *
+ * IMPORTANT: this function advances past Saturdays (+2→Monday) and Sundays
+ * (+1→Monday) ONLY.  It intentionally does NOT skip PWCS no-school weekdays;
+ * those still appear in the UI as "No school" cards.  If you need the next
+ * *actual instructional* day, use countPWCSInstructionalWeekdaysBetween or
+ * consult isPWCSNoSchoolDate after calling this function.
+ */
 function getNextSchoolDay(fromISO: string): string {
   const date = parseISOAtUtcNoon(fromISO);
   const dayOfWeek = date.getUTCDay();
@@ -151,6 +160,14 @@ function isPlausibleMenuSnapshot(
     return false;
   }
 
+  // Reject if too few visible days — but allow a calendar-justified short week.
+  //
+  // Truth table (minimumDays = 3):
+  //   visibleDays.length >= 3           → outer condition false → pass
+  //   visibleDays.length == 2:
+  //     instructional days in window < 3 → inner OR both false → pass (end-of-year)
+  //     instructional days in window >= 3 → inner right true   → fail (missing data)
+  //   visibleDays.length < 2            → inner left true      → always fail
   if (
     visibleDays.length < minimumDays &&
     (
@@ -191,12 +208,6 @@ function formatMealViewerDate(offsetDays = 0): string {
   return `${month}-${day}-${year}`;
 }
 
-function getDefaultExpectedNextRefreshAt(): string {
-  const generatedAt = new Date();
-  generatedAt.setUTCDate(generatedAt.getUTCDate() + 7);
-  return generatedAt.toISOString();
-}
-
 // ── Menu categorisation ───────────────────────────────────────────────────────
 
 function sectionPriority(title: string): number {
@@ -232,6 +243,12 @@ function uniqueMenuItems(items: string[]): string[] {
   return clean;
 }
 
+// Lowercase name → canonical section overrides applied at normalization time.
+// IMPORTANT: Keep this list in sync with REQUIRED_ARTIFACT_ITEM_SECTIONS in
+// menu-contract.ts, which uses the same item names (title-cased) to validate
+// that the built artifact has placed each item in the expected section.  Adding
+// a new entry here without a matching entry there means the override is applied
+// but never verified in the committed artifact.
 const ITEM_CATEGORY_OVERRIDES: Record<string, string> = {
   'american cheese slice': 'Condiments',
   'applesauce cup': 'Fruit',
@@ -403,7 +420,23 @@ function normalizeMealViewerDay(
 
 function normalizeMenuResponse(
   rawData: Record<string, unknown>,
-  options: { expectedNextRefreshAt?: string; todayISO?: string } = {},
+  options: {
+    /**
+     * The ISO timestamp captured immediately before this normalization call.
+     * Must be provided by the caller so that snapshotGeneratedAt and
+     * expectedNextRefreshAt are derived from the same instant.  Falls back to
+     * new Date().toISOString() only in tests; production callers must always
+     * provide this to keep the two timestamps consistent.
+     */
+    snapshotGeneratedAt?: string;
+    /**
+     * Must be the next Saturday 10:00 UTC computed from snapshotGeneratedAt
+     * via getExpectedNextRefreshAt().  Omitting this in production produces an
+     * artifact whose expectedNextRefreshAt is '' and will fail validateMenuArtifact.
+     */
+    expectedNextRefreshAt?: string;
+    todayISO?: string;
+  } = {},
 ): SharedMenuResponse {
   // Use the true calendar today for the "Today" badge so that on weekends no
   // future day is incorrectly labelled "Today".  Separately, compute the first
@@ -444,8 +477,16 @@ function normalizeMenuResponse(
     days,
     meta: {
       schemaVersion: MENU_SCHEMA_VERSION,
-      snapshotGeneratedAt: new Date().toISOString(),
-      expectedNextRefreshAt: options.expectedNextRefreshAt ?? getDefaultExpectedNextRefreshAt(),
+      // Prefer the caller-supplied timestamp so that snapshotGeneratedAt and
+      // expectedNextRefreshAt are derived from the same instant.  The fallback
+      // is intentionally left for test convenience only; production callers in
+      // fetch-menu.ts always pass this option.
+      snapshotGeneratedAt: options.snapshotGeneratedAt ?? new Date().toISOString(),
+      // '' is intentionally invalid: an artifact without a proper Saturday-
+      // aligned expectedNextRefreshAt will fail validateMenuArtifact, making
+      // the missing option visible immediately rather than silently persisting a
+      // bad value.
+      expectedNextRefreshAt: options.expectedNextRefreshAt ?? '',
       schoolName: (rawData?.schoolName as string) || SCHOOL_ID,
     },
   };

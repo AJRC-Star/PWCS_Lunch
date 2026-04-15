@@ -28,6 +28,12 @@ const VALID_SECTION_TITLES = new Set([
   'Other',
 ]);
 
+// Title-cased item name → expected section, verified in committed artifacts.
+// IMPORTANT: Keep this list in sync with ITEM_CATEGORY_OVERRIDES in
+// menu-core.ts, which uses the same items (lowercase) to assign sections during
+// normalization.  Adding an entry here without a corresponding entry there will
+// cause validation to reject any artifact that contains the item, since it will
+// have been placed in the wrong section by the normalizer.
 const REQUIRED_ARTIFACT_ITEM_SECTIONS: Record<string, string> = {
   'American Cheese Slice': 'Condiments',
   'Applesauce Cup': 'Fruit',

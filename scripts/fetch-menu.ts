@@ -75,9 +75,9 @@ async function main(): Promise<void> {
     const rawData = await fetchWithRetry();
     const snapshotGeneratedAt = new Date().toISOString();
     const normalizedData = normalizeMenuResponse(rawData, {
+      snapshotGeneratedAt,
       expectedNextRefreshAt: getExpectedNextRefreshAt(snapshotGeneratedAt),
     });
-    normalizedData.meta.snapshotGeneratedAt = snapshotGeneratedAt;
     const outputPath = path.join(__dirname, '../public/menu-data.json');
     const previousSnapshot = loadPreviousSnapshot(outputPath);
 

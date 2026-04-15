@@ -13,6 +13,7 @@ import {
 import type { MenuData } from './types';
 
 const CACHE_KEY = `bms_lunch_cache_v${MENU_CACHE_SEMANTIC_VERSION}`;
+const CACHE_KEY_PREFIX = 'bms_lunch_cache_v';
 const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 const SNAPSHOT_STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000; // weekly schedule SLA
 const INVALID_SNAPSHOT_MESSAGE = 'Menu snapshot is unavailable right now. Showing the last known good menu.';
@@ -152,7 +153,30 @@ function buildInvalidSnapshotResult(message: string, cached?: CacheEntry | null)
   };
 }
 
+/**
+ * Remove any localStorage entries whose key matches the cache prefix but
+ * belongs to an older semantic version.  On shared/public devices (school
+ * Chromebooks) stale keys would otherwise accumulate indefinitely.
+ */
+function purgeStaleCacheKeys(): void {
+  try {
+    const keysToDelete: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(CACHE_KEY_PREFIX) && key !== CACHE_KEY) {
+        keysToDelete.push(key);
+      }
+    }
+    for (const key of keysToDelete) {
+      localStorage.removeItem(key);
+    }
+  } catch {
+    // Ignore storage errors during cleanup.
+  }
+}
+
 function loadCache(): CacheEntry | null {
+  purgeStaleCacheKeys();
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     if (!cached) return null;
