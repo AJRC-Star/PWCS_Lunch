@@ -5,7 +5,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import {
   formatMealViewerDate,
-  isPlausibleMenuSnapshot,
   normalizeMenuResponse,
   SCHOOL_ID,
   type SharedMenuResponse,
@@ -86,11 +85,8 @@ async function main(): Promise<void> {
       process.exit(1);
     }
 
-    if (!isPlausibleMenuSnapshot(normalizedData.days, previousSnapshot?.days)) {
-      console.warn('⚠ Normalised snapshot failed plausibility checks — preserving previous artifact.');
-      process.exit(1);
-    }
-
+    // validateMenuArtifact runs isPlausibleMenuSnapshot internally; no need for
+    // a separate pre-flight call.
     validateMenuArtifact(normalizedData, previousSnapshot?.days);
 
     fs.writeFileSync(outputPath, JSON.stringify(normalizedData));

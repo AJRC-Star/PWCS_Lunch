@@ -69,14 +69,23 @@ const schoolDateFormatter = new Intl.DateTimeFormat('en-US', {
   day: '2-digit',
 });
 
+// Lazy cache of formatters keyed by JSON-stringified options.  DayCard and
+// DayTabs call formatSchoolDate with a small fixed set of option shapes
+// (≈4 distinct combinations), so this cache converges quickly and avoids
+// allocating a new Intl.DateTimeFormat on every render cycle.
+const schoolDateFormatterCache = new Map<string, Intl.DateTimeFormat>();
+
 function formatSchoolDate(
   iso: string,
   options: Intl.DateTimeFormatOptions,
 ): string {
-  return new Intl.DateTimeFormat('en-US', {
-    ...options,
-    timeZone: SCHOOL_TIMEZONE,
-  }).format(parseISOAtUtcNoon(iso));
+  const cacheKey = JSON.stringify(options);
+  let formatter = schoolDateFormatterCache.get(cacheKey);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-US', { ...options, timeZone: SCHOOL_TIMEZONE });
+    schoolDateFormatterCache.set(cacheKey, formatter);
+  }
+  return formatter.format(parseISOAtUtcNoon(iso));
 }
 
 function getTodayISO(): string {
