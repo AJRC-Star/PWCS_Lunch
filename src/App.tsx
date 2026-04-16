@@ -81,8 +81,10 @@ function App() {
   const [retrying, setRetrying] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [themePreference, setThemePreference] = useState<ThemePreference>(getInitialThemePreference);
-  // Derive the concrete theme from the same preference: reads localStorage once
-  // via getInitialThemePreference() then converts 'system' to the OS value.
+  // Derive the concrete theme from the stored preference, converting 'system'
+  // to the actual OS value via getSystemTheme().  getInitialThemePreference()
+  // is called a second time here (two localStorage reads on mount) because
+  // useState does not expose its lazy-init result to sibling useState calls.
   const [theme, setTheme] = useState<Theme>(() => getInitialTheme(getInitialThemePreference()));
   const retryControllerRef = useRef<AbortController | null>(null);
 

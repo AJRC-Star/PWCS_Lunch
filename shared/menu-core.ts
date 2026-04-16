@@ -1,6 +1,7 @@
 import {
   countPWCSInstructionalWeekdaysBetween,
   getPWCSNoSchoolDatesBetween,
+  isNearSchoolYearEnd,
   isPWCSNoSchoolDate,
 } from './pwcs-calendar.ts';
 
@@ -69,14 +70,23 @@ const schoolDateFormatter = new Intl.DateTimeFormat('en-US', {
   day: '2-digit',
 });
 
+// Lazy cache of formatters keyed by JSON-stringified options.  DayCard and
+// DayTabs call formatSchoolDate with a small fixed set of option shapes
+// (≈4 distinct combinations), so this cache converges quickly and avoids
+// allocating a new Intl.DateTimeFormat on every render cycle.
+const schoolDateFormatterCache = new Map<string, Intl.DateTimeFormat>();
+
 function formatSchoolDate(
   iso: string,
   options: Intl.DateTimeFormatOptions,
 ): string {
-  return new Intl.DateTimeFormat('en-US', {
-    ...options,
-    timeZone: SCHOOL_TIMEZONE,
-  }).format(parseISOAtUtcNoon(iso));
+  const cacheKey = JSON.stringify(options);
+  let formatter = schoolDateFormatterCache.get(cacheKey);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat('en-US', { ...options, timeZone: SCHOOL_TIMEZONE });
+    schoolDateFormatterCache.set(cacheKey, formatter);
+  }
+  return formatter.format(parseISOAtUtcNoon(iso));
 }
 
 function getTodayISO(): string {
@@ -162,20 +172,29 @@ function isPlausibleMenuSnapshot(
 
   // Reject if too few visible days — but allow a calendar-justified short week.
   //
+  // Uses a forward-looking 14-day horizon rather than the data's own lastVisibleISO
+  // to avoid circular reasoning: checking how many days exist in the fetched range
+  // can't tell us whether MealViewer simply published a short week or truncated data.
+  //
   // Truth table (minimumDays = 3):
   //   visibleDays.length >= 3           → outer condition false → pass
+  //   visibleDays.length < 2            → inner size check true → always fail
   //   visibleDays.length == 2:
-  //     instructional days in window < 3 → inner OR both false → pass (end-of-year)
-  //     instructional days in window >= 3 → inner right true   → fail (missing data)
-  //   visibleDays.length < 2            → inner left true      → always fail
-  if (
-    visibleDays.length < minimumDays &&
-    (
-      visibleDays.length < Math.max(2, minimumDays - 1) ||
-      countPWCSInstructionalWeekdaysBetween(getNextSchoolDay(todayISO), lastVisibleISO) >= minimumDays
-    )
-  ) {
-    return false;
+  //     near school-year end            → year-end exception   → pass
+  //     horizon has < 3 instructional   → inner count false    → pass (genuine short week)
+  //     horizon has >= 3 instructional  → inner count true     → fail (missing data)
+  if (visibleDays.length < minimumDays) {
+    if (visibleDays.length < Math.max(2, minimumDays - 1)) {
+      return false;
+    }
+    if (!isNearSchoolYearEnd(lastVisibleISO)) {
+      const horizonDate = parseISOAtUtcNoon(getNextSchoolDay(todayISO));
+      horizonDate.setUTCDate(horizonDate.getUTCDate() + 13);
+      const horizonISO = formatUTCISODate(horizonDate);
+      if (countPWCSInstructionalWeekdaysBetween(getNextSchoolDay(todayISO), horizonISO) >= minimumDays) {
+        return false;
+      }
+    }
   }
 
   if (!previousDays) {
@@ -504,4 +523,5 @@ export {
   getTodayISO,
   normalizeMealViewerDay,
   normalizeMenuResponse,
+  normalizeVisibleSharedDays,
 };

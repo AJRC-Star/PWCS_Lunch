@@ -1,8 +1,8 @@
 import {
-  getNextSchoolDay,
   getTodayISO,
   isPlausibleMenuSnapshot,
   MENU_SCHEMA_VERSION,
+  normalizeVisibleSharedDays,
   SCHOOL_ID,
 } from '../shared/menu-core.js';
 import {
@@ -14,7 +14,6 @@ import type { MenuData } from './types';
 
 const CACHE_KEY = `bms_lunch_cache_v${MENU_CACHE_SEMANTIC_VERSION}`;
 const CACHE_KEY_PREFIX = 'bms_lunch_cache_v';
-const CACHE_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 const SNAPSHOT_STALE_AFTER_MS = 7 * 24 * 60 * 60 * 1000; // weekly schedule SLA
 const INVALID_SNAPSHOT_MESSAGE = 'Menu snapshot is unavailable right now. Showing the last known good menu.';
 const INVALID_NO_CACHE_MESSAGE = 'Menu snapshot is invalid right now. Please try again later.';
@@ -69,26 +68,12 @@ function getMenuDataUrl(cacheBustKey?: string): string {
   return `${import.meta.env.BASE_URL}menu-data.json?v=${encodeURIComponent(version)}`;
 }
 
-function normalizeVisibleDays(days: MenuData['days'], todayISO = getTodayISO()): MenuData['days'] {
-  const displayFromISO = getNextSchoolDay(todayISO);
-  return days
-    .filter((day) => !day.weekend && day.iso >= displayFromISO)
-    .map((day) => ({
-      ...day,
-      today: day.iso === todayISO,
-    }));
-}
-
-function isSnapshotStale(snapshotGeneratedAt?: string, fallbackFetchedAt?: number): boolean {
+function isSnapshotStale(snapshotGeneratedAt?: string): boolean {
   if (snapshotGeneratedAt) {
     const generatedAt = Date.parse(snapshotGeneratedAt);
     if (Number.isFinite(generatedAt)) {
       return Date.now() - generatedAt > SNAPSHOT_STALE_AFTER_MS;
     }
-  }
-
-  if (typeof fallbackFetchedAt === 'number') {
-    return Date.now() - fallbackFetchedAt > CACHE_TTL_MS;
   }
 
   return false;
@@ -98,14 +83,14 @@ function finalizeMenuData(
   data: MenuData,
   overrides?: Partial<MenuData['meta']>,
 ): MenuData {
-  const visibleDays = normalizeVisibleDays(data.days);
+  const visibleDays = normalizeVisibleSharedDays(data.days);
   const snapshotGeneratedAt = overrides?.snapshotGeneratedAt ?? data.meta.snapshotGeneratedAt;
   const expectedNextRefreshAt = overrides?.expectedNextRefreshAt ?? data.meta.expectedNextRefreshAt;
   const clientFetchedAt = overrides?.clientFetchedAt ?? data.meta.clientFetchedAt;
   const isStale = overrides?.isStale ??
     (expectedNextRefreshAt && isPastExpectedRefresh(expectedNextRefreshAt)
       ? true
-      : isSnapshotStale(snapshotGeneratedAt, clientFetchedAt));
+      : isSnapshotStale(snapshotGeneratedAt));
 
   return {
     ...data,

@@ -9,6 +9,8 @@ describe('api', () => {
   beforeEach(() => {
     const storage = new Map<string, string>();
     vi.stubGlobal('localStorage', {
+      get length() { return storage.size; },
+      key: vi.fn((index: number) => Array.from(storage.keys())[index] ?? null),
       getItem: vi.fn((key: string) => storage.get(key) ?? null),
       setItem: vi.fn((key: string, value: string) => {
         storage.set(key, value);
@@ -483,6 +485,8 @@ describe('api', () => {
     };
 
     vi.stubGlobal('localStorage', {
+      get length() { return 1; },
+      key: vi.fn(() => null),
       getItem: vi.fn(() => JSON.stringify(cachedPayload)),
       setItem: vi.fn(),
       removeItem: vi.fn(),
@@ -490,11 +494,18 @@ describe('api', () => {
     });
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));
 
-    const data = await getFreshData({ cacheBustKey: 'retry' });
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-15T14:00:00.000Z'));
 
-    expect(data.days[0].sections[0].items).toContain('Cached Pizza');
-    expect(data.meta.source).toBe('offline');
-    expect(data.meta.isOffline).toBe(true);
+    try {
+      const data = await getFreshData({ cacheBustKey: 'retry' });
+
+      expect(data.days[0].sections[0].items).toContain('Cached Pizza');
+      expect(data.meta.source).toBe('offline');
+      expect(data.meta.isOffline).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('labels cached last-known-good data distinctly when the published snapshot is unavailable', async () => {
@@ -783,6 +794,22 @@ describe('api', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('removes stale-version cache keys on first load without touching the current key', async () => {
+    // Seed one stale key (v1) and one current key.  The current key stores a
+    // wrong-version payload so loadCache returns null without removing it — this
+    // isolates the purge assertion from the self-healing removeItem that loadCache
+    // performs on corrupt entries.
+    const staleKey = 'bms_lunch_cache_v1';
+    const currentKey = `bms_lunch_cache_v${MENU_CACHE_SEMANTIC_VERSION}`;
+    localStorage.setItem(staleKey, '{}');
+    localStorage.setItem(currentKey, JSON.stringify({ version: 0 })); // wrong version → returns null, no remove
+
+    await getCachedData();
+
+    expect(localStorage.removeItem).toHaveBeenCalledWith(staleKey);
+    expect(localStorage.removeItem).not.toHaveBeenCalledWith(currentKey);
   });
 
   it('labels cached last-known-good data distinctly when the published snapshot is invalid', async () => {

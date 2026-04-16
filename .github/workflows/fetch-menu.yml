@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
@@ -58,6 +59,7 @@ jobs:
           git add public/menu-data.json
           FETCH_TIME=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
           git commit -m "Update menu data via GitHub Actions - $FETCH_TIME"
+          git pull --rebase origin main
           git push
 
       - name: Open issue on failure

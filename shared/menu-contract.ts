@@ -280,8 +280,17 @@ function validateSectionFamilies(data: SharedMenuResponse): void {
 
 function validateOfficialNoSchoolDays(data: SharedMenuResponse): void {
   const daysByIso = new Map(data.days.map((day) => [day.iso, day]));
-  const firstISO = data.days[0]?.iso;
-  const lastISO = data.days[data.days.length - 1]?.iso;
+  // Use reduce rather than data.days[0] / data.days[last] because the artifact
+  // is sorted today-first (the current day floats to index 0), which means
+  // array positions do not reflect chronological order.
+  const firstISO = data.days.reduce<string | undefined>(
+    (min, day) => (min === undefined || day.iso < min ? day.iso : min),
+    undefined,
+  );
+  const lastISO = data.days.reduce<string | undefined>(
+    (max, day) => (max === undefined || day.iso > max ? day.iso : max),
+    undefined,
+  );
   if (!firstISO || !lastISO) {
     return;
   }
