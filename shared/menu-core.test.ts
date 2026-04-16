@@ -344,24 +344,46 @@ describe('menu-core', () => {
     expect(isPlausibleMenuSnapshot(result.days, undefined, '2026-04-13')).toBe(false);
   });
 
-  it('accepts shorter snapshots versus the previous artifact when the current range is still internally plausible', () => {
+  it('accepts a shorter snapshot at year-end versus the previous artifact when the visible range is near the last school day', () => {
+    // Previous artifact had Jun 8-12 (full final week); the replacement has only
+    // Jun 11-12 (Thu+Fri) because MealViewer published a shorter end-of-year view.
+    // isNearSchoolYearEnd('2026-06-12') → true so the forward-looking horizon check
+    // is bypassed and the two-day end-of-year snapshot is accepted.
     const previous = normalizeMenuResponse(
       {
         schoolName: 'TEST',
         menuSchedules: [
-          makeSchedule('2026-04-13', 'Lunch', PIZZA_ITEMS),
-          makeSchedule('2026-04-14', 'Lunch', PIZZA_ITEMS),
-          makeSchedule('2026-04-15', 'Lunch', PIZZA_ITEMS),
-          makeSchedule('2026-04-16', 'Lunch', PIZZA_ITEMS),
-          makeSchedule('2026-04-17', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-06-08', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-06-09', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-06-10', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-06-11', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-06-12', 'Lunch', PIZZA_ITEMS),
         ],
       },
-      { todayISO: '2026-04-13' },
+      { todayISO: '2026-06-11' },
     );
     const next = normalizeMenuResponse(
       {
         schoolName: 'TEST',
         menuSchedules: [
+          makeSchedule('2026-06-11', 'Lunch', PIZZA_ITEMS),
+          makeSchedule('2026-06-12', 'Lunch', PIZZA_ITEMS),
+        ],
+      },
+      { todayISO: '2026-06-11' },
+    );
+
+    expect(isPlausibleMenuSnapshot(next.days, previous.days, '2026-06-11')).toBe(true);
+  });
+
+  it('rejects a Mon+Tue snapshot mid-year when many instructional days remain in the 14-day horizon', () => {
+    // Apr 13 (Mon) + Apr 14 (Tue) with todayISO Apr 13: the 14-day horizon
+    // contains many instructional days, so this is identified as truncated data
+    // rather than a calendar-justified short week.
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [
           makeSchedule('2026-04-13', 'Lunch', PIZZA_ITEMS),
           makeSchedule('2026-04-14', 'Lunch', PIZZA_ITEMS),
         ],
@@ -369,22 +391,7 @@ describe('menu-core', () => {
       { todayISO: '2026-04-13' },
     );
 
-    expect(isPlausibleMenuSnapshot(next.days, previous.days, '2026-04-13')).toBe(true);
-  });
-
-  it('accepts a shorter snapshot when only two school days remain in the visible range', () => {
-    const result = normalizeMenuResponse(
-      {
-        schoolName: 'TEST',
-        menuSchedules: [
-          makeSchedule('2026-04-16', 'Lunch', PIZZA_ITEMS),
-          makeSchedule('2026-04-17', 'Lunch', PIZZA_ITEMS),
-        ],
-      },
-      { todayISO: '2026-04-16' },
-    );
-
-    expect(isPlausibleMenuSnapshot(result.days, undefined, '2026-04-16')).toBe(true);
+    expect(isPlausibleMenuSnapshot(result.days, undefined, '2026-04-13')).toBe(false);
   });
 
   // ── formatMealViewerDate ───────────────────────────────────────────────────

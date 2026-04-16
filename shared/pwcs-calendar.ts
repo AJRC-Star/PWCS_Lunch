@@ -64,6 +64,21 @@ const PWCS_NO_SCHOOL_RANGES: NoSchoolDateRange[] = [
 
 const PWCS_CALENDAR_COVERAGE_END_ISO = '2027-06-21';
 
+// The last instructional day of each covered school year.  Used by
+// isNearSchoolYearEnd to allow short snapshots in the final days of school
+// without triggering the forward-looking plausibility guard.
+const PWCS_SCHOOL_YEAR_LAST_DAYS = ['2026-06-12', '2027-06-17'];
+
+function isNearSchoolYearEnd(iso: string, windowDays = 5): boolean {
+  const date = parseISOAtUtcNoon(iso);
+  return PWCS_SCHOOL_YEAR_LAST_DAYS.some((lastDay) => {
+    const last = parseISOAtUtcNoon(lastDay);
+    const diffMs = last.getTime() - date.getTime();
+    const diffDays = diffMs / (1000 * 60 * 60 * 24);
+    return diffDays >= 0 && diffDays <= windowDays;
+  });
+}
+
 function expandDateRange({ start, end = start }: NoSchoolDateRange): string[] {
   const dates: string[] = [];
   const cursor = parseISOAtUtcNoon(start);
@@ -131,7 +146,9 @@ function countPWCSInstructionalWeekdaysBetween(startISO: string, endISO: string)
 export {
   countPWCSInstructionalWeekdaysBetween,
   getPWCSNoSchoolDatesBetween,
+  isNearSchoolYearEnd,
   isPWCSNoSchoolDate,
   PWCS_CALENDAR_COVERAGE_END_ISO,
   PWCS_NO_SCHOOL_DATES,
+  PWCS_SCHOOL_YEAR_LAST_DAYS,
 };

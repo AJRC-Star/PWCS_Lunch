@@ -31,10 +31,11 @@ export interface MenuData {
     expectedNextRefreshAt?: string;
     /**
      * Unix epoch ms recorded when the browser saved this payload to the local
-     * cache.  Used to enforce the 4-hour TTL and to display "cached X ago".
+     * cache.  Used to determine staleness against the weekly refresh schedule
+     * and to compute the 7-day absolute stale ceiling.
      */
     clientFetchedAt?: number;
-    /** True when the cached entry is older than the 4-hour TTL. */
+    /** True when the cached entry is past the expected weekly refresh time or the 7-day absolute ceiling. */
     isStale?: boolean;
     isOffline: boolean;
     isPreview: boolean;

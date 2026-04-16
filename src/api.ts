@@ -1,8 +1,8 @@
 import {
-  getNextSchoolDay,
   getTodayISO,
   isPlausibleMenuSnapshot,
   MENU_SCHEMA_VERSION,
+  normalizeVisibleSharedDays,
   SCHOOL_ID,
 } from '../shared/menu-core.js';
 import {
@@ -68,16 +68,6 @@ function getMenuDataUrl(cacheBustKey?: string): string {
   return `${import.meta.env.BASE_URL}menu-data.json?v=${encodeURIComponent(version)}`;
 }
 
-function normalizeVisibleDays(days: MenuData['days'], todayISO = getTodayISO()): MenuData['days'] {
-  const displayFromISO = getNextSchoolDay(todayISO);
-  return days
-    .filter((day) => !day.weekend && day.iso >= displayFromISO)
-    .map((day) => ({
-      ...day,
-      today: day.iso === todayISO,
-    }));
-}
-
 function isSnapshotStale(snapshotGeneratedAt?: string): boolean {
   if (snapshotGeneratedAt) {
     const generatedAt = Date.parse(snapshotGeneratedAt);
@@ -93,7 +83,7 @@ function finalizeMenuData(
   data: MenuData,
   overrides?: Partial<MenuData['meta']>,
 ): MenuData {
-  const visibleDays = normalizeVisibleDays(data.days);
+  const visibleDays = normalizeVisibleSharedDays(data.days);
   const snapshotGeneratedAt = overrides?.snapshotGeneratedAt ?? data.meta.snapshotGeneratedAt;
   const expectedNextRefreshAt = overrides?.expectedNextRefreshAt ?? data.meta.expectedNextRefreshAt;
   const clientFetchedAt = overrides?.clientFetchedAt ?? data.meta.clientFetchedAt;
