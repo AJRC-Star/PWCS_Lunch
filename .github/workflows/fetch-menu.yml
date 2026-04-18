@@ -18,6 +18,8 @@ jobs:
     permissions:
       contents: write
       issues: write
+      pages: write
+      id-token: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
@@ -61,6 +63,43 @@ jobs:
           git commit -m "Update menu data via GitHub Actions - $FETCH_TIME"
           git pull --rebase origin main
           git push
+
+      - name: Typecheck updated site
+        if: steps.check-changes.outputs.changed == 'true'
+        run: npm run typecheck
+
+      - name: Test updated site
+        if: steps.check-changes.outputs.changed == 'true'
+        run: npm test
+
+      - name: Build updated site
+        if: steps.check-changes.outputs.changed == 'true'
+        run: npm run build
+
+      - name: Archive GitHub Pages artifact
+        if: steps.check-changes.outputs.changed == 'true'
+        run: |
+          tar \
+            --dereference --hard-dereference \
+            --directory dist \
+            -cvf "$RUNNER_TEMP/artifact.tar" \
+            --exclude=.git \
+            --exclude=.github \
+            .
+
+      - name: Upload GitHub Pages artifact
+        if: steps.check-changes.outputs.changed == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: github-pages
+          path: ${{ runner.temp }}/artifact.tar
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Deploy updated site to GitHub Pages
+        if: steps.check-changes.outputs.changed == 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4
 
       - name: Open issue on failure
         if: failure()
