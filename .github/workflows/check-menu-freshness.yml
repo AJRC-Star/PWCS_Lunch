@@ -2,8 +2,10 @@ name: Check Menu Freshness
 
 on:
   schedule:
-    # Verify the weekly Saturday refresh after the two-hour freshness grace.
-    - cron: '30 12 * * 6'
+    # Verify the weekly Saturday refresh — run at 16:00 UTC to give the
+    # 10:00 UTC fetch workflow a full 6-hour window to complete and for
+    # GitHub Pages to finish deploying before we check freshness.
+    - cron: '0 16 * * 6'
     # Keep a weekday correctness signal visible while students are using it.
     - cron: '0 11 * * 1-5'
   workflow_dispatch:
