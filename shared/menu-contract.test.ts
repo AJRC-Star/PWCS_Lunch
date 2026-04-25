@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MENU_SCHEMA_VERSION, type SharedMenuResponse } from './menu-core.ts';
 import {
   getExpectedNextRefreshAt,
@@ -57,6 +57,17 @@ function makeArtifact(overrides: Partial<SharedMenuResponse> = {}): SharedMenuRe
 }
 
 describe('menu artifact contract', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    // Pin to the fixture's snapshotGeneratedAt so Apr 20-22 days are always
+    // in the future and expectedNextRefreshAt (Apr 25) is always upcoming.
+    vi.setSystemTime(new Date('2026-04-18T10:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('accepts semantically valid artifacts', () => {
     expect(validateMenuArtifact(makeArtifact()).days).toHaveLength(3);
   });
