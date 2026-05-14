@@ -26,3 +26,7 @@ dist-ssr
 # Deployment
 .env.local
 .env
+
+# Repository-local Codex memory
+memory/
+knowledge-base/

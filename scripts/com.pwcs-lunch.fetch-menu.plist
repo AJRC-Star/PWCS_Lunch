@@ -8,7 +8,7 @@
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
-        <string>/Users/ajstaranowicz/PWCS_Lunch/scripts/local-fetch.sh</string>
+        <string>/Users/ajstaranowicz/Library/Mobile Documents/com~apple~CloudDocs/Codex/PWCS Lunch/scripts/local-fetch.sh</string>
     </array>
 
     <!-- Run every Saturday at 06:00 local time (= 10:00 UTC during EDT) -->
@@ -23,9 +23,9 @@
     </dict>
 
     <key>StandardOutPath</key>
-    <string>/Users/ajstaranowicz/PWCS_Lunch/logs/fetch.log</string>
+    <string>/Users/ajstaranowicz/Library/Mobile Documents/com~apple~CloudDocs/Codex/PWCS Lunch/logs/fetch.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/ajstaranowicz/PWCS_Lunch/logs/fetch-error.log</string>
+    <string>/Users/ajstaranowicz/Library/Mobile Documents/com~apple~CloudDocs/Codex/PWCS Lunch/logs/fetch-error.log</string>
 
     <!-- Run missed jobs when the Mac wakes up after the scheduled time -->
     <key>RunAtLoad</key>

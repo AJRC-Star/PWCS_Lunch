@@ -21,7 +21,7 @@ A mobile-first web app that displays the school lunch menu for Benton Middle Sch
 - **TypeScript** — type safety (covers `src/`, `shared/`, and `scripts/`)
 - **Vite** — build tool and dev server
 - **CSS3** — fluid sizing with `clamp()`, `dvh`, and CSS Grid/Flexbox
-- **GitHub Actions + Pages** — production deployment
+- **GitHub Actions + Pages** — CI and production deployment
 
 ## API
 
@@ -57,11 +57,11 @@ npm run validate:artifact # validate the committed menu-data.json against curren
 npm run build     # build for production → dist/
 ```
 
-Requires Node.js 20.19+ locally. GitHub Actions runs Node.js 22.
+Requires Node.js 22 locally to match GitHub Actions.
 
-Deployment is automated via GitHub Actions:
-- **Menu data:** `scripts/fetch-menu.ts` runs weekly on Saturday at 10:00 UTC, fetches the latest data, validates the regenerated artifact, writes a GitHub Actions summary with range/count health details, and pushes to `main`
-- **Failures:** If menu ingestion breaks or a new snapshot fails plausibility checks, the scheduled workflow fails so the issue is visible in GitHub Actions
+Deployment is automated via GitHub Actions, while menu refresh runs locally:
+- **Menu data:** A weekly Codex automation runs `scripts/local-fetch.sh` on Saturday at 06:00 America/New_York. The script pulls `origin/main`, fetches the latest MealViewer data from the local network, commits `public/menu-data.json` only when it changes, and pushes to `main`.
+- **Manual fallback:** `.github/workflows/fetch-menu.yml` keeps a manual GitHub Actions dispatch for testing or emergency refreshes, but its schedule is disabled because MealViewer blocks GitHub-hosted runner IPs.
 - **CI:** Pushes to `main` and pull requests run install, typecheck, tests, and build
 - **Site deployment:** validated `main` commits are deployed by the GitHub Pages Actions artifact flow
 
@@ -82,7 +82,8 @@ src/
 shared/
   menu-core.ts            # Shared normalization logic (used by app and scripts)
 scripts/
-  fetch-menu.ts           # GitHub Actions menu fetcher
+  fetch-menu.ts           # MealViewer fetch and artifact generation
+  local-fetch.sh          # Local weekly refresh wrapper
 ```
 
 ## Browser Support

@@ -15,7 +15,8 @@ if [ -s "$HOME/.nvm/nvm.sh" ]; then
   source "$HOME/.nvm/nvm.sh"
 fi
 
-PROJECT="$HOME/PWCS_Lunch"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT="$(cd "$SCRIPT_DIR/.." && pwd)"
 LOG_DIR="$PROJECT/logs"
 mkdir -p "$LOG_DIR"
 

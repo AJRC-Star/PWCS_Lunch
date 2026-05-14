@@ -2,8 +2,8 @@ name: Fetch Menu Data
 
 on:
   # Schedule disabled: MealViewer blocks GitHub Actions runner IPs.
-  # Menu data is refreshed weekly by scripts/local-fetch.sh running on a
-  # local Mac via launchd (see scripts/com.pwcs-lunch.fetch-menu.plist).
+  # Menu data is refreshed weekly by a Codex local automation running
+  # scripts/local-fetch.sh from the user's Mac.
   # Manual dispatch remains available for testing or emergency refreshes.
   workflow_dispatch:
 
