@@ -223,6 +223,17 @@ main {
   margin-bottom: 4px;
 }
 
+.day-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.day-title-block {
+  min-width: 0;
+}
+
 .day-weekday {
   font-size: clamp(10px, 2.5vw, 11px);
   font-weight: 800;
@@ -241,6 +252,39 @@ main {
   margin: 0 0 4px;
   color: var(--text);
   display: block;
+}
+
+.school-countdown {
+  flex-shrink: 0;
+  min-width: 92px;
+  margin-top: 2px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--c) 35%, var(--line));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--c) 9%, var(--surface));
+  color: var(--text);
+  text-align: right;
+}
+
+.school-countdown-label,
+.school-countdown-unit {
+  display: block;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.school-countdown-value {
+  display: block;
+  color: var(--c);
+  font-size: clamp(21px, 6vw, 28px);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 0.95;
+  margin: 2px 0;
 }
 
 /* ── Entree block ── */
@@ -417,6 +461,30 @@ main {
 @keyframes shimmer {
   from { background-position: 200% 0; }
   to   { background-position: -200% 0; }
+}
+
+@media (max-width: 360px) {
+  .day-head {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .school-countdown {
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: baseline;
+    gap: 6px;
+    text-align: left;
+  }
+
+  .school-countdown-label,
+  .school-countdown-unit,
+  .school-countdown-value {
+    display: inline;
+    margin: 0;
+  }
 }
 
 /* ── Reduced motion ── */
