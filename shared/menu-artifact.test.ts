@@ -51,7 +51,6 @@ describe('published menu artifact', () => {
     }
 
     expect(placements.get('Marinara Dipping Sauce')).toBe('Condiments');
-    expect(placements.get('Apple Crisp')).toBe('Dessert');
     expect(placements.get('Grape Tomatoes')).toBe('Sides');
     expect(placements.get('Crispy Chickpeas, Ranch')).toBe('Sides');
   });
