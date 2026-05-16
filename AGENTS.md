@@ -11,6 +11,7 @@ For broader shared context, see:
 - `docs/codex/workflows.md`
 - `docs/codex/codex-app.md`
 - `docs/codex/config-recommendations.md`
+- `docs/codex/automations.md`
 
 ## Instruction Priority
 
@@ -65,14 +66,16 @@ Before finishing code changes, run the smallest relevant checks first, then broa
 
 Known commands:
 
-- Install: `npm install`
-- Dev server: `npm run dev`
-- Typecheck: `npm run typecheck`
-- Test: `npm test`
-- Validate menu artifact: `npm run validate:artifact`
-- Check artifact freshness: `npm run check:artifact-freshness`
-- Build: `npm run build`
-- Preview production build: `npm run preview`
+| Check | Command | When to run |
+|---|---|---|
+| Install | `npm install` | When dependencies are missing or lockfile changes need validation. |
+| Dev server | `npm run dev` | For local frontend development and browser verification. |
+| Typecheck | `npm run typecheck` | Before completing TypeScript or script changes. |
+| Test | `npm test` | Before completing behavior, contract, or UI changes. |
+| Validate menu artifact | `npm run validate:artifact` | When menu data, normalization, contracts, or artifact rules change. |
+| Check artifact freshness | `npm run check:artifact-freshness` | When refresh workflows or freshness rules change. |
+| Build | `npm run build` | Before deploy-sensitive or frontend production changes. |
+| Preview | `npm run preview` | To inspect production output after `npm run build`. |
 
 Run `npm run validate:artifact` when menu data, normalization, or artifact rules change.
 Run `npm run build` before deploy-sensitive or frontend changes.
@@ -97,6 +100,7 @@ When durable shared project knowledge changes, update the appropriate checked-in
 - `docs/codex/decisions.md` for durable decisions and rationale.
 - `docs/codex/workflows.md` for repeated repository workflows.
 - `docs/codex/codex-app.md` for Codex app local workflow, actions, worktree, and automation notes.
+- `docs/codex/automations.md` for active or candidate Codex automations and safeguards.
 
 Do not update docs for temporary implementation details.
 

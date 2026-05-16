@@ -1,6 +1,6 @@
-# Decisions
+# Codex-Relevant Project Decisions
 
-Durable project decisions and rationale.
+Record only durable decisions that future Codex work should know.
 
 ## Entry Template
 
@@ -46,6 +46,10 @@ Durable project decisions and rationale.
 - **Scope:** Area-specific
 - **Related files:** `public/menu-data.json`, `src/api.ts`, `scripts/fetch-menu.ts`, `scripts/validate-menu-artifact.ts`
 
+## Decision Criteria
+
+Add a decision here only when it changes future implementation, verification, architecture, or workflow choices. Do not record ephemeral project-management notes.
+
 ## Last Reviewed
 
-2026-05-14
+2026-05-16

@@ -1,23 +1,49 @@
 # Codex Prompt Template
 
-Use this template for high-quality Codex tasks.
+Use this template for larger Codex tasks.
 
-```text
-Goal:
-- What should change or be built?
+## Goal
 
-Context:
-- Relevant files, folders, docs, screenshots, errors, logs, or examples.
+What should Codex accomplish?
 
-Constraints:
-- Architecture, compatibility, style, security, performance, dependencies, or product requirements.
+## Context
 
-Done when:
+Relevant files, docs, issues, PRs, screenshots, errors, logs, examples, or deployment links.
+
+## Scope
+
+In scope:
+
+- TODO
+
+Out of scope:
+
+- TODO
+
+## Constraints
+
+- TODO: architecture, compatibility, UI, data, security, performance, dependencies, or deployment requirements.
+
+## Verification
+
+Run:
+
+- TODO
+
+Also verify:
+
+- TODO
+
+## Done When
+
 - Tests/checks pass.
 - User-visible behavior is correct.
 - Docs are updated if needed.
 - Diff is focused and reviewable.
-```
+
+## Risks / Watchouts
+
+- TODO
 
 ## For Complex Work
 

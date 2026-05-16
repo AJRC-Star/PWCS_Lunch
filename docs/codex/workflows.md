@@ -1,6 +1,14 @@
-# Workflows
+# Codex Workflows
 
 Repeated repository workflows that Codex should know.
+
+## Workflow Maturity Ladder
+
+1. Manual prompt: use for one-off or exploratory work.
+2. Documented workflow: add here after the workflow proves useful more than once.
+3. App action: use for repeated commands such as dev server, test, typecheck, build, and artifact validation.
+4. Skill: use when a workflow needs reusable instructions, references, scripts, or decision logic.
+5. Automation: use only after the workflow is stable, safe to run unattended, and produces reviewable results.
 
 ## Development Loop
 
@@ -53,6 +61,28 @@ npm run validate:artifact
 
 The manual GitHub Actions fetch workflow remains available for dispatch/testing, but its schedule is intentionally disabled.
 
+## Recommended App Actions
+
+| Action | Command | Purpose | When to use |
+|---|---|---|---|
+| Dev server | `npm run dev` | Start Vite locally. | Frontend implementation and browser verification. |
+| Typecheck | `npm run typecheck` | Check app, shared code, and scripts. | TypeScript and script changes. |
+| Test | `npm test` | Run Vitest regression tests. | Behavior and UI changes. |
+| Validate artifact | `npm run validate:artifact` | Validate the committed menu artifact. | Menu data, normalization, contract, or refresh changes. |
+| Build | `npm run build` | Generate icons, compile, and build production output. | Deploy-sensitive frontend changes. |
+
+## Skill Candidates
+
+| Candidate | Purpose | Trigger phrasing | Status |
+|---|---|---|---|
+| Menu artifact triage | Diagnose menu artifact validation or freshness failures. | "Fix menu artifact failure" or "why did refresh fail?" | Proposed; keep as documented workflow until repeated further. |
+
+Only create a skill after the workflow is stable and repeated enough to justify reusable instructions or scripts.
+
+## Automation Candidates
+
+See `docs/codex/automations.md` for the active weekly menu refresh automation and candidate automations.
+
 ## Documentation Updates
 
 Update docs when behavior, commands, architecture, setup, workflows, or user-facing behavior changes.
@@ -69,4 +99,4 @@ Do not update docs for temporary implementation details.
 
 ## Last Reviewed
 
-2026-05-14
+2026-05-16

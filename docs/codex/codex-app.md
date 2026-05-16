@@ -1,8 +1,18 @@
-# Codex App Notes
+# Codex App Workflow
 
 Repository-specific guidance for using the Codex app.
 
-## Local vs Worktree
+## Project Mapping
+
+Use the narrowest Codex app project root that still contains the app, scripts, shared code, workflows, and docs.
+
+| Codex app project | Folder | Use case |
+|---|---|---|
+| PWCS Lunch | `/Users/ajstaranowicz/Library/Mobile Documents/com~apple~CloudDocs/Codex/PWCS Lunch` | Normal local development, menu refresh, verification, and GitHub Pages work. |
+
+Do not trust broad parent folders such as the home directory, `~/Documents`, or all of iCloud Drive for this repo.
+
+## Thread Modes
 
 Use Local mode when:
 
@@ -19,6 +29,19 @@ Use Worktree mode when:
 - The change might be risky or large.
 - The task is suitable for isolated review.
 
+Use Cloud mode only when the repo and environment are intentionally prepared for remote execution and no local-only network, browser, credential, or machine state is needed. Cloud mode is a poor fit for the normal MealViewer refresh path.
+
+## Worktrees
+
+Worktrees keep parallel code changes isolated. Prefer them for risky work, experiments, background automation, or large changes that should not touch a dirty local checkout.
+
+Before merging or handing work back:
+
+- Inspect the full diff.
+- Run relevant checks.
+- Remove unrelated generated files.
+- Confirm changes do not overwrite user work.
+
 ## Local Environments and Actions
 
 Recommended Codex app actions:
@@ -34,6 +57,19 @@ Recommended Codex app actions:
 | Preview | `npm run preview` | Preview production output after build. |
 
 Configure these through the Codex app Local Environments settings. Check in generated `.codex` local-environment config only if it is safe and useful for collaborators.
+
+## In-App Browser
+
+Use the in-app browser for:
+
+- Local development servers.
+- GitHub Pages public production checks.
+- Public pages that do not require sign-in.
+- Rendered UI inspection and visual comments.
+
+Use Chrome or computer use only when signed-in browser state, extensions, existing tabs, or GUI-only behavior are required and the user has approved the relevant site or app access.
+
+Do not use browser or computer-use tools for unrelated personal accounts, sensitive school/family systems, production admin consoles, secrets, or credentials by default.
 
 ## Review Workflow
 
@@ -59,8 +95,8 @@ Guidelines:
 
 Active repository automation:
 
-- `weekly-pwcs-lunch-menu-refresh`: runs `scripts/local-fetch.sh` on Saturdays at 06:00 America/New_York from the local checkout.
+- `weekly-pwcs-lunch-menu-refresh`: runs `scripts/local-fetch.sh` on Saturdays at 06:00 America/New_York from the local checkout. See `docs/codex/automations.md`.
 
 ## Last Reviewed
 
-2026-05-14
+2026-05-16
