@@ -87,7 +87,6 @@ If a check cannot be run, explain why and provide the exact command the user sho
 
 - Required shared project facts belong in checked-in docs, especially `docs/codex/`.
 - Private cross-thread recall should use Codex native Memories, not repo-local private markdown by default.
-- The legacy local-only `memory/` and `knowledge-base/` folders may remain for historical reference, but they are ignored by git and are not the default memory protocol going forward.
 - Do not create new repo-local private memory folders unless explicitly requested.
 - If native Memories are disabled and durable private context matters, tell the user to enable Memories in Codex settings or set `[features].memories = true` in `~/.codex/config.toml`.
 
