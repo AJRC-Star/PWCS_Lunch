@@ -38,5 +38,4 @@ jobs:
         run: npx tsx scripts/summarize-menu-artifact.ts >> "$GITHUB_STEP_SUMMARY"
 
       - name: Build
-        if: github.event_name == 'pull_request'
         run: npm run build

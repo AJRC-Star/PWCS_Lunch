@@ -24,9 +24,22 @@ echo "=== Menu fetch started $(date -u +'%Y-%m-%d %H:%M:%S UTC') ==="
 
 cd "$PROJECT"
 
-git pull origin main
+CURRENT_BRANCH="$(git branch --show-current)"
+if [ "$CURRENT_BRANCH" != "main" ]; then
+  echo "Refusing to refresh menu data from branch '$CURRENT_BRANCH'; expected main."
+  exit 1
+fi
+
+if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git status --porcelain --untracked-files=normal)" ]; then
+  echo "Refusing to refresh menu data with a dirty working tree."
+  git status --short
+  exit 1
+fi
+
+git pull --ff-only origin main
 
 npx tsx scripts/fetch-menu.ts
+npm run validate:artifact
 
 if git diff --quiet public/menu-data.json; then
   echo "No changes to menu data — skipping commit."

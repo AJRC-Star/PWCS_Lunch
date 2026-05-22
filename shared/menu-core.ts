@@ -170,6 +170,23 @@ function isPlausibleMenuSnapshot(
     return false;
   }
 
+  const expectedVisibleDays = new Set(visibleDays.map((day) => day.iso));
+  const cursor = parseISOAtUtcNoon(getNextSchoolDay(todayISO));
+  const lastVisible = parseISOAtUtcNoon(lastVisibleISO);
+  while (cursor <= lastVisible) {
+    const dayOfWeek = cursor.getUTCDay();
+    const iso = formatUTCISODate(cursor);
+    if (
+      dayOfWeek !== 0 &&
+      dayOfWeek !== 6 &&
+      !isPWCSNoSchoolDate(iso) &&
+      !expectedVisibleDays.has(iso)
+    ) {
+      return false;
+    }
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+
   // Reject if too few visible days — but allow a calendar-justified short week.
   //
   // Uses a forward-looking 14-day horizon rather than the data's own lastVisibleISO

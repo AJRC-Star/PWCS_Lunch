@@ -35,12 +35,12 @@ The app fetches 21 days of data starting from today (using the school's local ti
 
 ## Caching & Data Flow
 
-Menu data is pre-normalized and cached for offline access:
+Menu data is pre-normalized and cached for resilient repeat access:
 
 - **Network available:** Latest data fetched from the published weekly `menu-data.json`
 - **Preview mode:** Shows cached data immediately when available, then re-fetches fresh data in the background. Every read path re-applies the same visible-day filtering so past days never come back after preview mode has already cleaned them up.
 - **Snapshot authority:** The published weekly artifact is the only authoritative menu source in the app. If it is unavailable or invalid, the app keeps showing the last known good published snapshot instead of silently switching users onto a second truth source.
-- **Offline:** Shows cached data with warning banner
+- **Offline after a prior load:** Shows cached data with a warning banner. The app does not currently precache the full app shell for guaranteed cold-start offline launches.
 - **Snapshot validity:** Published artifacts must pass plausibility checks before they replace the last known good menu.
 - **Staleness:** The 4-hour TTL is enforced on the local cache, and the app also warns when the normalized snapshot itself is older than the expected weekly refresh window.
 
@@ -62,7 +62,7 @@ Requires Node.js 22 locally to match GitHub Actions.
 Deployment is automated via GitHub Actions, while menu refresh runs locally:
 - **Menu data:** A weekly Codex automation runs `scripts/local-fetch.sh` on Saturday at 06:00 America/New_York. The script pulls `origin/main`, fetches the latest MealViewer data from the local network, commits `public/menu-data.json` only when it changes, and pushes to `main`.
 - **Manual fallback:** `.github/workflows/fetch-menu.yml` keeps a manual GitHub Actions dispatch for testing or emergency refreshes, but its schedule is disabled because MealViewer blocks GitHub-hosted runner IPs.
-- **CI:** Pushes to `main` and pull requests run install, typecheck, tests, and build
+- **CI:** Pushes to `main` and pull requests run install, typecheck, tests, artifact validation, and build
 - **Site deployment:** validated `main` commits are deployed by the GitHub Pages Actions artifact flow
 
 The deploy base path defaults to `/PWCS_Lunch/` but can be overridden with the `VITE_BASE_PATH` environment variable for alternative deploy targets (custom domains, root paths, etc.).
@@ -88,6 +88,6 @@ scripts/
 
 ## Browser Support
 
-- iOS Safari 13+
+- iOS Safari 15.4+
 - Android Chrome / Firefox
 - All modern desktop browsers (layout is capped at 480px, centered)

@@ -484,4 +484,21 @@ describe('menu-core', () => {
     expect(result.days).toHaveLength(2);
     expect(isPlausibleMenuSnapshot(result.days, undefined, '2026-04-13')).toBe(false);
   });
+
+  it('rejects a sparse snapshot that has enough days but skips intervening instructional weekdays', () => {
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [
+          makeSchedule('2026-04-13', 'Lunch', PIZZA_ITEMS), // Mon
+          makeSchedule('2026-04-20', 'Lunch', PIZZA_ITEMS), // next Mon
+          makeSchedule('2026-04-27', 'Lunch', PIZZA_ITEMS), // next Mon
+        ],
+      },
+      { todayISO: '2026-04-13' },
+    );
+
+    expect(result.days.filter((day) => !day.no_school)).toHaveLength(3);
+    expect(isPlausibleMenuSnapshot(result.days, undefined, '2026-04-13')).toBe(false);
+  });
 });

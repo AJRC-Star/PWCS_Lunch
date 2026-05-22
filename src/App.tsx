@@ -255,7 +255,7 @@ function App() {
   return (
     <div id="app">
       {data?.error && (
-        <div className="error-banner">{data.error}</div>
+        <div className="error-banner" role="alert">{data.error}</div>
       )}
 
       <header>

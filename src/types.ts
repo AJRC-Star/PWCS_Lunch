@@ -1,18 +1,8 @@
-export interface MenuItem {
-  title: string;
-  items: string[];
-  wide?: boolean;
-}
+import type { SharedMenuDay, SharedMenuSection } from '../shared/menu-core.js';
 
-export interface MenuDay {
-  iso: string;
-  dateObj: number;
-  today: boolean;
-  weekend: boolean;
-  no_school: boolean;
-  no_information_provided: boolean;
-  sections: MenuItem[];
-}
+export type MenuItem = SharedMenuSection;
+
+export type MenuDay = SharedMenuDay;
 
 export interface MenuData {
   days: MenuDay[];

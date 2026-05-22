@@ -386,7 +386,7 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByText('Nothing to show')).toBeInTheDocument();
-    expect(screen.getByText(/Published weekly menu snapshot unavailable/i)).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent(/Published weekly menu snapshot unavailable/i);
   });
 
   it('lets the user switch theme manually and persists the choice', async () => {

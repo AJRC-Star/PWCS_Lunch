@@ -17,6 +17,9 @@ env:
 jobs:
   check-menu-freshness:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@v5
@@ -32,3 +35,14 @@ jobs:
 
       - name: Check production artifact freshness
         run: npm run check:artifact-freshness
+
+      - name: Open issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          CHECK_TIME=$(date -u +'%Y-%m-%d %H:%M UTC')
+          gh issue create \
+            --title "Production menu freshness check failed — ${CHECK_TIME}" \
+            --body "The production menu freshness check failed at ${CHECK_TIME}. Students may see stale menu data until this is resolved. Check the [workflow run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details." \
+          || echo "Could not create issue; see workflow logs for failure details."
