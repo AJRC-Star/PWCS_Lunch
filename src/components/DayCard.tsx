@@ -1,13 +1,13 @@
 import React from 'react';
 import type { MenuDay } from '../types';
 import { formatSchoolDate } from '../../shared/menu-core.js';
+import { PWCS_SCHOOL_YEAR_LAST_DAYS } from '../../shared/pwcs-calendar.js';
 
 interface Props {
   day: MenuDay;
 }
 
 const COUNTDOWN_START_ISO = '2026-05-01';
-const LAST_DAY_OF_SCHOOL_ISO = '2026-06-12';
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -31,11 +31,16 @@ function getUtcDay(iso: string): number {
 }
 
 function getSchoolCountdownDays(iso: string): number | null {
-  if (iso < COUNTDOWN_START_ISO || iso > LAST_DAY_OF_SCHOOL_ISO) {
+  const lastDayOfSchool = PWCS_SCHOOL_YEAR_LAST_DAYS.find((lastDay) => {
+    const countdownStart = `${lastDay.slice(0, 4)}-05-01`;
+    return iso >= countdownStart && iso <= lastDay;
+  });
+
+  if (!lastDayOfSchool || iso < COUNTDOWN_START_ISO) {
     return null;
   }
 
-  return Math.max(0, Math.round((getUtcDay(LAST_DAY_OF_SCHOOL_ISO) - getUtcDay(iso)) / MS_PER_DAY));
+  return Math.max(0, Math.round((getUtcDay(lastDayOfSchool) - getUtcDay(iso)) / MS_PER_DAY));
 }
 
 export const DayCard: React.FC<Props> = ({ day }) => {
@@ -108,21 +113,21 @@ export const DayCard: React.FC<Props> = ({ day }) => {
         <div className={`entree-block ${entreeSection.items.length >= 3 ? 'featured' : 'compact'}`}>
           <div className="sec-label">{getCategoryEmoji('Entree')} Entree</div>
           <ul>
-            {entreeSection.items.map((item, idx) => (
-              <li key={idx}>{item}</li>
+            {entreeSection.items.map((item) => (
+              <li key={item}>{item}</li>
             ))}
           </ul>
         </div>
       )}
 
       <div className="sections-rest">
-        {restSections.map((section, idx) => {
+        {restSections.map((section) => {
           return (
-            <div key={idx} className={`section-block ${section.wide ? 'wide' : 'compact'}`}>
+            <div key={section.title} className={`section-block ${section.wide ? 'wide' : 'compact'}`}>
               <div className="sec-label">{getCategoryEmoji(section.title)} {section.title}</div>
               <ul>
-                {section.items.map((item, itemIdx) => (
-                  <li key={itemIdx}>{item}</li>
+                {section.items.map((item) => (
+                  <li key={item}>{item}</li>
                 ))}
               </ul>
             </div>

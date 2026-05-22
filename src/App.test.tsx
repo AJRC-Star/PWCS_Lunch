@@ -327,7 +327,7 @@ describe('App', () => {
 
     render(<App />);
 
-    expect(await screen.findByText('CachedItem')).toBeInTheDocument();
+    expect(await screen.findByText('Pizza')).toBeInTheDocument();
     await screen.findByText(/Showing the last known good menu/i);
     expect(document.querySelector('.caption')?.textContent).toMatch(/Cached published snapshot generated/);
     expect(document.querySelector('.caption')?.textContent).toMatch(/stale/i);

@@ -43,7 +43,7 @@ async function fetchData(): Promise<Record<string, unknown>> {
   try {
     const response = await fetch(url, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { Accept: 'application/json' },
       signal: controller.signal,
     });
 

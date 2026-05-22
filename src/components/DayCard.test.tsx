@@ -36,4 +36,12 @@ describe('DayCard school countdown', () => {
 
     expect(screen.queryByText("School's out in")).not.toBeInTheDocument();
   });
+
+  it('uses the shared PWCS last day for the next covered school year', () => {
+    render(<DayCard day={makeDay({ iso: '2027-06-16' })} />);
+
+    expect(screen.getByText("School's out in")).toBeInTheDocument();
+    expect(screen.getByText('1')).toBeInTheDocument();
+    expect(screen.getByText('day')).toBeInTheDocument();
+  });
 });
