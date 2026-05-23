@@ -71,6 +71,26 @@ describe('menu-core', () => {
     expect(categorizeMealViewerItem({ item_Name: 'Crispy Chickpeas, Ranch', item_Type: 'Condiment' })).toBe('Sides');
   });
 
+  it('normalizes internal whitespace in item names from MealViewer', () => {
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'BENTONMIDDLE',
+        menuSchedules: [
+          makeSchedule('2026-05-26', 'Lunch', [
+            { item_Name: 'Fruit Juice Cup -  Strawberry Pomegranate', item_Type: '' },
+            { item_Name: 'Chicken  Sandwich', item_Type: 'Main' },
+          ]),
+        ],
+      },
+      { todayISO: '2026-05-26' },
+    );
+
+    const items = result.days[0].sections.flatMap((s) => s.items);
+    expect(items).toContain('Fruit Juice Cup - Strawberry Pomegranate');
+    expect(items).toContain('Chicken Sandwich');
+    expect(items.some((i) => /  /.test(i))).toBe(false);
+  });
+
   it('keeps tricky items in the intended sections when MealViewer raw types are misleading', () => {
     const result = normalizeMenuResponse(
       {

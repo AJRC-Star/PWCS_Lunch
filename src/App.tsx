@@ -264,6 +264,7 @@ function App() {
   }, [days.length]);
 
   const handleSelectDay = useCallback((newIndex: number) => {
+    if (newIndex === selectedIndex) return;
     setSwipeDirection(newIndex > selectedIndex ? 'left' : 'right');
     setSelectedIndex(newIndex);
   }, [selectedIndex]);
