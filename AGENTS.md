@@ -9,8 +9,8 @@ For broader shared context, see:
 - `docs/codex/verification.md`
 - `docs/codex/decisions.md`
 - `docs/codex/workflows.md`
-- `docs/codex/codex-app.md`
-- `docs/codex/config-recommendations.md`
+- `docs/codex/platform-workflows.md`
+- `docs/codex/config.md`
 - `docs/codex/automations.md`
 
 ## Instruction Priority
@@ -18,8 +18,9 @@ For broader shared context, see:
 1. Direct user instructions for the current task.
 2. Current repository code and checked-in docs.
 3. This `AGENTS.md` file and any more specific nested `AGENTS.md` / `AGENTS.override.md` files.
-4. Codex native Memories for private preferences and recurring context.
-5. Prior chat context.
+4. Global/personal Codex instructions for communication style, safety defaults, and workflow preferences, unless they conflict with higher-priority repo or task guidance.
+5. Codex native Memories for private preferences and recurring context.
+6. Prior chat context.
 
 If guidance conflicts, explain the conflict and follow the highest-priority source.
 
@@ -51,10 +52,11 @@ If guidance conflicts, explain the conflict and follow the highest-priority sour
 - Do not store secrets, credentials, tokens, private keys, raw transcripts, or sensitive personal data.
 - Treat student, school, and family-related data as sensitive.
 
-## Codex App Workflow
+## Codex Platform Workflow
 
 - Use Local mode when work depends on this checkout, local credentials, a running dev server, browser/session state, or machine-specific context.
 - Use Worktree mode for speculative, risky, large, or parallel changes.
+- Use Codex Web/Cloud only when the repo and environment are intentionally prepared for clean-checkout remote execution.
 - Prefer Handoff when moving work safely between Local and Worktree.
 - Use the review pane before finalizing changes.
 - Stage, commit, or push only when the user asks or the active workflow clearly requires it.
@@ -98,7 +100,8 @@ When durable shared project knowledge changes, update the appropriate checked-in
 - `docs/codex/verification.md` for setup, commands, and verification guidance.
 - `docs/codex/decisions.md` for durable decisions and rationale.
 - `docs/codex/workflows.md` for repeated repository workflows.
-- `docs/codex/codex-app.md` for Codex app local workflow, actions, worktree, and automation notes.
+- `docs/codex/platform-workflows.md` for Codex app, Web/Cloud, CLI, IDE, browser, worktree, and automation notes.
+- `docs/codex/config.md` for repo-specific Codex configuration guidance.
 - `docs/codex/automations.md` for active or candidate Codex automations and safeguards.
 
 Do not update docs for temporary implementation details.

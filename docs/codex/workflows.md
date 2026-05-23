@@ -6,9 +6,10 @@ Repeated repository workflows that Codex should know.
 
 1. Manual prompt: use for one-off or exploratory work.
 2. Documented workflow: add here after the workflow proves useful more than once.
-3. App action: use for repeated commands such as dev server, test, typecheck, build, and artifact validation.
-4. Skill: use when a workflow needs reusable instructions, references, scripts, or decision logic.
-5. Automation: use only after the workflow is stable, safe to run unattended, and produces reviewable results.
+3. App action or CLI command: use for repeated commands such as dev server, test, typecheck, build, and artifact validation.
+4. Subagent/custom-agent workflow: use when repeatable parallel delegation improves quality or speed.
+5. Skill: use when a workflow needs reusable instructions, references, scripts, or decision logic.
+6. Automation: use only after the workflow is stable, safe to run unattended, and produces reviewable results.
 
 ## Development Loop
 
@@ -18,6 +19,8 @@ Repeated repository workflows that Codex should know.
 4. Run broader verification when warranted.
 5. Inspect the diff.
 6. Summarize changes, verification, and residual risk.
+
+For complex or ambiguous Codex setup/doc work, first select the smallest suitable profile and skip optional docs that would be generic boilerplate.
 
 ## Git and Review
 
@@ -71,6 +74,12 @@ The manual GitHub Actions fetch workflow remains available for dispatch/testing,
 | Validate artifact | `npm run validate:artifact` | Validate the committed menu artifact. | Menu data, normalization, contract, or refresh changes. |
 | Build | `npm run build` | Generate icons, compile, and build production output. | Deploy-sensitive frontend changes. |
 
+## Subagent Candidates
+
+| Candidate | Purpose | Trigger phrasing | Status |
+|---|---|---|---|
+| Focused codebase exploration | Answer narrow questions about independent app, shared, script, or workflow areas in parallel. | "Use subagents to investigate" or "parallel review" | Proposed; use only when decomposition clearly helps. |
+
 ## Skill Candidates
 
 | Candidate | Purpose | Trigger phrasing | Status |
@@ -93,10 +102,11 @@ Use:
 - `docs/codex/verification.md` for setup and checks.
 - `docs/codex/decisions.md` for durable decisions and rationale.
 - `docs/codex/workflows.md` for repeated repository workflows.
-- `docs/codex/codex-app.md` for Codex app workflow notes.
+- `docs/codex/platform-workflows.md` for Codex app, Web/Cloud, CLI, IDE, browser, worktree, and automation notes.
+- `docs/codex/config.md` for repo-specific Codex configuration guidance.
 
 Do not update docs for temporary implementation details.
 
 ## Last Reviewed
 
-2026-05-16
+2026-05-22

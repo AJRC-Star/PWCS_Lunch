@@ -28,7 +28,7 @@ Record only durable decisions that future Codex work should know.
 - **Rationale:** This avoids a heavy repo-local private memory framework and keeps startup guidance short.
 - **Status:** Active
 - **Scope:** Repo-wide
-- **Related files:** `AGENTS.md`, `docs/codex/config-recommendations.md`, `.gitignore`
+- **Related files:** `AGENTS.md`, `docs/codex/config.md`, `.gitignore`
 
 ### 2026-05-14 - Run weekly menu refresh as a Codex local automation
 
@@ -52,4 +52,4 @@ Add a decision here only when it changes future implementation, verification, ar
 
 ## Last Reviewed
 
-2026-05-16
+2026-05-22

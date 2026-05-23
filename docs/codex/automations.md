@@ -23,7 +23,9 @@ Automations are for stable, repeatable tasks that are safe to run unattended and
 - Avoid production mutations, secrets, sensitive accounts, or fragile credentials.
 - Prefer read-only or workspace-write sandbox settings unless there is a strong reason otherwise.
 - Keep outputs reviewable with clear changed files, commits, verification, and blockers.
+- Use subagents only when parallelism is necessary and cost/approval behavior is understood.
+- Document automation behavior here only after the workflow has been manually validated.
 
 ## Last Reviewed
 
-2026-05-16
+2026-05-22

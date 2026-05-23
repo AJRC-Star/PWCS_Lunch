@@ -53,6 +53,15 @@ npm run build
 npm run preview
 ```
 
+## Codex Web / Cloud Verification
+
+- Clean-checkout setup command: `npm install`.
+- Expected runtime: Node 22.
+- Agent-phase internet access: keep off unless a task explicitly requires current external data or docs.
+- Local-only limitation: the normal MealViewer refresh path should run locally, not in Cloud, because it depends on local network behavior and the established `scripts/local-fetch.sh` workflow.
+
+Do not assume local-only files, credentials, browser cookies, or dirty worktree state exist in Codex Web/Cloud.
+
 ## CI and Deployment
 
 - **CI provider:** GitHub Actions.
@@ -81,6 +90,7 @@ npm run check:artifact-freshness
 
 - MealViewer fetches can fail from GitHub-hosted runner IPs; prefer the local refresh path for real menu updates.
 - Browser verification depends on a local dev or preview server being available.
+- In this iCloud-backed local checkout, a hung Git or `tsx` command may indicate dataless files; check hydration before assuming the project command itself is broken.
 
 ## When Checks Cannot Run
 
@@ -93,4 +103,4 @@ If a command cannot be run locally, Codex should report:
 
 ## Last Reviewed
 
-2026-05-16
+2026-05-22

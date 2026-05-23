@@ -72,6 +72,7 @@ Menu refresh is intentionally local-network based: MealViewer blocks GitHub-host
 - Do not re-enable scheduled GitHub-hosted MealViewer fetches unless MealViewer runner access is proven reliable.
 - Do not commit generated `dist/`, local logs, environment files, or repo-local private memory folders.
 - Do not add broad Codex trust, hooks, rules, MCP servers, plugins, or automations without a specific reviewed need.
+- Do not add Codex docs that only restate generic platform policy; optional docs should contain repo-specific facts.
 
 ## External Systems
 
@@ -79,7 +80,8 @@ Menu refresh is intentionally local-network based: MealViewer blocks GitHub-host
 - GitHub Actions runs CI, deployment, freshness checks, and manual fetch dispatches.
 - GitHub Pages hosts production.
 - Codex automation `weekly-pwcs-lunch-menu-refresh` runs the local refresh workflow Saturdays at 06:00 America/New_York.
+- Codex Web/Cloud is suitable for clean-checkout code changes, but not for the normal MealViewer refresh path.
 
 ## Last Reviewed
 
-2026-05-16
+2026-05-22
