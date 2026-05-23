@@ -91,6 +91,7 @@ function App() {
   const mainRef = useRef<HTMLElement>(null);
   const selectedIndexRef = useRef(0);
   const daysLengthRef = useRef(0);
+  const autoSelectedRef = useRef(false);
 
   useEffect(() => {
     if (themePreference === 'system') {
@@ -254,6 +255,14 @@ function App() {
     setSelectedIndex((i) => Math.min(i, Math.max(days.length - 1, 0)));
   }, [days.length]);
 
+  // Jump to today's day on first data load
+  useEffect(() => {
+    if (autoSelectedRef.current || days.length === 0) return;
+    autoSelectedRef.current = true;
+    const todayIndex = days.findIndex((d) => d.today);
+    if (todayIndex >= 0) setSelectedIndex(todayIndex);
+  }, [days.length]);
+
   const handleSelectDay = useCallback((newIndex: number) => {
     setSwipeDirection(newIndex > selectedIndex ? 'left' : 'right');
     setSelectedIndex(newIndex);
@@ -319,6 +328,7 @@ function App() {
     };
   }, []); // stable: setState setters never change; current values read via refs
 
+  const allNoSchool = days.length >= 3 && days.every((d) => d.no_school);
   const nextTheme = theme === 'dark' ? 'light' : 'dark';
 
   return (
@@ -352,7 +362,7 @@ function App() {
         </button>
       </header>
 
-      {!loading && days.length > 0 && (
+      {!loading && days.length > 0 && !allNoSchool && (
         <DayTabs
           days={days}
           selectedIndex={selectedIndex}
@@ -362,7 +372,14 @@ function App() {
 
       <main ref={mainRef}>
         {loading && <SkeletonLoader />}
-        {!loading && days.length > 0 && days[selectedIndex] && (
+        {!loading && allNoSchool && (
+          <div className="no-school-week">
+            <span className="no-school-emoji">☀️</span>
+            <h2 className="no-school-title">No School This Week</h2>
+            <p className="sub">Enjoy the break — see you when school's back!</p>
+          </div>
+        )}
+        {!loading && days.length > 0 && !allNoSchool && days[selectedIndex] && (
           <DayCard
             key={selectedIndex}
             day={days[selectedIndex]}
