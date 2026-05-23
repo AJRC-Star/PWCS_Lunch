@@ -11,6 +11,7 @@
     "generate-icons": "node scripts/generate-icons.js",
     "build": "npm run generate-icons && tsc && vite build",
     "test": "vitest run",
+    "test:local-fetch": "bash scripts/local-fetch.test.sh",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.scripts.json --noEmit",
     "validate:artifact": "npx tsx scripts/validate-menu-artifact.ts",
     "check:artifact-freshness": "npx tsx scripts/check-artifact-freshness.ts",
