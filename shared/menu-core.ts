@@ -266,7 +266,7 @@ function uniqueMenuItems(items: string[]): string[] {
   const clean: string[] = [];
 
   for (const item of items || []) {
-    const name = String(item ?? '').trim();
+    const name = String(item ?? '').replace(/\s+/g, ' ').trim();
     if (!name) continue;
 
     const key = name.toLowerCase();
