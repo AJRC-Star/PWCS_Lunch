@@ -143,7 +143,10 @@ export const DayCard: React.FC<Props> = ({ day, direction }) => {
       {dayHead}
 
       {entreeSection && (
-        <div className={`entree-block ${entreeSection.items.length >= 3 ? 'featured' : 'compact'}`}>
+        <div
+          className={`entree-block ${entreeSection.items.length >= 3 ? 'featured' : 'compact'}`}
+          style={{ animationDelay: '0ms' }}
+        >
           <div className="sec-label">{getCategoryEmoji('Entree')} Entree</div>
           <ul>
             {entreeSection.items.map((item) => (
@@ -154,9 +157,13 @@ export const DayCard: React.FC<Props> = ({ day, direction }) => {
       )}
 
       <div className="sections-rest">
-        {restSections.map((section) => {
+        {restSections.map((section, i) => {
           return (
-            <div key={section.title} className={`section-block ${section.wide ? 'wide' : 'compact'}`}>
+            <div
+              key={section.title}
+              className={`section-block ${section.wide ? 'wide' : 'compact'}`}
+              style={{ animationDelay: `${(i + 1) * 55}ms` }}
+            >
               <div className="sec-label">{getCategoryEmoji(section.title)} {section.title}</div>
               <ul>
                 {section.items.map((item) => (
