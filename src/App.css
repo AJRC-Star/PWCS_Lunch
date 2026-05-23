@@ -14,9 +14,6 @@
   --toggle-fg: #ffffff;
   --toggle-shadow: 0 10px 30px rgba(0, 0, 0, 0.18);
   --list-text: rgba(255, 255, 255, 0.75);
-  --aurora-a: #08080f;
-  --aurora-b: #0c1640;
-  --aurora-c: #180b30;
 }
 
 :root[data-theme='light'] {
@@ -33,9 +30,6 @@
   --toggle-fg: #111111;
   --toggle-shadow: 0 10px 30px rgba(59, 130, 246, 0.12);
   --list-text: rgba(0, 0, 0, 0.72);
-  --aurora-a: #f5f5f7;
-  --aurora-b: #e6edff;
-  --aurora-c: #ede8ff;
 }
 
 /* ── Reset ── */
@@ -46,9 +40,7 @@ html, body {
   height: 100vh;
   height: 100dvh;
   overflow: hidden; /* lock the page — no browser scroll */
-  background: linear-gradient(135deg, var(--aurora-a), var(--aurora-b), var(--aurora-c), var(--aurora-a));
-  background-size: 400% 400%;
-  animation: auroraShift 10s ease-in-out infinite;
+  background: var(--bg);
   color: var(--text);
   transition: color 0.4s ease;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
@@ -502,13 +494,6 @@ main {
     display: inline;
     margin: 0;
   }
-}
-
-/* ── Aurora background ── */
-@keyframes auroraShift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
 }
 
 /* ── Smooth theme crossfade ── */
