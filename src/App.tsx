@@ -88,7 +88,9 @@ function App() {
   const [theme, setTheme] = useState<Theme>(() => getInitialTheme(getInitialThemePreference()));
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const retryControllerRef = useRef<AbortController | null>(null);
-  const touchStartXRef = useRef<number | null>(null);
+  const mainRef = useRef<HTMLElement>(null);
+  const selectedIndexRef = useRef(0);
+  const daysLengthRef = useRef(0);
 
   useEffect(() => {
     if (themePreference === 'system') {
@@ -257,21 +259,60 @@ function App() {
     setSelectedIndex(newIndex);
   }, [selectedIndex]);
 
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartXRef.current = e.touches[0].clientX;
-  }, []);
+  // Sync refs so the stable touch-listener effect always reads current values.
+  selectedIndexRef.current = selectedIndex;
+  daysLengthRef.current = days.length;
 
-  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (touchStartXRef.current === null) return;
-    const delta = e.changedTouches[0].clientX - touchStartXRef.current;
-    touchStartXRef.current = null;
-    if (Math.abs(delta) < 40) return;
-    if (delta < 0 && selectedIndex < days.length - 1) {
-      handleSelectDay(selectedIndex + 1);
-    } else if (delta > 0 && selectedIndex > 0) {
-      handleSelectDay(selectedIndex - 1);
-    }
-  }, [selectedIndex, days.length, handleSelectDay]);
+  // Raw DOM listeners with { passive: false } so we can call preventDefault()
+  // on horizontal swipes — required for iOS PWA where the scrollable DayCard
+  // child swallows synthetic React touch events before they reach <main>.
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+
+    let startX = 0;
+    let startY = 0;
+    let isHorizontal: boolean | null = null;
+
+    const onStart = (e: TouchEvent) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      isHorizontal = null;
+    };
+
+    const onMove = (e: TouchEvent) => {
+      if (isHorizontal === null) {
+        const dx = Math.abs(e.touches[0].clientX - startX);
+        const dy = Math.abs(e.touches[0].clientY - startY);
+        if (dx > 6 || dy > 6) isHorizontal = dx > dy;
+      }
+      if (isHorizontal) e.preventDefault();
+    };
+
+    const onEnd = (e: TouchEvent) => {
+      if (!isHorizontal) return;
+      const delta = e.changedTouches[0].clientX - startX;
+      if (Math.abs(delta) < 40) return;
+      const idx = selectedIndexRef.current;
+      const len = daysLengthRef.current;
+      if (delta < 0 && idx < len - 1) {
+        setSwipeDirection('left');
+        setSelectedIndex(idx + 1);
+      } else if (delta > 0 && idx > 0) {
+        setSwipeDirection('right');
+        setSelectedIndex(idx - 1);
+      }
+    };
+
+    el.addEventListener('touchstart', onStart, { passive: true });
+    el.addEventListener('touchmove', onMove, { passive: false });
+    el.addEventListener('touchend', onEnd, { passive: true });
+    return () => {
+      el.removeEventListener('touchstart', onStart);
+      el.removeEventListener('touchmove', onMove);
+      el.removeEventListener('touchend', onEnd);
+    };
+  }, []); // stable: setState setters never change; current values read via refs
 
   const nextTheme = theme === 'dark' ? 'light' : 'dark';
 
@@ -314,7 +355,7 @@ function App() {
         />
       )}
 
-      <main onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+      <main ref={mainRef}>
         {loading && <SkeletonLoader />}
         {!loading && days.length > 0 && days[selectedIndex] && (
           <DayCard

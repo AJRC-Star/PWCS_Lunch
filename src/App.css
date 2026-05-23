@@ -489,6 +489,27 @@ main {
   }
 }
 
+/* ── Section stagger entrance ── */
+.entree-block,
+.section-block {
+  animation: sectionFadeIn 0.3s ease both;
+}
+
+@keyframes sectionFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+/* ── Today tab pulse glow ── */
+.day-chip.today:not(.active) {
+  animation: todayPulse 2.4s ease-in-out infinite;
+}
+
+@keyframes todayPulse {
+  0%, 100% { box-shadow: none; }
+  50%       { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.28), 0 0 14px rgba(59, 130, 246, 0.14); }
+}
+
 /* ── Day card slide transitions ── */
 .day-card.slide-in-left {
   animation: slideInLeft 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
