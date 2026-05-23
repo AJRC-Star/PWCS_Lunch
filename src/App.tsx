@@ -263,24 +263,28 @@ function App() {
   selectedIndexRef.current = selectedIndex;
   daysLengthRef.current = days.length;
 
-  // Raw DOM listeners with { passive: false } so we can call preventDefault()
-  // on horizontal swipes — required for iOS PWA where the scrollable DayCard
-  // child swallows synthetic React touch events before they reach <main>.
+  // Attach swipe listeners to document in capture phase with passive:false on
+  // both touchstart and touchmove. On iOS Safari/PWA, if touchstart is passive
+  // the browser pre-commits to scroll before our touchmove can call
+  // preventDefault() — making the swipe silently fail. Capture phase ensures
+  // we intercept before iOS's internal scroll handler claims the gesture.
   useEffect(() => {
-    const el = mainRef.current;
-    if (!el) return;
-
     let startX = 0;
     let startY = 0;
+    let tracking = false;
     let isHorizontal: boolean | null = null;
 
     const onStart = (e: TouchEvent) => {
+      const mainEl = mainRef.current;
+      if (!mainEl || !mainEl.contains(e.target as Node)) return;
+      tracking = true;
       startX = e.touches[0].clientX;
       startY = e.touches[0].clientY;
       isHorizontal = null;
     };
 
     const onMove = (e: TouchEvent) => {
+      if (!tracking) return;
       if (isHorizontal === null) {
         const dx = Math.abs(e.touches[0].clientX - startX);
         const dy = Math.abs(e.touches[0].clientY - startY);
@@ -290,7 +294,8 @@ function App() {
     };
 
     const onEnd = (e: TouchEvent) => {
-      if (!isHorizontal) return;
+      if (!tracking || !isHorizontal) { tracking = false; return; }
+      tracking = false;
       const delta = e.changedTouches[0].clientX - startX;
       if (Math.abs(delta) < 40) return;
       const idx = selectedIndexRef.current;
@@ -304,13 +309,13 @@ function App() {
       }
     };
 
-    el.addEventListener('touchstart', onStart, { passive: true });
-    el.addEventListener('touchmove', onMove, { passive: false });
-    el.addEventListener('touchend', onEnd, { passive: true });
+    document.addEventListener('touchstart', onStart, { passive: false, capture: true });
+    document.addEventListener('touchmove', onMove, { passive: false, capture: true });
+    document.addEventListener('touchend', onEnd, { passive: true });
     return () => {
-      el.removeEventListener('touchstart', onStart);
-      el.removeEventListener('touchmove', onMove);
-      el.removeEventListener('touchend', onEnd);
+      document.removeEventListener('touchstart', onStart, { capture: true });
+      document.removeEventListener('touchmove', onMove, { capture: true });
+      document.removeEventListener('touchend', onEnd);
     };
   }, []); // stable: setState setters never change; current values read via refs
 
