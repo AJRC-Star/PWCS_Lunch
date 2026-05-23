@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCachedData, getFreshData } from './api';
 import { MENU_SCHEMA_VERSION, SCHOOL_ID, SCHOOL_TIMEZONE } from '../shared/menu-core.js';
 import type { MenuData } from './types';
@@ -86,7 +86,9 @@ function App() {
   // is called a second time here (two localStorage reads on mount) because
   // useState does not expose its lazy-init result to sibling useState calls.
   const [theme, setTheme] = useState<Theme>(() => getInitialTheme(getInitialThemePreference()));
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const retryControllerRef = useRef<AbortController | null>(null);
+  const touchStartXRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (themePreference === 'system') {
@@ -250,6 +252,27 @@ function App() {
     setSelectedIndex((i) => Math.min(i, Math.max(days.length - 1, 0)));
   }, [days.length]);
 
+  const handleSelectDay = useCallback((newIndex: number) => {
+    setSwipeDirection(newIndex > selectedIndex ? 'left' : 'right');
+    setSelectedIndex(newIndex);
+  }, [selectedIndex]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartXRef.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartXRef.current;
+    touchStartXRef.current = null;
+    if (Math.abs(delta) < 40) return;
+    if (delta < 0 && selectedIndex < days.length - 1) {
+      handleSelectDay(selectedIndex + 1);
+    } else if (delta > 0 && selectedIndex > 0) {
+      handleSelectDay(selectedIndex - 1);
+    }
+  }, [selectedIndex, days.length, handleSelectDay]);
+
   const nextTheme = theme === 'dark' ? 'light' : 'dark';
 
   return (
@@ -287,14 +310,18 @@ function App() {
         <DayTabs
           days={days}
           selectedIndex={selectedIndex}
-          onSelect={setSelectedIndex}
+          onSelect={handleSelectDay}
         />
       )}
 
-      <main>
+      <main onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
         {loading && <SkeletonLoader />}
         {!loading && days.length > 0 && days[selectedIndex] && (
-          <DayCard day={days[selectedIndex]} />
+          <DayCard
+            key={selectedIndex}
+            day={days[selectedIndex]}
+            direction={swipeDirection}
+          />
         )}
         {!loading && days.length === 0 && (
           <div className="empty-state">

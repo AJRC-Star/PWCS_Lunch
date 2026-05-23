@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import type { MenuDay } from '../types';
 import { formatSchoolDate } from '../../shared/menu-core.js';
 import { PWCS_SCHOOL_YEAR_LAST_DAYS } from '../../shared/pwcs-calendar.js';
+import { Confetti } from './Confetti';
 
 interface Props {
   day: MenuDay;
+  direction?: 'left' | 'right' | null;
 }
 
 const COUNTDOWN_START_ISO = '2026-05-01';
@@ -43,13 +45,54 @@ function getSchoolCountdownDays(iso: string): number | null {
   return Math.max(0, Math.round((getUtcDay(lastDayOfSchool) - getUtcDay(iso)) / MS_PER_DAY));
 }
 
-export const DayCard: React.FC<Props> = ({ day }) => {
+export const DayCard: React.FC<Props> = ({ day, direction }) => {
   const weekday = formatSchoolDate(day.iso, { weekday: 'long' });
   const shortDate = formatSchoolDate(day.iso, {
     month: 'short',
     day: 'numeric',
   });
   const countdownDays = getSchoolCountdownDays(day.iso);
+
+  // Countdown flip animation
+  const prevCountdown = useRef<number | null | undefined>(undefined);
+  const [isFlipping, setIsFlipping] = useState(false);
+
+  useEffect(() => {
+    if (prevCountdown.current !== undefined && prevCountdown.current !== countdownDays) {
+      setIsFlipping(true);
+      const id = setTimeout(() => setIsFlipping(false), 400);
+      return () => clearTimeout(id);
+    }
+    prevCountdown.current = countdownDays;
+  }, [countdownDays]);
+
+  const slideClass = direction === 'left' ? 'slide-in-left' : direction === 'right' ? 'slide-in-right' : '';
+
+  const isLastDay = countdownDays === 0;
+
+  const countdownWidget = countdownDays !== null && (
+    isLastDay ? (
+      <div
+        className="school-countdown"
+        aria-label="Last day of school!"
+      >
+        <span className="school-countdown-label">Today is</span>
+        <span className="school-countdown-value" style={{ fontSize: 'clamp(15px, 4vw, 20px)' }}>🎉</span>
+        <span className="school-countdown-unit">Last Day!</span>
+      </div>
+    ) : (
+      <div
+        className="school-countdown"
+        aria-label={`${countdownDays} days until the last day of school`}
+      >
+        <span className="school-countdown-label">School's out in</span>
+        <span className={`school-countdown-value${isFlipping ? ' flipping' : ''}`}>{countdownDays}</span>
+        <span className="school-countdown-unit">
+          {countdownDays === 1 ? 'day' : 'days'}
+        </span>
+      </div>
+    )
+  );
 
   const dayHead = (
     <div className="day-head">
@@ -58,26 +101,14 @@ export const DayCard: React.FC<Props> = ({ day }) => {
         <span className="day-weekday">{weekday}</span>
         <span className="day-name">{shortDate}</span>
       </div>
-      {countdownDays !== null && (
-        <div
-          className="school-countdown"
-          aria-label={`${countdownDays} days until the last day of school`}
-        >
-          <span className="school-countdown-label">School's out in</span>
-          <span className="school-countdown-value">{countdownDays}</span>
-          <span className="school-countdown-unit">
-            {countdownDays === 1 ? 'day' : 'days'}
-          </span>
-        </div>
-      )}
+      {countdownWidget}
     </div>
   );
 
-  // Check no_school first: a no-school day always has empty sections, so
-  // checking no_information_provided first would swallow the "No school" UI.
   if (day.no_school) {
     return (
-      <div className="day-card">
+      <div className={`day-card ${slideClass}`}>
+        {isLastDay && <Confetti />}
         {dayHead}
         <div className="empty-state">
           <h2>No school</h2>
@@ -89,7 +120,8 @@ export const DayCard: React.FC<Props> = ({ day }) => {
 
   if (day.no_information_provided) {
     return (
-      <div className="day-card">
+      <div className={`day-card ${slideClass}`}>
+        {isLastDay && <Confetti />}
         {dayHead}
         <div className="empty-state">
           <h2>No menu yet</h2>
@@ -106,7 +138,8 @@ export const DayCard: React.FC<Props> = ({ day }) => {
     : sections.slice();
 
   return (
-    <div className="day-card">
+    <div className={`day-card ${slideClass}`}>
+      {isLastDay && <Confetti />}
       {dayHead}
 
       {entreeSection && (

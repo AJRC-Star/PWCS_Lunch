@@ -489,6 +489,65 @@ main {
   }
 }
 
+/* ── Day card slide transitions ── */
+.day-card.slide-in-left {
+  animation: slideInLeft 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+.day-card.slide-in-right {
+  animation: slideInRight 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(55px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(-55px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+/* ── Countdown flip animation ── */
+.school-countdown {
+  perspective: 300px;
+}
+
+.school-countdown-value.flipping {
+  animation: flipCount 0.38s ease-in-out;
+}
+
+@keyframes flipCount {
+  0%   { transform: rotateX(0deg);   opacity: 1; }
+  40%  { transform: rotateX(90deg);  opacity: 0; }
+  60%  { transform: rotateX(-90deg); opacity: 0; }
+  100% { transform: rotateX(0deg);   opacity: 1; }
+}
+
+/* ── Confetti ── */
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  animation: confettiFall linear forwards;
+}
+
+@keyframes confettiFall {
+  0%   { transform: translateY(0) rotate(0deg);     opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+
 /* ── Reduced motion ── */
 @media (prefers-reduced-motion: reduce) {
   * {
