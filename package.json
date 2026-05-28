@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -27,7 +27,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^22.0.0",
     "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
+    "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^4.2.0",
     "jsdom": "^29.0.2",
     "sharp": "^0.34.5",
