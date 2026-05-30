@@ -521,4 +521,78 @@ describe('menu-core', () => {
     expect(result.days.filter((day) => !day.no_school)).toHaveLength(3);
     expect(isPlausibleMenuSnapshot(result.days, undefined, '2026-04-13')).toBe(false);
   });
+
+  it('accepts a modest increase in no-information days when the majority of days still have data', () => {
+    const buildWeekdaySchedules = (startISO: string, weekdayCount: number) => {
+      const schedules: ReturnType<typeof makeSchedule>[] = [];
+      const cursor = new Date(`${startISO}T12:00:00Z`);
+      while (schedules.length < weekdayCount) {
+        const dayOfWeek = cursor.getUTCDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          const iso = cursor.toISOString().slice(0, 10);
+          schedules.push(makeSchedule(iso, 'Lunch', PIZZA_ITEMS));
+        }
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+      }
+      return schedules;
+    };
+
+    const base = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: buildWeekdaySchedules('2026-04-13', 15),
+      },
+      { todayISO: '2026-04-13' },
+    );
+
+    const next = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: base.days.map((day, index) =>
+          // Turn 4 days into "no_information_provided" by providing empty Lunch blocks.
+          index < 4 ? makeSchedule(day.iso, 'Lunch', []) : makeSchedule(day.iso, 'Lunch', PIZZA_ITEMS),
+        ),
+      },
+      { todayISO: '2026-04-13' },
+    );
+
+    expect(isPlausibleMenuSnapshot(next.days, base.days, '2026-04-13')).toBe(true);
+  });
+
+  it('rejects a large spike in no-information days relative to the previous snapshot', () => {
+    const buildWeekdaySchedules = (startISO: string, weekdayCount: number) => {
+      const schedules: ReturnType<typeof makeSchedule>[] = [];
+      const cursor = new Date(`${startISO}T12:00:00Z`);
+      while (schedules.length < weekdayCount) {
+        const dayOfWeek = cursor.getUTCDay();
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+          const iso = cursor.toISOString().slice(0, 10);
+          schedules.push(makeSchedule(iso, 'Lunch', PIZZA_ITEMS));
+        }
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+      }
+      return schedules;
+    };
+
+    const base = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: buildWeekdaySchedules('2026-04-13', 15),
+      },
+      { todayISO: '2026-04-13' },
+    );
+
+    const next = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: base.days.map((day, index) =>
+          // Turn 6 days into "no_information_provided", which should be treated as implausible.
+          index < 6 ? makeSchedule(day.iso, 'Lunch', []) : makeSchedule(day.iso, 'Lunch', PIZZA_ITEMS),
+        ),
+      },
+      { todayISO: '2026-04-13' },
+    );
+
+    expect(isPlausibleMenuSnapshot(next.days, base.days, '2026-04-13')).toBe(false);
+  });
 });

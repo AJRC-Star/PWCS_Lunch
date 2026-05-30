@@ -221,7 +221,12 @@ function isPlausibleMenuSnapshot(
   const previousVisibleDays = normalizeVisibleSharedDays(previousDays, todayISO);
   const nextNoInfoCount = visibleDays.filter((day) => day.no_information_provided).length;
   const previousNoInfoCount = previousVisibleDays.filter((day) => day.no_information_provided).length;
-  if (nextNoInfoCount > previousNoInfoCount + 2) {
+  // MealViewer sometimes publishes partial weeks where a handful of upcoming
+  // days have no menu items yet.  We want to protect against overwriting a
+  // healthy snapshot with a mostly-empty one, but allow modest, short-term
+  // gaps.
+  const allowedNoInfoIncrease = Math.max(2, Math.floor(visibleDays.length * 0.3));
+  if (nextNoInfoCount > previousNoInfoCount + allowedNoInfoIncrease) {
     return false;
   }
 
