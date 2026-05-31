@@ -12,10 +12,12 @@ type ThemePreference = Theme | 'system';
 
 const THEME_STORAGE_KEY = 'bms-lunch-theme-preference';
 const THEME_META_SELECTOR = 'meta[name="theme-color"]';
+const DATE_QUERY_PARAM = 'date';
 const THEME_COLORS: Record<Theme, string> = {
   dark: '#08080f',
   light: '#f5f5f7',
 };
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 function getSystemTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
@@ -36,15 +38,15 @@ function formatFreshnessLabel(meta: MenuData['meta']): string {
       minute: '2-digit',
       timeZone: SCHOOL_TIMEZONE,
     });
-    const staleWarning = meta.isStale ? ' · cache may be stale' : '';
+    const staleWarning = meta.isStale ? ' · may be stale' : '';
     const prefix = meta.source === 'artifact-cache'
-      ? 'Cached published snapshot generated'
-      : 'Published snapshot generated';
-    return `${prefix} ${date} ${time}${staleWarning}`;
+      ? 'Cached menu updated'
+      : 'Menu updated';
+    return `${prefix} ${date} at ${time}${staleWarning}`;
   }
 
-  const staleWarning = meta.isStale ? ' · cache may be stale' : '';
-  return `Updated ${meta.lastUpdated || '—'}${staleWarning}`;
+  const staleWarning = meta.isStale ? ' · may be stale' : '';
+  return `Menu updated ${meta.lastUpdated || '—'}${staleWarning}`;
 }
 
 function getEmptyStateMessage(data: MenuData | null): string {
@@ -73,6 +75,23 @@ function getInitialThemePreference(): ThemePreference {
 function getInitialTheme(themePreference: ThemePreference): Theme {
   if (typeof window === 'undefined') return 'dark';
   return themePreference === 'system' ? getSystemTheme() : themePreference;
+}
+
+function getRequestedDateFromUrl(): string | null {
+  if (typeof window === 'undefined') return null;
+
+  const requestedDate = new URLSearchParams(window.location.search).get(DATE_QUERY_PARAM);
+  return requestedDate && ISO_DATE_RE.test(requestedDate) ? requestedDate : null;
+}
+
+function replaceSelectedDateInUrl(iso: string): void {
+  if (typeof window === 'undefined') return;
+
+  const url = new URL(window.location.href);
+  if (url.searchParams.get(DATE_QUERY_PARAM) === iso) return;
+
+  url.searchParams.set(DATE_QUERY_PARAM, iso);
+  window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
 function App() {
@@ -259,9 +278,24 @@ function App() {
   useEffect(() => {
     if (autoSelectedRef.current || days.length === 0) return;
     autoSelectedRef.current = true;
+    const requestedDate = getRequestedDateFromUrl();
+    const requestedIndex = requestedDate
+      ? days.findIndex((d) => d.iso === requestedDate)
+      : -1;
+    if (requestedIndex >= 0) {
+      setSelectedIndex(requestedIndex);
+      return;
+    }
+
     const todayIndex = days.findIndex((d) => d.today);
     if (todayIndex >= 0) setSelectedIndex(todayIndex);
   }, [days.length]);
+
+  useEffect(() => {
+    const selectedDay = days[selectedIndex];
+    if (!selectedDay) return;
+    replaceSelectedDateInUrl(selectedDay.iso);
+  }, [days, selectedIndex]);
 
   const handleSelectDay = useCallback((newIndex: number) => {
     if (newIndex === selectedIndex) return;
@@ -346,7 +380,7 @@ function App() {
               {data?.meta ? formatFreshnessLabel(data.meta) : '—'}
             </span>
             {days.length > 0 && (
-              <span className="day-counter">{selectedIndex + 1} / {days.length}</span>
+              <span className="day-counter">Day {selectedIndex + 1} of {days.length}</span>
             )}
           </div>
         </div>

@@ -51,6 +51,32 @@ function makeMenuData(): MenuData {
   };
 }
 
+function makeMultiDayMenuData(): MenuData {
+  return {
+    ...makeMenuData(),
+    days: [
+      {
+        iso: '2026-04-13',
+        dateObj: Date.parse('2026-04-13T12:00:00Z'),
+        today: false,
+        weekend: false,
+        no_school: false,
+        no_information_provided: false,
+        sections: [{ title: 'Entree', items: ['Monday Pizza'], wide: true }],
+      },
+      {
+        iso: '2026-04-14',
+        dateObj: Date.parse('2026-04-14T12:00:00Z'),
+        today: true,
+        weekend: false,
+        no_school: false,
+        no_information_provided: false,
+        sections: [{ title: 'Entree', items: ['Tuesday Pasta'], wide: true }],
+      },
+    ],
+  };
+}
+
 function makeCachedMenuData(): MenuData {
   return {
     days: [
@@ -93,6 +119,7 @@ function makeEmptyPreview(): MenuData {
 
 describe('App', () => {
   beforeEach(() => {
+    window.history.replaceState({}, '', '/PWCS_Lunch/');
     const storage = new Map<string, string>();
     vi.stubGlobal('localStorage', {
       getItem: vi.fn((key: string) => storage.get(key) ?? null),
@@ -277,13 +304,14 @@ describe('App', () => {
     render(<App />);
 
     // Wait until the menu has rendered
-    await screen.findByText(/snapshot generated/i);
+    await screen.findByText(/Menu updated/i);
 
     const caption = document.querySelector('.caption');
     // 2026-04-13T10:00:00.000Z renders in America/New_York as Apr 13 06:00 AM.
     expect(caption?.textContent).toMatch(/Apr 13/);
-    expect(caption?.textContent).toMatch(/Published snapshot generated/);
+    expect(caption?.textContent).toMatch(/Menu updated/);
     expect(caption?.textContent).toMatch(/06:00 AM/);
+    expect(caption?.textContent).not.toMatch(/snapshot/i);
     expect(caption?.textContent).not.toMatch(/stale/i);
   });
 
@@ -329,8 +357,35 @@ describe('App', () => {
 
     expect(await screen.findByText('Pizza')).toBeInTheDocument();
     await screen.findByText(/Showing the last known good menu/i);
-    expect(document.querySelector('.caption')?.textContent).toMatch(/Cached published snapshot generated/);
+    expect(document.querySelector('.caption')?.textContent).toMatch(/Cached menu updated/);
     expect(document.querySelector('.caption')?.textContent).toMatch(/stale/i);
+  });
+
+  it('uses plain language for the day counter', async () => {
+    apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
+    apiMocks.getFreshData.mockResolvedValue(makeMultiDayMenuData());
+
+    render(<App />);
+
+    expect(await screen.findByText('Tuesday Pasta')).toBeInTheDocument();
+    expect(document.querySelector('.day-counter')?.textContent).toBe('Day 2 of 2');
+  });
+
+  it('selects a date from the URL and keeps selected day shareable', async () => {
+    const user = userEvent.setup();
+    window.history.replaceState({}, '', '/PWCS_Lunch/?date=2026-04-13');
+    apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
+    apiMocks.getFreshData.mockResolvedValue(makeMultiDayMenuData());
+
+    render(<App />);
+
+    expect(await screen.findByText('Monday Pizza')).toBeInTheDocument();
+    expect(window.location.search).toBe('?date=2026-04-13');
+
+    await user.click(screen.getByRole('tab', { name: /Tuesday, April 14, today/i }));
+
+    expect(await screen.findByText('Tuesday Pasta')).toBeInTheDocument();
+    expect(window.location.search).toBe('?date=2026-04-14');
   });
 
   // ── Finding 3: no-school card is rendered correctly ───────────────────────

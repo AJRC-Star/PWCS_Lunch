@@ -27,6 +27,19 @@ function getCategoryEmoji(title: string): string {
   return CATEGORY_EMOJI[title] || '🍽️';
 }
 
+function getMenuDayTabId(iso: string): string {
+  return `menu-day-tab-${iso}`;
+}
+
+function getMenuDayPanelId(iso: string): string {
+  return `menu-day-panel-${iso}`;
+}
+
+function getMenuSectionHeadingId(iso: string, title: string): string {
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  return `menu-day-${iso}-${slug}`;
+}
+
 function getUtcDay(iso: string): number {
   const [year, month, day] = iso.split('-').map(Number);
   return Date.UTC(year, month - 1, day);
@@ -69,6 +82,13 @@ export const DayCard: React.FC<Props> = ({ day, direction }) => {
   const slideClass = direction === 'left' ? 'slide-in-left' : direction === 'right' ? 'slide-in-right' : '';
 
   const isLastDay = countdownDays === 0;
+  const panelProps = {
+    'aria-labelledby': getMenuDayTabId(day.iso),
+    className: `day-card ${slideClass}`,
+    id: getMenuDayPanelId(day.iso),
+    role: 'tabpanel',
+    tabIndex: 0,
+  } as const;
 
   const countdownWidget = countdownDays !== null && (
     isLastDay ? (
@@ -96,18 +116,21 @@ export const DayCard: React.FC<Props> = ({ day, direction }) => {
 
   const dayHead = (
     <div className="day-head">
-      <div className="day-title-block">
+      <h2
+        className="day-title-block"
+        aria-label={`${weekday}, ${shortDate}${day.today ? ', Today' : ''}`}
+      >
         {day.today && <span className="today-badge">Today</span>}
         <span className="day-weekday">{weekday}</span>
         <span className="day-name">{shortDate}</span>
-      </div>
+      </h2>
       {countdownWidget}
     </div>
   );
 
   if (day.no_school) {
     return (
-      <div className={`day-card ${slideClass}`}>
+      <div {...panelProps}>
         {isLastDay && <Confetti />}
         {dayHead}
         <div className="empty-state">
@@ -120,12 +143,12 @@ export const DayCard: React.FC<Props> = ({ day, direction }) => {
 
   if (day.no_information_provided) {
     return (
-      <div className={`day-card ${slideClass}`}>
+      <div {...panelProps}>
         {isLastDay && <Confetti />}
         {dayHead}
         <div className="empty-state">
-          <h2>No menu yet</h2>
-          <p className="sub">Check back later today.</p>
+          <h2>Menu not posted yet</h2>
+          <p className="sub">Check back after the next menu update.</p>
         </div>
       </div>
     );
@@ -138,39 +161,46 @@ export const DayCard: React.FC<Props> = ({ day, direction }) => {
     : sections.slice();
 
   return (
-    <div className={`day-card ${slideClass}`}>
+    <div {...panelProps}>
       {isLastDay && <Confetti />}
       {dayHead}
 
       {entreeSection && (
-        <div
+        <section
+          aria-labelledby={getMenuSectionHeadingId(day.iso, entreeSection.title)}
           className={`entree-block ${entreeSection.items.length >= 3 ? 'featured' : 'compact'}`}
           style={{ animationDelay: '0ms' }}
         >
-          <div className="sec-label">{getCategoryEmoji('Entree')} Entree</div>
+          <h3 className="sec-label" id={getMenuSectionHeadingId(day.iso, entreeSection.title)}>
+            <span aria-hidden="true">{getCategoryEmoji('Entree')}</span> Entree
+          </h3>
           <ul>
             {entreeSection.items.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>
-        </div>
+        </section>
       )}
 
       <div className="sections-rest">
         {restSections.map((section, i) => {
+          const sectionHeadingId = getMenuSectionHeadingId(day.iso, section.title);
           return (
-            <div
+            <section
               key={section.title}
+              aria-labelledby={sectionHeadingId}
               className={`section-block ${section.wide ? 'wide' : 'compact'}`}
               style={{ animationDelay: `${(i + 1) * 55}ms` }}
             >
-              <div className="sec-label">{getCategoryEmoji(section.title)} {section.title}</div>
+              <h3 className="sec-label" id={sectionHeadingId}>
+                <span aria-hidden="true">{getCategoryEmoji(section.title)}</span> {section.title}
+              </h3>
               <ul>
                 {section.items.map((item) => (
                   <li key={item}>{item}</li>
                 ))}
               </ul>
-            </div>
+            </section>
           );
         })}
       </div>

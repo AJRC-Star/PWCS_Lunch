@@ -2,7 +2,7 @@
 :root {
   --bg: #08080f;
   --text: #ffffff;
-  --muted: rgba(255, 255, 255, 0.4);
+  --muted: rgba(255, 255, 255, 0.68);
   --line: rgba(255, 255, 255, 0.08);
   --c: #3b82f6;
   --surface: rgba(255, 255, 255, 0.03);
@@ -23,7 +23,7 @@
 :root[data-theme='light'] {
   --bg: #f5f5f7;
   --text: #111111;
-  --muted: rgba(0, 0, 0, 0.45);
+  --muted: rgba(0, 0, 0, 0.64);
   --line: rgba(0, 0, 0, 0.08);
   --surface: rgba(0, 0, 0, 0.02);
   --surface-strong: rgba(255, 255, 255, 0.96);
@@ -90,6 +90,7 @@ header h1 {
   font-size: clamp(14px, 3.8vw, 16px);
   font-weight: 800;
   letter-spacing: -0.5px;
+  text-wrap: balance;
 }
 
 .theme-toggle {
@@ -106,6 +107,13 @@ header h1 {
   justify-content: center;
   cursor: pointer;
   transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.theme-toggle:focus-visible,
+.day-chip:focus-visible,
+.retry-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--c) 68%, var(--text));
+  outline-offset: 3px;
 }
 
 .theme-toggle:hover {
@@ -173,7 +181,8 @@ header h1 {
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+              color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .day-chip.active {
@@ -249,6 +258,8 @@ main {
 
 .day-title-block {
   min-width: 0;
+  margin: 0;
+  text-wrap: balance;
 }
 
 .day-weekday {
@@ -354,13 +365,11 @@ main {
 
 /* ── Section grid — fills remaining card space ── */
 .sections-rest {
-  flex: 1;
-  min-height: 0;
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   grid-auto-flow: dense;
   gap: clamp(8px, 2vw, 14px);
-  overflow: hidden;
 }
 
 .sec-label {

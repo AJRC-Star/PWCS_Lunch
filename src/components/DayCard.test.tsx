@@ -17,6 +17,35 @@ function makeDay(overrides: Partial<MenuDay> = {}): MenuDay {
 }
 
 describe('DayCard school countdown', () => {
+  it('uses semantic headings and a tab panel relationship for a normal menu day', () => {
+    render(<DayCard day={makeDay()} />);
+
+    expect(screen.getByRole('tabpanel')).toHaveAttribute('id', 'menu-day-panel-2026-05-14');
+    expect(screen.getByRole('tabpanel')).toHaveAttribute(
+      'aria-labelledby',
+      'menu-day-tab-2026-05-14',
+    );
+    expect(screen.getByRole('heading', { level: 2, name: /Thursday, May 14/i }))
+      .toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 3, name: /Entree/i })).toBeInTheDocument();
+  });
+
+  it('uses update-based copy when a future menu is not posted yet', () => {
+    render(
+      <DayCard
+        day={makeDay({
+          no_information_provided: true,
+          sections: [],
+        })}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { level: 2, name: /Menu not posted yet/i }))
+      .toBeInTheDocument();
+    expect(screen.getByText(/Check back after the next menu update/i)).toBeInTheDocument();
+    expect(screen.queryByText(/later today/i)).not.toBeInTheDocument();
+  });
+
   it('shows days until the PWCS last day of school during the seasonal window', () => {
     render(<DayCard day={makeDay()} />);
 
