@@ -29,14 +29,19 @@ describe('DayTabs', () => {
     expect(screen.getByRole('tablist', { name: /menu days/i })).toBeInTheDocument();
 
     const selected = screen.getByRole('tab', {
-      name: /Tuesday, May 26, selected, today/i,
+      name: /TUE 26, Tuesday, May 26, selected, today/,
     });
+    expect(selected).toHaveAttribute('aria-label', 'TUE 26, Tuesday, May 26, selected, today');
+    expect(selected).toHaveTextContent('TUE 26');
     expect(selected).toHaveAttribute('type', 'button');
     expect(selected).toHaveAttribute('aria-selected', 'true');
     expect(selected).toHaveAttribute('id', 'menu-day-tab-2026-05-26');
     expect(selected).toHaveAttribute('aria-controls', 'menu-day-panel-2026-05-26');
 
-    expect(screen.getByRole('tab', { name: /Monday, May 25/i })).toHaveAttribute(
+    const monday = screen.getByRole('tab', { name: /MON 25, Monday, May 25/ });
+    expect(monday).toHaveAttribute('aria-label', 'MON 25, Monday, May 25');
+    expect(monday).toHaveTextContent('MON 25');
+    expect(monday).toHaveAttribute(
       'aria-selected',
       'false',
     );
@@ -58,14 +63,14 @@ describe('DayTabs', () => {
       />,
     );
 
-    screen.getByRole('tab', { name: /Tuesday, May 26, selected, today/i }).focus();
+    screen.getByRole('tab', { name: /TUE 26, Tuesday, May 26, selected, today/ }).focus();
 
     await user.keyboard('{ArrowRight}');
     expect(onSelect).toHaveBeenLastCalledWith(2);
-    expect(screen.getByRole('tab', { name: /Wednesday, May 27/i })).toHaveFocus();
+    expect(screen.getByRole('tab', { name: /WED 27, Wednesday, May 27/ })).toHaveFocus();
 
     await user.keyboard('{Home}');
     expect(onSelect).toHaveBeenLastCalledWith(0);
-    expect(screen.getByRole('tab', { name: /Monday, May 25/i })).toHaveFocus();
+    expect(screen.getByRole('tab', { name: /MON 25, Monday, May 25/ })).toHaveFocus();
   });
 });

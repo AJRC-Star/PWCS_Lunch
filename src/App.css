@@ -5,6 +5,9 @@
   --muted: rgba(255, 255, 255, 0.68);
   --line: rgba(255, 255, 255, 0.08);
   --c: #3b82f6;
+  --accent-fill: #2563eb;
+  --accent-fill-text: #ffffff;
+  --accent-text: #60a5fa;
   --surface: rgba(255, 255, 255, 0.03);
   --surface-strong: rgba(255,255,255,0.045);
   --surface-soft: rgba(255,255,255,0.015);
@@ -25,6 +28,7 @@
   --text: #111111;
   --muted: rgba(0, 0, 0, 0.64);
   --line: rgba(0, 0, 0, 0.08);
+  --accent-text: #1d4ed8;
   --surface: rgba(0, 0, 0, 0.02);
   --surface-strong: rgba(255, 255, 255, 0.96);
   --surface-soft: rgba(236, 239, 244, 0.88);
@@ -186,9 +190,9 @@ header h1 {
 }
 
 .day-chip.active {
-  background: var(--c);
-  border-color: var(--c);
-  color: #fff;
+  background: var(--accent-fill);
+  border-color: var(--accent-fill);
+  color: var(--accent-fill-text);
   animation: chipSpring 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -199,7 +203,7 @@ header h1 {
 
 .day-chip.today:not(.active) {
   border-color: var(--c);
-  color: var(--c);
+  color: var(--accent-text);
 }
 
 .chip-weekday {
@@ -267,7 +271,7 @@ main {
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 2px;
-  color: var(--c);
+  color: var(--accent-text);
   display: block;
   margin-bottom: 2px;
 }
@@ -307,7 +311,7 @@ main {
 
 .school-countdown-value {
   display: block;
-  color: var(--c);
+  color: var(--accent-text);
   font-size: clamp(21px, 6vw, 28px);
   font-weight: 900;
   letter-spacing: 0;
@@ -340,7 +344,7 @@ main {
 
 .entree-block .sec-label {
   font-size: clamp(10px, 2.5vw, 11px);
-  color: var(--c);
+  color: var(--accent-text);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -433,8 +437,8 @@ main {
   margin-top: 18px;
   border: 0;
   border-radius: 14px;
-  background: var(--c);
-  color: #fff;
+  background: var(--accent-fill);
+  color: var(--accent-fill-text);
   font-size: 14px;
   font-weight: 800;
   padding: 12px 16px;

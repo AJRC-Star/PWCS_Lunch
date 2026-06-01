@@ -82,7 +82,7 @@ export const DayTabs: React.FC<Props> = ({ days, selectedIndex, onSelect }) => {
       aria-orientation="horizontal"
     >
       {days.map((day, idx) => {
-        const weekday = formatSchoolDate(day.iso, { weekday: 'short' });
+        const weekday = formatSchoolDate(day.iso, { weekday: 'short' }).toLocaleUpperCase('en-US');
         const dayNum = formatSchoolDate(day.iso, { day: 'numeric' });
         const fullDate = formatSchoolDate(day.iso, {
           weekday: 'long',
@@ -90,16 +90,19 @@ export const DayTabs: React.FC<Props> = ({ days, selectedIndex, onSelect }) => {
           day: 'numeric',
         });
         const selected = idx === selectedIndex;
+        const visibleLabel = `${weekday} ${dayNum}`;
         const ariaLabel = [
+          visibleLabel,
           fullDate,
           selected ? 'selected' : null,
           day.today ? 'today' : null,
         ].filter(Boolean).join(', ');
+        const tabId = getMenuDayTabId(day.iso);
 
         return (
           <button
             key={day.iso}
-            id={getMenuDayTabId(day.iso)}
+            id={tabId}
             type="button"
             role="tab"
             aria-selected={selected}
@@ -111,7 +114,7 @@ export const DayTabs: React.FC<Props> = ({ days, selectedIndex, onSelect }) => {
             onClick={() => onSelect(idx)}
             onKeyDown={(event) => handleKeyDown(event, idx)}
           >
-            <span className="chip-weekday">{weekday}</span>
+            <span className="chip-weekday">{weekday}{' '}</span>
             <span className="chip-day">{dayNum}</span>
           </button>
         );

@@ -20,4 +20,15 @@ describe('App layout CSS', () => {
     expect(body).toMatch(/flex\s*:\s*0\s+0\s+auto/);
     expect(body).not.toMatch(/overflow\s*:\s*hidden/);
   });
+
+  it('uses contrast-safe accent tokens for small blue text and filled controls', () => {
+    expect(readRuleBody(':root')).toMatch(/--accent-fill\s*:\s*#2563eb/);
+    expect(readRuleBody(':root')).toMatch(/--accent-fill-text\s*:\s*#ffffff/);
+    expect(readRuleBody(":root[data-theme='light']")).toMatch(/--accent-text\s*:\s*#1d4ed8/);
+
+    expect(readRuleBody('.day-chip.active')).toMatch(/background\s*:\s*var\(--accent-fill\)/);
+    expect(readRuleBody('.day-chip.active')).toMatch(/color\s*:\s*var\(--accent-fill-text\)/);
+    expect(readRuleBody('.day-weekday')).toMatch(/color\s*:\s*var\(--accent-text\)/);
+    expect(readRuleBody('.school-countdown-value')).toMatch(/color\s*:\s*var\(--accent-text\)/);
+  });
 });
