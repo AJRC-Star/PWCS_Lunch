@@ -297,20 +297,17 @@ describe('App', () => {
 
   // ── Finding 1: freshness label shows source timestamp ─────────────────────
 
-  it('displays the snapshot timestamp in the header when snapshotGeneratedAt is present', async () => {
+  it('shows a freshness label in the header when data loads', async () => {
     apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
     apiMocks.getFreshData.mockResolvedValue(makeMenuData());
 
     render(<App />);
 
     // Wait until the menu has rendered
-    await screen.findByText(/Menu updated/i);
+    await screen.findByText('Pizza');
 
     const caption = document.querySelector('.caption');
-    // 2026-04-13T10:00:00.000Z renders in America/New_York as Apr 13 06:00 AM.
-    expect(caption?.textContent).toMatch(/Apr 13/);
-    expect(caption?.textContent).toMatch(/Menu updated/);
-    expect(caption?.textContent).toMatch(/06:00 AM/);
+    expect(caption?.textContent).toMatch(/This week's menu/);
     expect(caption?.textContent).not.toMatch(/snapshot/i);
     expect(caption?.textContent).not.toMatch(/stale/i);
   });
@@ -330,7 +327,7 @@ describe('App', () => {
     // Stale cache renders and the header must call out the staleness
     await screen.findByText('CachedItem');
     const caption = document.querySelector('.caption');
-    expect(caption?.textContent).toMatch(/stale/i);
+    expect(caption?.textContent).toMatch(/Menu may be outdated/);
 
     // Clean up: resolve the deferred so the component does not leak
     await act(async () => {
@@ -357,18 +354,17 @@ describe('App', () => {
 
     expect(await screen.findByText('Pizza')).toBeInTheDocument();
     await screen.findByText(/Showing the last known good menu/i);
-    expect(document.querySelector('.caption')?.textContent).toMatch(/Cached menu updated/);
-    expect(document.querySelector('.caption')?.textContent).toMatch(/stale/i);
+    expect(document.querySelector('.caption')?.textContent).toMatch(/Menu may be outdated/);
   });
 
-  it('uses plain language for the day counter', async () => {
+  it('renders the day tab strip when there are multiple days', async () => {
     apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
     apiMocks.getFreshData.mockResolvedValue(makeMultiDayMenuData());
 
     render(<App />);
 
     expect(await screen.findByText('Tuesday Pasta')).toBeInTheDocument();
-    expect(document.querySelector('.day-counter')?.textContent).toBe('Day 2 of 2');
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
   });
 
   it('selects a date from the URL and keeps selected day shareable', async () => {

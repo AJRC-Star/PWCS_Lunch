@@ -49,28 +49,28 @@ describe('DayCard school countdown', () => {
   it('shows days until the PWCS last day of school during the seasonal window', () => {
     render(<DayCard day={makeDay()} />);
 
-    expect(screen.getByText("School's out in")).toBeInTheDocument();
-    expect(screen.getByText('29')).toBeInTheDocument();
-    expect(screen.getByText('days')).toBeInTheDocument();
+    const countdown = document.querySelector('.school-countdown');
+    expect(countdown).toBeInTheDocument();
+    expect(countdown?.textContent).toMatch(/School ends in 29 days/);
   });
 
   it('hides the countdown before May 2026', () => {
     render(<DayCard day={makeDay({ iso: '2026-04-30' })} />);
 
-    expect(screen.queryByText("School's out in")).not.toBeInTheDocument();
+    expect(document.querySelector('.school-countdown')).not.toBeInTheDocument();
   });
 
   it('hides the countdown after the last day of school', () => {
     render(<DayCard day={makeDay({ iso: '2026-06-13' })} />);
 
-    expect(screen.queryByText("School's out in")).not.toBeInTheDocument();
+    expect(document.querySelector('.school-countdown')).not.toBeInTheDocument();
   });
 
   it('uses the shared PWCS last day for the next covered school year', () => {
     render(<DayCard day={makeDay({ iso: '2027-06-16' })} />);
 
-    expect(screen.getByText("School's out in")).toBeInTheDocument();
-    expect(screen.getByText('1')).toBeInTheDocument();
-    expect(screen.getByText('day')).toBeInTheDocument();
+    const countdown = document.querySelector('.school-countdown');
+    expect(countdown).toBeInTheDocument();
+    expect(countdown?.textContent).toMatch(/School ends in 1 day/);
   });
 });
