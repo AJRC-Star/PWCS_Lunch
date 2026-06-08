@@ -146,13 +146,6 @@ header h1 {
   font-weight: 600;
 }
 
-.day-counter {
-  font-size: 11px;
-  color: var(--muted);
-  font-weight: 700;
-  letter-spacing: 1px;
-  margin-left: auto;
-}
 
 /* ── Day tabs ── */
 .day-tabs {
@@ -193,7 +186,7 @@ header h1 {
   background: var(--accent-fill);
   border-color: var(--accent-fill);
   color: var(--accent-fill-text);
-  animation: chipSpring 0.38s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: chipSpring 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes chipSpring {
@@ -207,10 +200,10 @@ header h1 {
 }
 
 .chip-weekday {
-  font-size: clamp(9px, 2.3vw, 10px);
+  font-size: clamp(0.625rem, 2.3vw, 0.75rem);
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.06em;
 }
 
 .chip-day {
@@ -244,9 +237,9 @@ main {
   display: inline-block;
   background: var(--c);
   color: #000;
-  font-size: 9px;
+  font-size: 0.6875rem;
   font-weight: 900;
-  letter-spacing: 2px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   padding: 3px 10px;
   border-radius: 999px;
@@ -293,7 +286,7 @@ main {
   padding: 8px 10px;
   border: 1px solid color-mix(in srgb, var(--c) 35%, var(--line));
   border-radius: 16px;
-  background: color-mix(in srgb, var(--c) 9%, var(--surface));
+  background: color-mix(in srgb, var(--c) 9%, var(--card-bg));
   color: var(--text);
   text-align: right;
 }
@@ -302,9 +295,9 @@ main {
 .school-countdown-unit {
   display: block;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 0.6875rem;
   font-weight: 800;
-  letter-spacing: 1px;
+  letter-spacing: 0.06em;
   line-height: 1.05;
   text-transform: uppercase;
 }
@@ -326,8 +319,6 @@ main {
   border: 1px solid var(--line);
   border-radius: 18px;
   background: var(--card-bg);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   box-shadow: var(--card-shadow);
 }
 
@@ -392,8 +383,6 @@ main {
   padding: 11px clamp(10px, 2.5vw, 14px);
   border-radius: 16px;
   background: var(--card-bg);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   border: 1px solid var(--line);
   box-shadow: var(--card-shadow);
   min-width: 0;
@@ -576,7 +565,7 @@ header,
 /* ── Section stagger entrance ── */
 .entree-block,
 .section-block {
-  animation: sectionFadeIn 0.3s ease both;
+  animation: sectionFadeIn 0.3s ease forwards;
 }
 
 @keyframes sectionFadeIn {

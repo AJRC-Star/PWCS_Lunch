@@ -374,14 +374,11 @@ function App() {
 
       <header>
         <div className="title">
-          <h1>🍔 BMS Lunch</h1>
+          <h1>BMS Lunch</h1>
           <div className="meta-row">
             <span className="caption">
               {data?.meta ? formatFreshnessLabel(data.meta) : '—'}
             </span>
-            {days.length > 0 && (
-              <span className="day-counter">Day {selectedIndex + 1} of {days.length}</span>
-            )}
           </div>
         </div>
         <button

@@ -135,7 +135,7 @@ export const DayCard: React.FC<Props> = ({ day, direction }) => {
         {dayHead}
         <div className="empty-state">
           <h2>No school</h2>
-          <p className="sub">Nothing posted because there is no school.</p>
+          <p className="sub">No cafeteria service today. Check another day in the strip above.</p>
         </div>
       </div>
     );
