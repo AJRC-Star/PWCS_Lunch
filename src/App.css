@@ -260,10 +260,10 @@ main {
 }
 
 .day-weekday {
-  font-size: clamp(10px, 2.5vw, 11px);
+  font-size: clamp(0.625rem, 2.5vw, 0.6875rem);
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 2px;
+  letter-spacing: 0.12em;
   color: var(--accent-text);
   display: block;
   margin-bottom: 2px;
@@ -334,11 +334,11 @@ main {
 }
 
 .entree-block .sec-label {
-  font-size: clamp(10px, 2.5vw, 11px);
+  font-size: clamp(0.625rem, 2.5vw, 0.6875rem);
   color: var(--accent-text);
   font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.08em;
   margin-bottom: 6px;
   display: flex;
   align-items: center;
@@ -368,11 +368,11 @@ main {
 }
 
 .sec-label {
-  font-size: clamp(10px, 2.5vw, 11px);
+  font-size: clamp(0.625rem, 2.5vw, 0.6875rem);
   color: var(--muted);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 0.08em;
   margin: 0 0 5px;
   display: flex;
   align-items: center;
