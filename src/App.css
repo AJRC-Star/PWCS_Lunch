@@ -141,10 +141,26 @@ header h1 {
 }
 
 .caption {
-  font-size: 11px;
+  font-size: 0.6875rem;
   color: var(--muted);
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0;
 }
+
+.status-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  margin-right: 5px;
+  flex-shrink: 0;
+}
+
+.status-dot--fresh   { background: #22c55e; }
+.status-dot--stale   { background: #f59e0b; }
+.status-dot--offline { background: #ef4444; }
 
 
 /* ── Day tabs ── */
@@ -281,35 +297,24 @@ main {
 
 .school-countdown {
   flex-shrink: 0;
-  min-width: 92px;
+  min-width: 80px;
   margin-top: 2px;
-  padding: 8px 10px;
+  padding: 7px 10px;
   border: 1px solid color-mix(in srgb, var(--c) 35%, var(--line));
-  border-radius: 16px;
+  border-radius: 14px;
   background: color-mix(in srgb, var(--c) 9%, var(--card-bg));
-  color: var(--text);
-  text-align: right;
-}
-
-.school-countdown-label,
-.school-countdown-unit {
-  display: block;
   color: var(--muted);
+  text-align: right;
   font-size: 0.6875rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  line-height: 1.05;
-  text-transform: uppercase;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .school-countdown-value {
-  display: block;
   color: var(--accent-text);
-  font-size: clamp(21px, 6vw, 28px);
   font-weight: 900;
+  font-size: 1em;
   letter-spacing: 0;
-  line-height: 0.95;
-  margin: 2px 0;
 }
 
 /* ── Entree block ── */
@@ -500,18 +505,7 @@ main {
   .school-countdown {
     width: 100%;
     min-width: 0;
-    display: grid;
-    grid-template-columns: 1fr auto auto;
-    align-items: baseline;
-    gap: 6px;
     text-align: left;
-  }
-
-  .school-countdown-label,
-  .school-countdown-unit,
-  .school-countdown-value {
-    display: inline;
-    margin: 0;
   }
 }
 
@@ -569,8 +563,8 @@ header,
 }
 
 @keyframes sectionFadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0);   }
+  from { opacity: 0.001; transform: translateY(8px); }
+  to   { opacity: 1;     transform: translateY(0);   }
 }
 
 /* ── Today tab pulse glow ── */
@@ -633,7 +627,7 @@ header,
   width: 10px;
   height: 10px;
   border-radius: 2px;
-  animation: confettiFall linear forwards;
+  animation: confettiFall cubic-bezier(0.55, 0, 1, 0.45) forwards;
 }
 
 @keyframes confettiFall {

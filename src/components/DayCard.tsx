@@ -96,20 +96,18 @@ export const DayCard: React.FC<Props> = ({ day, direction }) => {
         className="school-countdown"
         aria-label="Last day of school!"
       >
-        <span className="school-countdown-label">Today is</span>
-        <span className="school-countdown-value" style={{ fontSize: 'clamp(15px, 4vw, 20px)' }}>🎉</span>
-        <span className="school-countdown-unit">Last Day!</span>
+        Today is the last day! <span aria-hidden="true">🎉</span>
       </div>
     ) : (
       <div
         className="school-countdown"
         aria-label={`${countdownDays} days until the last day of school`}
       >
-        <span className="school-countdown-label">School's out in</span>
-        <span className={`school-countdown-value${isFlipping ? ' flipping' : ''}`}>{countdownDays}</span>
-        <span className="school-countdown-unit">
-          {countdownDays === 1 ? 'day' : 'days'}
+        School ends in{' '}
+        <span className={`school-countdown-value${isFlipping ? ' flipping' : ''}`}>
+          {countdownDays}
         </span>
+        {' '}{countdownDays === 1 ? 'day' : 'days'}
       </div>
     )
   );

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCachedData, getFreshData } from './api';
-import { MENU_SCHEMA_VERSION, SCHOOL_ID, SCHOOL_TIMEZONE } from '../shared/menu-core.js';
+import { MENU_SCHEMA_VERSION, SCHOOL_ID } from '../shared/menu-core.js';
 import type { MenuData } from './types';
 import { DayCard } from './components/DayCard';
 import { DayTabs } from './components/DayTabs';
@@ -23,30 +23,18 @@ function getSystemTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 }
 
+type MetaStatus = 'fresh' | 'stale' | 'offline';
+
+function getMetaStatus(meta: MenuData['meta']): MetaStatus {
+  if (meta.isOffline) return 'offline';
+  if (meta.isStale) return 'stale';
+  return 'fresh';
+}
+
 function formatFreshnessLabel(meta: MenuData['meta']): string {
-  if (meta.isOffline) return '⚠️ Offline — showing cached menu';
-
-  if (meta.snapshotGeneratedAt) {
-    const d = new Date(meta.snapshotGeneratedAt);
-    const date = d.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      timeZone: SCHOOL_TIMEZONE,
-    });
-    const time = d.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: SCHOOL_TIMEZONE,
-    });
-    const staleWarning = meta.isStale ? ' · may be stale' : '';
-    const prefix = meta.source === 'artifact-cache'
-      ? 'Cached menu updated'
-      : 'Menu updated';
-    return `${prefix} ${date} at ${time}${staleWarning}`;
-  }
-
-  const staleWarning = meta.isStale ? ' · may be stale' : '';
-  return `Menu updated ${meta.lastUpdated || '—'}${staleWarning}`;
+  if (meta.isOffline) return 'Offline — showing cached menu';
+  if (meta.isStale) return 'Menu may be outdated';
+  return "This week's menu";
 }
 
 function getEmptyStateMessage(data: MenuData | null): string {
@@ -377,7 +365,15 @@ function App() {
           <h1>BMS Lunch</h1>
           <div className="meta-row">
             <span className="caption">
-              {data?.meta ? formatFreshnessLabel(data.meta) : '—'}
+              {data?.meta ? (
+                <>
+                  <span
+                    className={`status-dot status-dot--${getMetaStatus(data.meta)}`}
+                    aria-hidden="true"
+                  />
+                  {formatFreshnessLabel(data.meta)}
+                </>
+              ) : '—'}
             </span>
           </div>
         </div>
