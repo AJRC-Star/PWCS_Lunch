@@ -588,7 +588,7 @@ header,
 
 /* ── Section stagger entrance — entree stays static, the rest float in ── */
 .section-block {
-  animation: sectionFadeIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: sectionFadeIn 1s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes sectionFadeIn {
