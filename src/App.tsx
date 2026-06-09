@@ -39,14 +39,16 @@ function formatFreshnessLabel(meta: MenuData['meta']): string {
 
 function getEmptyStateMessage(data: MenuData | null): string {
   if (data?.errorType === 'invalid_snapshot') {
-    return 'The latest published menu snapshot was rejected because it looked invalid or incomplete. Please try again later.';
+    return 'The latest menu snapshot was rejected as invalid. Wait a few minutes, then tap Refresh Menu.';
   }
 
   if (data?.errorType === 'snapshot_unavailable') {
-    return 'The published weekly menu snapshot is unavailable right now. Please try again later.';
+    return 'The weekly menu snapshot is unavailable right now. Tap Refresh Menu to try again.';
   }
 
-  return data?.error ? 'Check your internet connection or try again later.' : 'Try again later.';
+  return data?.error
+    ? 'Check your internet connection, then tap Refresh Menu.'
+    : 'Tap Refresh Menu to try again.';
 }
 
 function getInitialThemePreference(): ThemePreference {
@@ -94,11 +96,15 @@ function App() {
   // useState does not expose its lazy-init result to sibling useState calls.
   const [theme, setTheme] = useState<Theme>(() => getInitialTheme(getInitialThemePreference()));
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [bgRefreshing, setBgRefreshing] = useState(false);
+  const [showSwipeHint, setShowSwipeHint] = useState(false);
   const retryControllerRef = useRef<AbortController | null>(null);
   const mainRef = useRef<HTMLElement>(null);
   const selectedIndexRef = useRef(0);
   const daysLengthRef = useRef(0);
   const autoSelectedRef = useRef(false);
+  const hintShownRef = useRef(false);
+  const daysRef = useRef<MenuData['days']>([]);
 
   useEffect(() => {
     if (themePreference === 'system') {
@@ -149,6 +155,7 @@ function App() {
         if (!signal.aborted) {
           setData(hasCachedDays ? cachedData : null);
           setLoading(!hasCachedDays);
+          if (hasCachedDays) setBgRefreshing(true);
         }
 
         const freshRequest = getFreshData({ signal });
@@ -175,6 +182,7 @@ function App() {
           if (!signal.aborted) {
             setData(freshData);
             setLoading(false);
+            setBgRefreshing(false);
           }
           return;
         }
@@ -186,9 +194,11 @@ function App() {
         if (!signal.aborted) {
           setData(eventualData);
           setLoading(false);
+          setBgRefreshing(false);
         }
       } catch (e) {
         if (signal.aborted) return;
+        setBgRefreshing(false);
         setData({
           days: [],
           meta: {
@@ -291,9 +301,10 @@ function App() {
     setSelectedIndex(newIndex);
   }, [selectedIndex]);
 
-  // Sync refs so the stable touch-listener effect always reads current values.
+  // Sync refs so the stable event-listener effects always read current values.
   selectedIndexRef.current = selectedIndex;
   daysLengthRef.current = days.length;
+  daysRef.current = days;
 
   // Attach swipe listeners to document in capture phase with passive:false on
   // both touchstart and touchmove. On iOS Safari/PWA, if touchstart is passive
@@ -351,8 +362,40 @@ function App() {
     };
   }, []); // stable: setState setters never change; current values read via refs
 
+  // `t` key jumps to today from anywhere in the app (H7 accelerator).
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 't' && e.key !== 'T') return;
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) return;
+      const todayIdx = daysRef.current.findIndex((d) => d.today);
+      if (todayIdx >= 0 && todayIdx !== selectedIndexRef.current) {
+        const direction = todayIdx > selectedIndexRef.current ? 'left' : 'right';
+        setSwipeDirection(direction);
+        setSelectedIndex(todayIdx);
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []); // stable: reads current values via refs
+
+  // Show a brief swipe hint on first data load this session.
+  useEffect(() => {
+    if (days.length > 1 && !hintShownRef.current) {
+      hintShownRef.current = true;
+      if (!sessionStorage.getItem('bms-lunch-hint-shown')) {
+        sessionStorage.setItem('bms-lunch-hint-shown', '1');
+        setShowSwipeHint(true);
+        const id = setTimeout(() => setShowSwipeHint(false), 2500);
+        return () => clearTimeout(id);
+      }
+    }
+  }, [days.length]);
+
   const allNoSchool = days.length >= 3 && days.every((d) => d.no_school);
   const nextTheme = theme === 'dark' ? 'light' : 'dark';
+  const todayIndex = days.findIndex((d) => d.today);
+  const isOnToday = todayIndex === -1 || selectedIndex === todayIndex;
 
   return (
     <div id="app">
@@ -368,13 +411,23 @@ function App() {
               {data?.meta ? (
                 <>
                   <span
-                    className={`status-dot status-dot--${getMetaStatus(data.meta)}`}
+                    className={`status-dot status-dot--${getMetaStatus(data.meta)}${bgRefreshing ? ' status-dot--refreshing' : ''}`}
                     aria-hidden="true"
                   />
                   {formatFreshnessLabel(data.meta)}
                 </>
               ) : '—'}
             </span>
+            {!isOnToday && todayIndex >= 0 && (
+              <button
+                className="today-shortcut"
+                type="button"
+                onClick={() => handleSelectDay(todayIndex)}
+                aria-label="Jump to today's menu"
+              >
+                Today
+              </button>
+            )}
           </div>
         </div>
         <button
@@ -396,6 +449,9 @@ function App() {
           selectedIndex={selectedIndex}
           onSelect={handleSelectDay}
         />
+      )}
+      {showSwipeHint && (
+        <p className="swipe-hint" aria-hidden="true">Swipe left or right to browse days</p>
       )}
 
       <main ref={mainRef}>
@@ -424,7 +480,7 @@ function App() {
               onClick={handleRetry}
               disabled={retrying}
             >
-              {retrying ? 'Refreshing…' : 'Try Again'}
+              {retrying ? 'Refreshing…' : 'Refresh Menu'}
             </button>
           </div>
         )}

@@ -211,7 +211,7 @@ describe('App', () => {
 
     expect(await screen.findByText('Nothing to show')).toBeInTheDocument();
 
-    await user.click(screen.getByRole('button', { name: /try again/i }));
+    await user.click(screen.getByRole('button', { name: /refresh menu/i }));
 
     expect(apiMocks.getFreshData).toHaveBeenLastCalledWith({
       cacheBustKey: expect.any(String),
@@ -243,7 +243,7 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByText('Nothing to show')).toBeInTheDocument();
-    const retryButton = screen.getByRole('button', { name: /try again/i });
+    const retryButton = screen.getByRole('button', { name: /refresh menu/i });
 
     await Promise.all([user.click(retryButton), user.click(retryButton)]);
 

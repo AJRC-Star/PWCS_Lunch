@@ -45,17 +45,20 @@ function getUtcDay(iso: string): number {
   return Date.UTC(year, month - 1, day);
 }
 
-function getSchoolCountdownDays(iso: string): number | null {
+type CountdownInfo = { days: number; lastDayIso: string };
+
+function getSchoolCountdown(iso: string): CountdownInfo | null {
   const lastDayOfSchool = PWCS_SCHOOL_YEAR_LAST_DAYS.find((lastDay) => {
     const countdownStart = `${lastDay.slice(0, 4)}-05-01`;
     return iso >= countdownStart && iso <= lastDay;
   });
 
-  if (!lastDayOfSchool || iso < COUNTDOWN_START_ISO) {
-    return null;
-  }
+  if (!lastDayOfSchool || iso < COUNTDOWN_START_ISO) return null;
 
-  return Math.max(0, Math.round((getUtcDay(lastDayOfSchool) - getUtcDay(iso)) / MS_PER_DAY));
+  return {
+    days: Math.max(0, Math.round((getUtcDay(lastDayOfSchool) - getUtcDay(iso)) / MS_PER_DAY)),
+    lastDayIso: lastDayOfSchool,
+  };
 }
 
 export const DayCard: React.FC<Props> = ({ day, direction }) => {
@@ -64,7 +67,11 @@ export const DayCard: React.FC<Props> = ({ day, direction }) => {
     month: 'short',
     day: 'numeric',
   });
-  const countdownDays = getSchoolCountdownDays(day.iso);
+  const countdown = getSchoolCountdown(day.iso);
+  const countdownDays = countdown?.days ?? null;
+  const lastDayShortDate = countdown
+    ? formatSchoolDate(countdown.lastDayIso, { month: 'short', day: 'numeric' })
+    : null;
 
   // Countdown flip animation
   const prevCountdown = useRef<number | null | undefined>(undefined);
@@ -101,13 +108,16 @@ export const DayCard: React.FC<Props> = ({ day, direction }) => {
     ) : (
       <div
         className="school-countdown"
-        aria-label={`${countdownDays} days until the last day of school`}
+        aria-label={`${countdownDays} ${countdownDays === 1 ? 'day' : 'days'} until the last day of school${lastDayShortDate ? `, ${lastDayShortDate}` : ''}`}
       >
         School ends in{' '}
         <span className={`school-countdown-value${isFlipping ? ' flipping' : ''}`}>
           {countdownDays}
         </span>
         {' '}{countdownDays === 1 ? 'day' : 'days'}
+        {lastDayShortDate && (
+          <span className="school-countdown-date"> · {lastDayShortDate}</span>
+        )}
       </div>
     )
   );
