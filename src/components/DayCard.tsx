@@ -177,7 +177,6 @@ export const DayCard: React.FC<Props> = ({ day, direction }) => {
         <section
           aria-labelledby={getMenuSectionHeadingId(day.iso, entreeSection.title)}
           className={`entree-block ${entreeSection.items.length >= 3 ? 'featured' : 'compact'}`}
-          style={{ animationDelay: '0ms' }}
         >
           <h3 className="sec-label" id={getMenuSectionHeadingId(day.iso, entreeSection.title)}>
             <span aria-hidden="true">{getCategoryEmoji('Entree')}</span> Entree
@@ -198,7 +197,7 @@ export const DayCard: React.FC<Props> = ({ day, direction }) => {
               key={section.title}
               aria-labelledby={sectionHeadingId}
               className={`section-block ${section.wide ? 'wide' : 'compact'}`}
-              style={{ animationDelay: `${(i + 1) * 55}ms` }}
+              style={{ animationDelay: `${(i + 1) * 100}ms` }}
             >
               <h3 className="sec-label" id={sectionHeadingId}>
                 <span aria-hidden="true">{getCategoryEmoji(section.title)}</span> {section.title}
