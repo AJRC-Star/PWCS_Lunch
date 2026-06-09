@@ -425,7 +425,7 @@ function App() {
                 onClick={() => handleSelectDay(todayIndex)}
                 aria-label="Jump to today's menu"
               >
-                Today
+                ↩ Today
               </button>
             )}
           </div>
