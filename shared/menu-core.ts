@@ -167,7 +167,9 @@ function isPlausibleMenuSnapshot(
 
   const lastVisibleISO = visibleDays[visibleDays.length - 1]?.iso;
   if (!lastVisibleISO) {
-    return false;
+    // MealViewer stops publishing data before the final school bell.
+    // An empty snapshot is plausible when we're in the year-end window.
+    return isNearSchoolYearEnd(todayISO);
   }
 
   const expectedVisibleDays = new Set(visibleDays.map((day) => day.iso));
@@ -215,6 +217,12 @@ function isPlausibleMenuSnapshot(
   }
 
   if (!previousDays) {
+    return true;
+  }
+
+  // Near year-end MealViewer stops publishing data entirely; a snapshot where
+  // every remaining day is no_information_provided is expected and plausible.
+  if (isNearSchoolYearEnd(todayISO)) {
     return true;
   }
 

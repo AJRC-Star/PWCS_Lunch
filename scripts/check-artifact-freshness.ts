@@ -7,6 +7,15 @@ import {
   isPastExpectedRefresh,
   validateMenuArtifact,
 } from '../shared/menu-contract.ts';
+import { isNearSchoolYearEnd, PWCS_SCHOOL_YEAR_LAST_DAYS } from '../shared/pwcs-calendar.ts';
+
+function isSchoolYearOver(nowMs = Date.now()): boolean {
+  return PWCS_SCHOOL_YEAR_LAST_DAYS.some((lastDay) => nowMs > Date.parse(lastDay));
+}
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,6 +43,11 @@ async function readArtifact(): Promise<unknown> {
 
 async function main(): Promise<void> {
   const artifact = validateMenuArtifact(await readArtifact());
+
+  if (isSchoolYearOver() || isNearSchoolYearEnd(todayISO())) {
+    console.log('School year ending or over — freshness check skipped.');
+    return;
+  }
 
   if (isPastExpectedRefresh(artifact.meta.expectedNextRefreshAt)) {
     throw new Error(
