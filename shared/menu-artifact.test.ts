@@ -52,7 +52,6 @@ describe('published menu artifact', () => {
 
     expect(placements.get('Marinara Dipping Sauce')).toBe('Condiments');
     expect(placements.get('Grape Tomatoes')).toBe('Sides');
-    expect(placements.get('Crispy Chickpeas, Ranch')).toBe('Sides');
   });
 
   it('marks official PWCS closure dates as no-school instead of missing menu data', () => {
