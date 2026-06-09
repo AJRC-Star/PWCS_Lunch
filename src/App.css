@@ -281,8 +281,8 @@ main {
 
 .today-badge {
   display: inline-block;
-  background: var(--c);
-  color: #000;
+  background: var(--accent-fill);
+  color: var(--accent-fill-text);
   font-size: 0.6875rem;
   font-weight: 900;
   letter-spacing: 0.08em;
@@ -679,8 +679,10 @@ header,
 }
 
 @keyframes hintFadeOut {
-  0%, 50% { opacity: 0.75; }
-  100%     { opacity: 0; }
+  0%    { opacity: 0; }
+  8%    { opacity: 0.8; }
+  55%   { opacity: 0.75; }
+  100%  { opacity: 0; }
 }
 
 /* ── Countdown end date ── */
