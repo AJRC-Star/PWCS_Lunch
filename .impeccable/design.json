@@ -1,0 +1,242 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-09T12:00:00Z",
+  "title": "Design System: BMS Lunch",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "oklch(64% 0.21 263)",
+        "tonalRamp": ["#0a1030", "#1a2f6a", "#1e4baa", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"]
+      },
+      "accent-fill": {
+        "role": "primary",
+        "displayName": "Action Blue",
+        "canonical": "oklch(55% 0.23 263)",
+        "tonalRamp": ["#0a1030", "#1a2f6a", "#1e4baa", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#dbeafe"]
+      },
+      "accent-text-dark": {
+        "role": "primary",
+        "displayName": "Accessible Blue (Dark)",
+        "canonical": "oklch(74% 0.17 263)",
+        "tonalRamp": ["#1e3a5f", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe", "#dbeafe"]
+      },
+      "accent-text-light": {
+        "role": "primary",
+        "displayName": "Accessible Blue (Light)",
+        "canonical": "oklch(47% 0.25 263)",
+        "tonalRamp": ["#0a1030", "#1a2f6a", "#1e4baa", "#1d4ed8", "#2563eb", "#3b82f6", "#60a5fa", "#93c5fd"]
+      },
+      "bg-dark": {
+        "role": "neutral",
+        "displayName": "Deep Void",
+        "canonical": "oklch(8% 0.012 280)",
+        "tonalRamp": ["#050507", "#08080f", "#131421", "#1e2033", "#2d3047", "#3d4260", "#505578", "#6e7499"]
+      },
+      "bg-light": {
+        "role": "neutral",
+        "displayName": "Apple Silver",
+        "canonical": "oklch(97% 0.002 264)",
+        "tonalRamp": ["#6e7499", "#9497b0", "#b8bac8", "#d4d5e0", "#e8e9f0", "#f0f0f5", "#f5f5f7", "#fafafa"]
+      },
+      "text-dark": {
+        "role": "neutral",
+        "displayName": "Full White",
+        "canonical": "oklch(100% 0 0)",
+        "tonalRamp": ["#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f3f4f6", "#f9fafb", "#ffffff", "#ffffff"]
+      },
+      "text-light": {
+        "role": "neutral",
+        "displayName": "Near Black",
+        "canonical": "oklch(14% 0 0)",
+        "tonalRamp": ["#111111", "#374151", "#6b7280", "#9ca3af", "#d1d5db", "#e5e7eb", "#f3f4f6", "#f9fafb"]
+      },
+      "status-fresh": {
+        "role": "semantic",
+        "displayName": "Fresh Green",
+        "canonical": "oklch(75% 0.20 145)",
+        "tonalRamp": ["#052e16", "#166534", "#15803d", "#16a34a", "#22c55e", "#4ade80", "#86efac", "#dcfce7"]
+      },
+      "status-stale": {
+        "role": "semantic",
+        "displayName": "Stale Amber",
+        "canonical": "oklch(78% 0.18 80)",
+        "tonalRamp": ["#451a03", "#92400e", "#b45309", "#d97706", "#f59e0b", "#fbbf24", "#fcd34d", "#fef3c7"]
+      },
+      "status-error": {
+        "role": "semantic",
+        "displayName": "Error Red",
+        "canonical": "oklch(63% 0.22 25)",
+        "tonalRamp": ["#450a0a", "#991b1b", "#b91c1c", "#dc2626", "#ef4444", "#f87171", "#fca5a5", "#fee2e2"]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Day date number — the largest text on screen. One instance per view." },
+      "headline": { "displayName": "Headline", "purpose": "Empty-state headings and no-school titles only." },
+      "title": { "displayName": "Title / Entree", "purpose": "Entree items — the highest-priority food content." },
+      "body": { "displayName": "Body / List", "purpose": "Secondary section items (sides, fruit, drink). Lighter weight signals secondary priority." },
+      "label": { "displayName": "Label", "purpose": "Section eyebrows, chip weekday abbreviations, captions. Always uppercase, always ≤4 words." }
+    },
+    "shadows": [
+      {
+        "name": "card-dark",
+        "value": "inset 0 1px 0 rgba(255,255,255,0.09), 0 2px 8px rgba(0,0,0,0.20), 0 8px 24px rgba(0,0,0,0.12)",
+        "purpose": "All content cards in dark theme. Inset highlight simulates specular top edge; two-layer drop is ambient, not structural."
+      },
+      {
+        "name": "card-light",
+        "value": "inset 0 1px 0 rgba(255,255,255,1), 0 1px 3px rgba(0,0,0,0.05), 0 4px 14px rgba(0,0,0,0.08)",
+        "purpose": "All content cards in light theme. Lighter, crisper. Inset top is full opaque white."
+      },
+      {
+        "name": "toggle-dark",
+        "value": "0 10px 30px rgba(0,0,0,0.18)",
+        "purpose": "Theme toggle in dark mode. Neutral ambient shadow."
+      },
+      {
+        "name": "toggle-light",
+        "value": "0 10px 30px rgba(59,130,246,0.12)",
+        "purpose": "Theme toggle in light mode. Blue-tinted glow links the button to the brand accent."
+      },
+      {
+        "name": "today-pulse",
+        "value": "0 0 0 3px rgba(59,130,246,0.28), 0 0 14px rgba(59,130,246,0.14)",
+        "purpose": "Animated box-shadow for the today chip's pulse glow (50% keyframe of todayPulse). Never static."
+      }
+    ],
+    "motion": [
+      { "name": "chip-spring", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "duration": "0.28s", "purpose": "Day chip selection entrance — scale 0.86 → 1. Springing without bounce." },
+      { "name": "slide-day", "value": "cubic-bezier(0.25, 0.46, 0.45, 0.94)", "duration": "0.28s", "purpose": "Day card slide-in-left / slide-in-right on day tab change." },
+      { "name": "section-fade", "value": "ease", "duration": "0.3s", "purpose": "Section blocks fadeIn with 8px translateY. Staggered 55ms per section, entree at 0ms." },
+      { "name": "shimmer", "value": "linear", "duration": "1.2s", "purpose": "Skeleton loading shimmer. Linear intentional — simulates a scan, not a pulse." },
+      { "name": "today-pulse", "value": "ease-in-out", "duration": "2.4s", "purpose": "Infinite box-shadow glow on today chip when not selected. Slow, ambient." },
+      { "name": "sun-pulse", "value": "ease-in-out", "duration": "3s", "purpose": "No-school emoji scale + rotate loop. Playful, unhurried." },
+      { "name": "flip-count", "value": "ease-in-out", "duration": "0.38s", "purpose": "Countdown number flip on day change. rotateX 0→90→-90→0. Requires perspective: 300px on parent." },
+      { "name": "confetti-fall", "value": "cubic-bezier(0.55, 0, 1, 0.45)", "duration": "2.2–4.2s", "purpose": "Confetti pieces fall with gravity acceleration. Delay 0–1.8s per piece for organic feel." },
+      { "name": "theme-crossfade", "value": "ease", "duration": "0.4s", "purpose": "Background, border-color, color, box-shadow transition on theme switch." },
+      { "name": "dot-pulse", "value": "ease-in-out", "duration": "1.2s", "purpose": "Status dot opacity pulse during background refresh. opacity 1→0.35→1." },
+      { "name": "hint-fade", "value": "ease-out", "duration": "2.5s", "purpose": "Swipe hint fade-out. Holds at 0.75 opacity for first 50%, fades to 0 over remaining 50%." }
+    ],
+    "breakpoints": [
+      { "name": "narrow", "value": "360px", "purpose": "Day-head switches to column layout; countdown goes full-width at ≤360px." },
+      { "name": "max-app", "value": "480px", "purpose": "App shell max-width. Above this, the app is centered on a dark body background." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Day Chip (Default)",
+      "kind": "chip",
+      "refersTo": "day-chip-default",
+      "description": "Week navigation tab. Unselected rest state.",
+      "html": "<button class=\"ds-day-chip\" role=\"tab\" aria-selected=\"false\"><span class=\"ds-chip-weekday\">MON</span><span class=\"ds-chip-day\">12</span></button>",
+      "css": ".ds-day-chip { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: transparent; color: rgba(255,255,255,0.68); cursor: pointer; transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease; } .ds-chip-weekday { font-size: 0.6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; } .ds-chip-day { font-size: 18px; font-weight: 900; line-height: 1; } .ds-day-chip:focus-visible { outline: 3px solid #3b82f6; outline-offset: 3px; }"
+    },
+    {
+      "name": "Day Chip (Active)",
+      "kind": "chip",
+      "refersTo": "day-chip-active",
+      "description": "Week navigation tab — selected state. Fills with Action Blue, springs in.",
+      "html": "<button class=\"ds-day-chip ds-day-chip--active\" role=\"tab\" aria-selected=\"true\"><span class=\"ds-chip-weekday\">MON</span><span class=\"ds-chip-day\">12</span></button>",
+      "css": ".ds-day-chip { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 16px; border-radius: 12px; border: 1px solid #2563eb; cursor: pointer; } .ds-day-chip--active { background: #2563eb; color: #ffffff; animation: chipSpring 0.28s cubic-bezier(0.22, 1, 0.36, 1); } @keyframes chipSpring { from { transform: scale(0.86); } to { transform: scale(1); } } .ds-chip-weekday { font-size: 0.6875rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; } .ds-chip-day { font-size: 18px; font-weight: 900; line-height: 1; }"
+    },
+    {
+      "name": "Entree Block",
+      "kind": "card",
+      "refersTo": "entree-block",
+      "description": "Primary content card. Always first in the day view. Featured variant when ≥3 items.",
+      "html": "<section class=\"ds-entree-block ds-entree-block--featured\"><h3 class=\"ds-sec-label\"><span aria-hidden=\"true\">🍗</span> Entree</h3><ul><li>Pepperoni Pizza</li><li>Cheese Pizza</li><li>Veggie Pizza</li></ul></section>",
+      "css": ".ds-entree-block { padding: 12px 16px; border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; background: rgba(255,255,255,0.065); box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 2px 8px rgba(0,0,0,0.20), 0 8px 24px rgba(0,0,0,0.12); animation: sectionFadeIn 0.3s ease forwards; } .ds-entree-block--featured { background: linear-gradient(160deg, color-mix(in srgb, #3b82f6 12%, rgba(255,255,255,0.065)), rgba(255,255,255,0.065)); } @keyframes sectionFadeIn { from { opacity: 0.001; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } } .ds-sec-label { font-size: 0.6875rem; color: #60a5fa; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; } .ds-entree-block ul { list-style: none; margin: 0; padding: 0; } .ds-entree-block li { font-size: 21px; font-weight: 700; line-height: 1.2; margin: 0 0 2px; color: #ffffff; }"
+    },
+    {
+      "name": "Section Block",
+      "kind": "card",
+      "refersTo": "section-block",
+      "description": "Secondary food category card. Two-column grid; wide variant spans both columns.",
+      "html": "<section class=\"ds-section-block\"><h3 class=\"ds-sec-label\"><span aria-hidden=\"true\">🥗</span> Sides</h3><ul><li>Garden Salad</li><li>Steamed Broccoli</li></ul></section>",
+      "css": ".ds-section-block { padding: 11px 14px; border-radius: 16px; background: rgba(255,255,255,0.065); border: 1px solid rgba(255,255,255,0.08); box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 2px 8px rgba(0,0,0,0.20), 0 8px 24px rgba(0,0,0,0.12); animation: sectionFadeIn 0.3s ease forwards; } @keyframes sectionFadeIn { from { opacity: 0.001; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } } .ds-sec-label { font-size: 0.6875rem; color: rgba(255,255,255,0.68); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 5px; display: flex; align-items: center; gap: 6px; } .ds-section-block ul { list-style: none; margin: 0; padding: 0; } .ds-section-block li { font-size: 15px; line-height: 1.35; color: rgba(255,255,255,0.75); margin-bottom: 1px; }"
+    },
+    {
+      "name": "Theme Toggle",
+      "kind": "button",
+      "refersTo": "theme-toggle",
+      "description": "Dark/light mode toggle. Top-right of header. Circular.",
+      "html": "<button class=\"ds-theme-toggle\" type=\"button\" aria-label=\"Switch to light mode\"><span aria-hidden=\"true\">☀️</span></button>",
+      "css": ".ds-theme-toggle { width: 42px; height: 42px; border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; background: rgba(255,255,255,0.06); color: #ffffff; box-shadow: 0 10px 30px rgba(0,0,0,0.18); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; transition: transform 0.15s ease, background 0.15s ease; } .ds-theme-toggle:hover { transform: translateY(-1px); } .ds-theme-toggle:active { transform: translateY(0); } .ds-theme-toggle:focus-visible { outline: 3px solid #3b82f6; outline-offset: 3px; }"
+    },
+    {
+      "name": "Refresh Menu Button",
+      "kind": "button",
+      "refersTo": "retry-button",
+      "description": "Primary action button in the empty/error state. Full-width on mobile.",
+      "html": "<button class=\"ds-btn-refresh\" type=\"button\">Refresh Menu</button>",
+      "css": ".ds-btn-refresh { border: 0; border-radius: 14px; background: #2563eb; color: #ffffff; font-size: 14px; font-weight: 800; padding: 12px 16px; min-width: 140px; cursor: pointer; transition: background 0.15s ease, transform 0.1s ease; } .ds-btn-refresh:hover { background: #3b82f6; } .ds-btn-refresh:active { transform: scale(0.97); } .ds-btn-refresh:focus-visible { outline: 3px solid #3b82f6; outline-offset: 3px; } .ds-btn-refresh:disabled { cursor: wait; opacity: 0.7; }"
+    },
+    {
+      "name": "Today Shortcut",
+      "kind": "button",
+      "refersTo": "today-shortcut",
+      "description": "Appears in the meta-row when viewing a non-today day. Quick return to today.",
+      "html": "<button class=\"ds-today-shortcut\" type=\"button\" aria-label=\"Jump to today's menu\">Today</button>",
+      "css": ".ds-today-shortcut { border: 1px solid #3b82f6; border-radius: 999px; background: transparent; color: #60a5fa; font-size: 0.625rem; font-weight: 800; letter-spacing: 0.04em; padding: 2px 8px; cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease; line-height: 1.5; } .ds-today-shortcut:hover { background: #2563eb; color: #ffffff; border-color: #2563eb; } .ds-today-shortcut:focus-visible { outline: 3px solid #3b82f6; outline-offset: 3px; }"
+    },
+    {
+      "name": "Status Dot",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "6x6px circle in the header meta-row. Color encodes data freshness.",
+      "html": "<span class=\"ds-status-dot ds-status-dot--fresh\" aria-hidden=\"true\"></span>",
+      "css": ".ds-status-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 5px; flex-shrink: 0; } .ds-status-dot--fresh { background: #22c55e; } .ds-status-dot--stale { background: #f59e0b; } .ds-status-dot--offline { background: #ef4444; } .ds-status-dot--refreshing { animation: dotPulse 1.2s ease-in-out infinite; } @keyframes dotPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }"
+    },
+    {
+      "name": "School Countdown",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Countdown widget showing days until school ends. Visible May 1 through last day. Features flip animation.",
+      "html": "<div class=\"ds-school-countdown\">School ends in <span class=\"ds-countdown-value\">29</span> days <span class=\"ds-countdown-date\"> · Jun 12</span></div>",
+      "css": ".ds-school-countdown { min-width: 80px; padding: 7px 10px; border: 1px solid color-mix(in srgb, #3b82f6 35%, rgba(255,255,255,0.08)); border-radius: 14px; background: color-mix(in srgb, #3b82f6 9%, rgba(255,255,255,0.065)); color: rgba(255,255,255,0.68); text-align: right; font-size: 0.6875rem; font-weight: 700; line-height: 1.4; perspective: 300px; } .ds-countdown-value { color: #60a5fa; font-weight: 900; } .ds-countdown-date { font-weight: 600; } .ds-countdown-value.flipping { animation: flipCount 0.38s ease-in-out; } @keyframes flipCount { 0% { transform: rotateX(0deg); opacity: 1; } 40% { transform: rotateX(90deg); opacity: 0; } 60% { transform: rotateX(-90deg); opacity: 0; } 100% { transform: rotateX(0deg); opacity: 1; } }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Instrument",
+    "overview": "This system disappears into its task. The interface exists to deliver one piece of information — what is for lunch today — and then yield. Every design decision is evaluated against that principle: does this help the student glance and go, or does it demand attention the task doesn't warrant?\n\nThe system is calm at rest and confident in motion. Transitions confirm selection rather than decorate it; the countdown number flips like a physical display rather than fading; confetti erupts exactly once per school year. Playfulness is rationed.\n\nThe dual theme (dark default, light optional) honors the physical context. Students check this in the hallway, under fluorescent lights, in dim homerooms. Dark is the right call for the modal use case.",
+    "keyCharacteristics": [
+      "Single-column, full-viewport, no sidebars or nav chrome",
+      "Content hierarchy: entree first, everything else secondary",
+      "System font stack: zero FOUT, native weight rendering at any DPI",
+      "Dual theme driven by CSS custom properties on [data-theme]",
+      "Motion is confirmatory, not choreographic",
+      "Reduced motion honored globally"
+    ],
+    "rules": [
+      { "name": "The One Accent Rule", "body": "Signal Blue (#3b82f6) and Action Blue (#2563eb) are variants of one accent. No second accent hue is permitted.", "section": "colors" },
+      { "name": "The Status-Only Rule", "body": "Green, amber, and red are semantic status colors exclusively. Prohibited on cards, labels, chips, or any decorative surface.", "section": "colors" },
+      { "name": "The Label Cap Rule", "body": "ALL CAPS is reserved for labels of ≤4 words at label scale (≤11px). No sentence-case text is set in all-caps.", "section": "typography" },
+      { "name": "The No FOUT Rule", "body": "No web fonts are loaded. The system font stack is non-negotiable for this use case.", "section": "typography" },
+      { "name": "The Blur-is-Chrome Rule", "body": "backdrop-filter: blur(12px) is used only on chrome that is position:sticky with content scrolling behind it. Cards do not blur.", "section": "elevation" },
+      { "name": "The Flat-Card Rule", "body": "Cards are flat at rest and flat on hover. Only :active fires (scale 0.97). Hover elevation lift is prohibited.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep the entree as the first and largest content block on every day view.",
+      "Do use the system font stack exclusively. No custom fonts.",
+      "Do use Signal Blue (#3b82f6) and Action Blue (#2563eb) for all interactive affordances.",
+      "Do use backdrop-filter: blur(12px) only on position:sticky chrome elements.",
+      "Do stagger section entrance animations by 55ms per section.",
+      "Do honor prefers-reduced-motion with animation: none !important.",
+      "Do use clamp() scale for display and title text.",
+      "Do test touch targets at 44x44px minimum."
+    ],
+    "donts": [
+      "Don't add sidebar navigation, widget grids, or dashboard layout patterns.",
+      "Don't add photography, hero images, or marketing chrome.",
+      "Don't introduce a second accent color.",
+      "Don't apply backdrop-filter to cards or decorative surfaces.",
+      "Don't use border-left or border-right greater than 1px as a colored stripe on cards.",
+      "Don't add gradient text (background-clip: text with a gradient).",
+      "Don't animate layout properties (height, padding, margin, width).",
+      "Don't add section eyebrows above new sections.",
+      "Don't set body copy or list items in all-caps.",
+      "Don't build a heavy school-district portal: no cluttered header, no desktop-first layout."
+    ]
+  }
+}
