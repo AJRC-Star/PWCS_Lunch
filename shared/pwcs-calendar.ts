@@ -69,6 +69,34 @@ const PWCS_CALENDAR_COVERAGE_END_ISO = '2027-06-21';
 // without triggering the forward-looking plausibility guard.
 const PWCS_SCHOOL_YEAR_LAST_DAYS = ['2026-06-12', '2027-06-17'];
 
+// Summer break windows: the day after each school year's last instructional
+// day through the day before the next year's first instructional day.  The
+// 2026 first day (2026-08-24) is the Monday after the August staff-day
+// closures above.  2027's break is open-ended until the 2027-28 calendar is
+// published; an open-ended range treats every later date as summer, which
+// fails safe (the app shows the summer state instead of a data error).
+const PWCS_SUMMER_BREAKS: NoSchoolDateRange[] = [
+  { start: '2026-06-13', end: '2026-08-23' },
+  { start: '2027-06-18' },
+];
+
+function isPWCSSummerBreak(iso: string): boolean {
+  return PWCS_SUMMER_BREAKS.some(({ start, end }) => iso >= start && (!end || iso <= end));
+}
+
+/**
+ * Returns the first instructional day of the school year that follows the
+ * summer break containing `iso`, or null when that calendar isn't published
+ * yet (open-ended break).  Used for user-facing "menus return on …" copy.
+ */
+function getPWCSNextSchoolYearStart(iso: string): string | null {
+  const range = PWCS_SUMMER_BREAKS.find(({ start, end }) => iso >= start && (!end || iso <= end));
+  if (!range?.end) return null;
+  const firstDay = parseISOAtUtcNoon(range.end);
+  firstDay.setUTCDate(firstDay.getUTCDate() + 1);
+  return formatUTCISODate(firstDay);
+}
+
 function isNearSchoolYearEnd(iso: string, windowDays = 5): boolean {
   const date = parseISOAtUtcNoon(iso);
   return PWCS_SCHOOL_YEAR_LAST_DAYS.some((lastDay) => {
@@ -145,9 +173,11 @@ function countPWCSInstructionalWeekdaysBetween(startISO: string, endISO: string)
 
 export {
   countPWCSInstructionalWeekdaysBetween,
+  getPWCSNextSchoolYearStart,
   getPWCSNoSchoolDatesBetween,
   isNearSchoolYearEnd,
   isPWCSNoSchoolDate,
+  isPWCSSummerBreak,
   PWCS_CALENDAR_COVERAGE_END_ISO,
   PWCS_NO_SCHOOL_DATES,
   PWCS_SCHOOL_YEAR_LAST_DAYS,

@@ -7,11 +7,7 @@ import {
   isPastExpectedRefresh,
   validateMenuArtifact,
 } from '../shared/menu-contract.ts';
-import { isNearSchoolYearEnd, PWCS_SCHOOL_YEAR_LAST_DAYS } from '../shared/pwcs-calendar.ts';
-
-function isSchoolYearOver(nowMs = Date.now()): boolean {
-  return PWCS_SCHOOL_YEAR_LAST_DAYS.some((lastDay) => nowMs > Date.parse(lastDay));
-}
+import { isNearSchoolYearEnd, isPWCSSummerBreak } from '../shared/pwcs-calendar.ts';
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
@@ -42,10 +38,18 @@ async function readArtifact(): Promise<unknown> {
 }
 
 async function main(): Promise<void> {
-  const artifact = validateMenuArtifact(await readArtifact());
+  // During the year-end window and summer break the artifact legitimately has
+  // no visible days, so skip plausibility (structural validation still runs)
+  // and skip the refresh-deadline check.  Unlike a "school year over" check
+  // against past last-days, isPWCSSummerBreak turns itself back off when the
+  // next school year starts, so the watchdog resumes automatically in fall.
+  const quietPeriod = isNearSchoolYearEnd(todayISO()) || isPWCSSummerBreak(todayISO());
+  const artifact = validateMenuArtifact(await readArtifact(), undefined, {
+    enforcePlausibility: !quietPeriod,
+  });
 
-  if (isSchoolYearOver() || isNearSchoolYearEnd(todayISO())) {
-    console.log('School year ending or over — freshness check skipped.');
+  if (quietPeriod) {
+    console.log('School year ending or summer break — freshness check skipped.');
     return;
   }
 

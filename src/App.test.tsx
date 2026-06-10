@@ -12,6 +12,18 @@ const apiMocks = vi.hoisted(() => ({
 
 vi.mock('./api', () => apiMocks);
 
+// Controls the calendar date App sees for summer-mode detection without
+// touching the real clock.  Defaults to a regular school day.
+const todayISOMock = vi.hoisted(() => ({ value: '2026-04-13' }));
+
+vi.mock('../shared/menu-core.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../shared/menu-core.js')>();
+  return {
+    ...actual,
+    getTodayISO: () => todayISOMock.value,
+  };
+});
+
 function createDeferred<T>() {
   let resolve!: (value: T) => void;
   let reject!: (reason?: unknown) => void;
@@ -119,6 +131,7 @@ function makeEmptyPreview(): MenuData {
 
 describe('App', () => {
   beforeEach(() => {
+    todayISOMock.value = '2026-04-13';
     window.history.replaceState({}, '', '/PWCS_Lunch/');
     const storage = new Map<string, string>();
     vi.stubGlobal('localStorage', {
@@ -525,5 +538,45 @@ describe('App', () => {
     });
 
     expect(document.documentElement.dataset.theme).toBe('light');
+  });
+
+  // ── Summer break mode ───────────────────────────────────────────────────────
+
+  it('shows the summer state instead of errors or empty messaging during summer break', async () => {
+    todayISOMock.value = '2026-07-15';
+    apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
+    apiMocks.getFreshData.mockResolvedValue({
+      days: [],
+      meta: {
+        ...makeEmptyPreview().meta,
+        source: 'artifact' as const,
+        isPreview: false,
+        isStale: true,
+      },
+      error: 'Menu snapshot is unavailable right now. Showing the last known good menu.',
+      errorType: 'invalid_snapshot' as const,
+    });
+
+    render(<App />);
+
+    expect(await screen.findByText("School's Out for Summer")).toBeInTheDocument();
+    expect(
+      screen.getByText(/lunch menus return when school starts August 24/i),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Summer break')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByText('Nothing to show')).not.toBeInTheDocument();
+    expect(screen.queryByRole('tablist')).not.toBeInTheDocument();
+  });
+
+  it('keeps real menu data winning over summer mode when sections exist', async () => {
+    todayISOMock.value = '2026-07-15';
+    apiMocks.getCachedData.mockResolvedValue(makeEmptyPreview());
+    apiMocks.getFreshData.mockResolvedValue(makeMenuData());
+
+    render(<App />);
+
+    expect(await screen.findByText('Pizza')).toBeInTheDocument();
+    expect(screen.queryByText("School's Out for Summer")).not.toBeInTheDocument();
   });
 });

@@ -3,6 +3,7 @@ import {
   getPWCSNoSchoolDatesBetween,
   isNearSchoolYearEnd,
   isPWCSNoSchoolDate,
+  isPWCSSummerBreak,
 } from './pwcs-calendar.ts';
 
 const SCHOOL_ID = 'BENTONMIDDLE';
@@ -167,9 +168,10 @@ function isPlausibleMenuSnapshot(
 
   const lastVisibleISO = visibleDays[visibleDays.length - 1]?.iso;
   if (!lastVisibleISO) {
-    // MealViewer stops publishing data before the final school bell.
-    // An empty snapshot is plausible when we're in the year-end window.
-    return isNearSchoolYearEnd(todayISO);
+    // MealViewer stops publishing data before the final school bell and stays
+    // silent all summer.  An empty snapshot is plausible in the year-end
+    // window and for the whole summer break.
+    return isNearSchoolYearEnd(todayISO) || isPWCSSummerBreak(todayISO);
   }
 
   const expectedVisibleDays = new Set(visibleDays.map((day) => day.iso));
@@ -220,9 +222,10 @@ function isPlausibleMenuSnapshot(
     return true;
   }
 
-  // Near year-end MealViewer stops publishing data entirely; a snapshot where
-  // every remaining day is no_information_provided is expected and plausible.
-  if (isNearSchoolYearEnd(todayISO)) {
+  // Near year-end and over summer break MealViewer stops publishing data
+  // entirely; a snapshot where every remaining day is no_information_provided
+  // is expected and plausible.
+  if (isNearSchoolYearEnd(todayISO) || isPWCSSummerBreak(todayISO)) {
     return true;
   }
 

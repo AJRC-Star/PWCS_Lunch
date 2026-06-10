@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCachedData, getFreshData } from './api';
-import { MENU_SCHEMA_VERSION, SCHOOL_ID } from '../shared/menu-core.js';
+import { formatSchoolDate, getTodayISO, MENU_SCHEMA_VERSION, SCHOOL_ID } from '../shared/menu-core.js';
+import { getPWCSNextSchoolYearStart, isPWCSSummerBreak } from '../shared/pwcs-calendar.js';
 import type { MenuData } from './types';
 import { DayCard } from './components/DayCard';
 import { DayTabs } from './components/DayTabs';
@@ -31,10 +32,18 @@ function getMetaStatus(meta: MenuData['meta']): MetaStatus {
   return 'fresh';
 }
 
-function formatFreshnessLabel(meta: MenuData['meta']): string {
+function formatFreshnessLabel(meta: MenuData['meta'], summerMode: boolean): string {
+  if (summerMode) return 'Summer break';
   if (meta.isOffline) return 'Offline — showing cached menu';
   if (meta.isStale) return 'Menu may be outdated';
   return "This week's menu";
+}
+
+function getSummerSubMessage(todayISO: string): string {
+  const firstDay = getPWCSNextSchoolYearStart(todayISO);
+  if (!firstDay) return 'Enjoy the break — menus return in the fall!';
+  const firstDayLabel = formatSchoolDate(firstDay, { month: 'long', day: 'numeric' });
+  return `Enjoy the break — lunch menus return when school starts ${firstDayLabel}.`;
 }
 
 function getEmptyStateMessage(data: MenuData | null): string {
@@ -393,13 +402,19 @@ function App() {
   }, [days.length]);
 
   const allNoSchool = days.length >= 3 && days.every((d) => d.no_school);
+  // Summer mode: it's summer break and no visible day carries menu data.
+  // The sections guard keeps real data winning if menus ever publish in
+  // summer (e.g. summer school), and the calendar gate keeps a mid-year
+  // empty artifact from masquerading as summer.
+  const todayISO = getTodayISO();
+  const summerMode = isPWCSSummerBreak(todayISO) && !days.some((d) => d.sections.length > 0);
   const nextTheme = theme === 'dark' ? 'light' : 'dark';
   const todayIndex = days.findIndex((d) => d.today);
   const isOnToday = todayIndex === -1 || selectedIndex === todayIndex;
 
   return (
     <div id="app">
-      {data?.error && (
+      {data?.error && !summerMode && (
         <div className="error-banner" role="alert">{data.error}</div>
       )}
 
@@ -411,10 +426,10 @@ function App() {
               {data?.meta ? (
                 <>
                   <span
-                    className={`status-dot status-dot--${getMetaStatus(data.meta)}${bgRefreshing ? ' status-dot--refreshing' : ''}`}
+                    className={`status-dot status-dot--${summerMode ? 'fresh' : getMetaStatus(data.meta)}${bgRefreshing ? ' status-dot--refreshing' : ''}`}
                     aria-hidden="true"
                   />
-                  {formatFreshnessLabel(data.meta)}
+                  {formatFreshnessLabel(data.meta, summerMode)}
                 </>
               ) : '—'}
             </span>
@@ -443,34 +458,41 @@ function App() {
         </button>
       </header>
 
-      {!loading && days.length > 0 && !allNoSchool && (
+      {!loading && !summerMode && days.length > 0 && !allNoSchool && (
         <DayTabs
           days={days}
           selectedIndex={selectedIndex}
           onSelect={handleSelectDay}
         />
       )}
-      {showSwipeHint && (
+      {showSwipeHint && !summerMode && (
         <p className="swipe-hint" aria-hidden="true">Swipe left or right to browse days</p>
       )}
 
       <main ref={mainRef}>
         {loading && <SkeletonLoader />}
-        {!loading && allNoSchool && (
+        {!loading && summerMode && (
+          <div className="no-school-week">
+            <span className="no-school-emoji">🏖️</span>
+            <h2 className="no-school-title">School's Out for Summer</h2>
+            <p className="sub">{getSummerSubMessage(todayISO)}</p>
+          </div>
+        )}
+        {!loading && !summerMode && allNoSchool && (
           <div className="no-school-week">
             <span className="no-school-emoji">☀️</span>
             <h2 className="no-school-title">No School This Week</h2>
             <p className="sub">Enjoy the break — see you when school's back!</p>
           </div>
         )}
-        {!loading && days.length > 0 && !allNoSchool && days[selectedIndex] && (
+        {!loading && !summerMode && days.length > 0 && !allNoSchool && days[selectedIndex] && (
           <DayCard
             key={selectedIndex}
             day={days[selectedIndex]}
             direction={swipeDirection}
           />
         )}
-        {!loading && days.length === 0 && (
+        {!loading && !summerMode && days.length === 0 && (
           <div className="empty-state">
             <h2>Nothing to show</h2>
             <p className="sub">{getEmptyStateMessage(data)}</p>

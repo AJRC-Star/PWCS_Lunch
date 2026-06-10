@@ -10,7 +10,7 @@ import {
   type SharedMenuResponse,
 } from '../shared/menu-core.ts';
 import { getExpectedNextRefreshAt, validateMenuArtifact } from '../shared/menu-contract.ts';
-import { isNearSchoolYearEnd } from '../shared/pwcs-calendar.ts';
+import { isNearSchoolYearEnd, isPWCSSummerBreak } from '../shared/pwcs-calendar.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -90,19 +90,20 @@ async function main(): Promise<void> {
     const outputPath = path.join(__dirname, '../public/menu-data.json');
     const previousSnapshot = loadPreviousSnapshot(outputPath);
 
+    const fetchDateISO = snapshotGeneratedAt.slice(0, 10);
     if (normalizedData.days.length === 0) {
-      if (!isNearSchoolYearEnd(snapshotGeneratedAt.slice(0, 10))) {
+      if (!isNearSchoolYearEnd(fetchDateISO) && !isPWCSSummerBreak(fetchDateISO)) {
         console.warn('⚠ Normalisation produced 0 days — skipping file write to preserve previous data.');
         process.exit(1);
       }
-      console.warn('⚠ Normalisation produced 0 days — school year ending, proceeding with empty snapshot.');
+      console.warn('⚠ Normalisation produced 0 days — school year ending or summer break, proceeding with empty snapshot.');
     }
 
     // validateMenuArtifact runs isPlausibleMenuSnapshot internally; no need for
     // a separate pre-flight call.
     validateMenuArtifact(normalizedData, previousSnapshot?.days);
 
-    if (previousSnapshot !== null && !isNearSchoolYearEnd(snapshotGeneratedAt.slice(0, 10))) {
+    if (previousSnapshot !== null && !isNearSchoolYearEnd(fetchDateISO) && !isPWCSSummerBreak(fetchDateISO)) {
       const instructionalDays = normalizedData.days.filter((d) => !d.weekend && !d.no_school);
       const noInfoCount = instructionalDays.filter((d) => d.no_information_provided).length;
       const noInfoRate = instructionalDays.length > 0 ? noInfoCount / instructionalDays.length : 0;
