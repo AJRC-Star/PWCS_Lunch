@@ -21,6 +21,8 @@
   --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09),
                  0 2px 8px rgba(0, 0, 0, 0.20),
                  0 8px 24px rgba(0, 0, 0, 0.12);
+  --skeleton-base: rgba(255, 255, 255, 0.06);
+  --skeleton-highlight: rgba(255, 255, 255, 0.12);
 }
 
 :root[data-theme='light'] {
@@ -42,6 +44,8 @@
   --card-shadow: inset 0 1px 0 rgba(255, 255, 255, 1),
                  0 1px 3px rgba(0, 0, 0, 0.05),
                  0 4px 14px rgba(0, 0, 0, 0.08);
+  --skeleton-base: rgba(0, 0, 0, 0.06);
+  --skeleton-highlight: rgba(0, 0, 0, 0.13);
 }
 
 /* ── Reset ── */
@@ -123,6 +127,7 @@ header h1 {
 
 .today-shortcut {
   flex-shrink: 0;
+  position: relative;
   border: 1px solid var(--c);
   border-radius: 999px;
   background: transparent;
@@ -134,6 +139,13 @@ header h1 {
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
   line-height: 1.5;
+}
+
+/* Invisible hit-area extension: visual pill stays 21px tall, tap target ≥44px */
+.today-shortcut::before {
+  content: '';
+  position: absolute;
+  inset: -12px -8px;
 }
 
 .today-shortcut:hover {
@@ -183,6 +195,10 @@ header h1 {
 .status-dot--fresh   { background: #22c55e; }
 .status-dot--stale   { background: #f59e0b; }
 .status-dot--offline { background: #ef4444; }
+
+/* Darker variants for the light surface — 3:1 non-text minimum */
+:root[data-theme='light'] .status-dot--fresh { background: #16a34a; }
+:root[data-theme='light'] .status-dot--stale { background: #b45309; }
 .status-dot--refreshing {
   animation: dotPulse 1.2s ease-in-out infinite;
 }
@@ -481,7 +497,7 @@ main {
   top: max(16px, env(safe-area-inset-top));
   left: 16px;
   right: 16px;
-  background: #ef4444;
+  background: #dc2626; /* 4.8:1 with white at 13px — #ef4444 was 3.8:1 */
   color: #fff;
   padding: 12px;
   border-radius: 14px;
@@ -502,9 +518,9 @@ main {
   display: block;
   background: linear-gradient(
     90deg,
-    rgba(255,255,255,0.06),
-    rgba(255,255,255,0.12),
-    rgba(255,255,255,0.06)
+    var(--skeleton-base),
+    var(--skeleton-highlight),
+    var(--skeleton-base)
   );
   background-size: 200% 100%;
   animation: shimmer 1.2s linear infinite;
@@ -586,9 +602,10 @@ header,
   50%       { transform: scale(1.1) rotate(4deg);  }
 }
 
-/* ── Section stagger entrance — entree stays static, the rest float in ── */
+/* ── Section stagger entrance — entree stays static, the rest float in.
+   Last section must finish well inside the 2-second glance budget. ── */
 .section-block {
-  animation: sectionFadeIn 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: sectionFadeIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes sectionFadeIn {
@@ -596,14 +613,26 @@ header,
   to   { opacity: 1;     transform: translateY(0);    }
 }
 
-/* ── Today tab pulse glow ── */
+/* ── Today tab pulse glow — opacity on a static-shadow layer keeps the
+   infinite animation on the compositor instead of repainting box-shadow ── */
 .day-chip.today:not(.active) {
+  position: relative;
+}
+
+.day-chip.today:not(.active)::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 12px;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.28), 0 0 14px rgba(59, 130, 246, 0.14);
+  opacity: 0;
+  pointer-events: none;
   animation: todayPulse 2.4s ease-in-out infinite;
 }
 
 @keyframes todayPulse {
-  0%, 100% { box-shadow: none; }
-  50%       { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.28), 0 0 14px rgba(59, 130, 246, 0.14); }
+  0%, 100% { opacity: 0; }
+  50%       { opacity: 1; }
 }
 
 /* ── Day card slide transitions ── */

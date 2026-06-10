@@ -197,7 +197,7 @@ export const DayCard: React.FC<Props> = ({ day, direction }) => {
               key={section.title}
               aria-labelledby={sectionHeadingId}
               className={`section-block ${section.wide ? 'wide' : 'compact'}`}
-              style={{ animationDelay: `${(i + 1) * 200}ms` }}
+              style={{ animationDelay: `${(i + 1) * 100}ms` }}
             >
               <h3 className="sec-label" id={sectionHeadingId}>
                 <span aria-hidden="true">{getCategoryEmoji(section.title)}</span> {section.title}

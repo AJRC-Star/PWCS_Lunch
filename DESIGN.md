@@ -135,7 +135,7 @@ Two surfaces, one signal. The palette is near-black or near-white with a single 
 ### Status
 - **Fresh Green** (`#22c55e`): Status dot — data is current. Never used decoratively.
 - **Stale Amber** (`#f59e0b`): Status dot — data is past its TTL. Never used decoratively.
-- **Error Red** (`#ef4444`): Status dot (offline) and error banner background. Never used as a text color on its own.
+- **Error Red** (`#ef4444`): Status dot (offline). The error banner uses the darkened `#dc2626` for 4.5:1 text contrast. Never used as a text color on its own.
 
 **The One Accent Rule.** Signal Blue (`#3b82f6`) and Action Blue (`#2563eb`) are variants of one accent, not two separate accents. Treat them as a single brand identity with a filled and a text-safe form. No second accent hue is permitted. No purple, no teal, no orange alongside them.
 
@@ -158,7 +158,7 @@ No custom font is loaded. SF Pro renders on Apple devices at native quality; sys
 - **Label** (weight 700-900, `clamp(0.625rem, 2.5vw, 0.6875rem)`, ALL CAPS, letter-spacing 0.06–0.12em): Section eyebrows (`🍗 ENTREE`, `🥗 SIDES`), chip weekday abbreviations (`MON`), caption text (freshness label), today badge. This is the only context where all-caps is used and the copy is always ≤2 words.
 - **Brand Header** (weight 800, `clamp(14px, 3.8vw, 16px)`, letter-spacing -0.5px): The "BMS Lunch" `h1` in the sticky header. Deliberately small — the brand does not compete with the menu.
 
-**The Label Cap Rule.** ALL CAPS is reserved for labels of ≤4 words at label scale (≤11px). No sentence-case text is set in all-caps. No body copy is uppercased. The uppercase budget is spent entirely on: chip weekday abbreviations, section category eyebrows, the "TODAY" badge, and the today-shortcut "Today" label (mixed case there by exception).
+**The Label Cap Rule.** ALL CAPS is reserved for labels of ≤4 words at label scale (≤11px). No sentence-case text is set in all-caps. No body copy is uppercased. The uppercase budget is spent entirely on: chip weekday abbreviations, section category eyebrows, the "TODAY" badge, and the today-shortcut "↩ Today" label (mixed case there by exception).
 
 **The No FOUT Rule.** No web fonts are loaded. The system font stack is non-negotiable for this use case: students check this on spotty school Wi-Fi. A font download adds latency and layout shift at exactly the wrong moment.
 
@@ -189,7 +189,7 @@ The week navigation. Compact, scrollable, keyboard-accessible tablist.
 
 - **Shape:** Softly rounded (12px) rectangle
 - **Default:** Transparent background, muted text (`rgba(255,255,255,0.68)`), 1px `--line` border. Padding `8px 16px` (clamps with viewport)
-- **Today (unselected):** Signal Blue border, accent-text color, pulsing glow animation (`todayPulse` 2.4s ease-in-out infinite)
+- **Today (unselected):** Signal Blue border, accent-text color, pulsing glow (`todayPulse` 2.4s ease-in-out infinite — opacity on a static-shadow `::after` layer, compositor-only)
 - **Active (selected):** Action Blue fill (`#2563eb`), white text, `chipSpring` entrance (scale 0.86 → 1, `cubic-bezier(0.22, 1, 0.36, 1)`, 0.28s)
 - **Layout:** Flex column; abbreviated weekday label on top (label scale, weight 800, uppercase), numeric date below (weight 900, `clamp(14px, 4vw, 18px)`)
 - **Keyboard:** Full ARIA tablist with `ArrowLeft/Right/Up/Down/Home/End` navigation; selected chip auto-scrolls into center
@@ -204,7 +204,7 @@ The primary content card. Always first in the day view.
 - **Featured variant:** Blue-tinted gradient overlay (`linear-gradient(160deg, color-mix(in srgb, var(--c) 12%, var(--card-bg)), var(--card-bg))`). Used when ≥3 entree items. The tint signals "there's more here" without changing the structure
 - **Label:** `🍗 ENTREE` in accent text, label scale, weight 800, 6px gap before emoji
 - **Items:** Title-scale text (weight 700, `clamp(15px, 4.5vw, 21px)`). Line-height 1.2 to pack 2-3 items cleanly
-- **Entrance animation:** `sectionFadeIn` 0.3s ease, `animationDelay: 0ms`
+- **Entrance animation:** None — the entree renders statically so the answer to "what's for lunch" is readable the instant the card mounts
 
 ### Section Blocks
 
@@ -215,7 +215,7 @@ Secondary food categories (Sides, Fruit, Drink, Grains, Condiments, Dessert). Re
 - **Wide variant:** `grid-column: span 2` — used when `section.wide === true`. Spans the full row
 - **Label:** `{emoji} {CATEGORY}` in muted color, label scale, weight 700. Emoji distinguishes category at a glance without reading the label
 - **Items:** Body-scale text in `--list-text` (75% white / 72% black). Margin-bottom 1px — minimal vertical rhythm
-- **Stagger:** `animationDelay: (i + 1) * 55ms` — sections enter in order after the entree, reinforcing hierarchy
+- **Stagger:** `sectionFadeIn` 0.6s, `animationDelay: (i + 1) * 100ms` — sections float in after the static entree, reinforcing hierarchy; the last section settles within the 2-second glance budget
 - **Press feedback:** `transform: scale(0.97)` on `:active`
 
 ### Skeleton Loader
@@ -223,7 +223,7 @@ Secondary food categories (Sides, Fruit, Drink, Grains, Condiments, Dessert). Re
 Structural placeholder shown only when there is no cached data (no layout shift on repeat visits).
 
 - **Role:** `role="status" aria-busy="true" aria-label="Loading menu"` — announced to screen readers
-- **Shimmer:** `background: linear-gradient(90deg, ...)` with `background-size: 200%` animated by `shimmer` (1.2s linear infinite). Simulates content arriving left-to-right
+- **Shimmer:** `background: linear-gradient(90deg, var(--skeleton-base), var(--skeleton-highlight), var(--skeleton-base))` with `background-size: 200%` animated by `shimmer` (1.2s linear infinite). Tokens are themed (white rgba in dark, black rgba in light) so the shimmer is visible on both surfaces
 - **Structure:** Mirrors the actual DayCard DOM (day head + entree block + two section blocks) so the layout doesn't reflow when real content arrives
 
 ### School Countdown Widget
@@ -252,17 +252,17 @@ Circular button in the header, top-right corner.
 
 6×6px circle in the header meta-row conveying data freshness.
 
-- **Fresh:** `#22c55e` — data arrived this session within TTL
-- **Stale:** `#f59e0b` — data is past its expected refresh deadline
-- **Offline:** `#ef4444` — no network and serving cached data
+- **Fresh:** `#22c55e` dark / `#16a34a` light — data arrived this session within TTL
+- **Stale:** `#f59e0b` dark / `#b45309` light — data is past its expected refresh deadline
+- **Offline:** `#ef4444` — no network and serving cached data (passes 3:1 on both surfaces)
 - **Refreshing:** Any color + `dotPulse` animation (opacity 1 → 0.35 → 1, 1.2s ease-in-out infinite) — background fetch in progress
 
 ### Today Shortcut
 
 Appears in the meta-row when the selected day is not today.
 
-- **Shape:** Pill (border-radius 999px), 1px Signal Blue border
-- **Text:** "Today", 0.625rem, weight 800, accent-text color
+- **Shape:** Pill (border-radius 999px), 1px Signal Blue border. Visual pill is ~21px tall; an invisible `::before` overlay (`inset: -12px -8px`) extends the tap target to ≥44px
+- **Text:** "↩ Today", 0.625rem, weight 800, accent-text color — the arrow signals navigation, not status
 - **Hover:** Fills with Action Blue, white text — matching the day chip active state
 - **Purpose:** One-tap and keyboard-accessible path back to today's menu from any day view
 
@@ -278,7 +278,7 @@ Full-viewport overlay on the last day of school. `aria-hidden="true"` — purely
 
 Fixed position, top of viewport, `role="alert"` for screen reader announcement.
 
-- **Background:** `#ef4444` (Error Red), white text
+- **Background:** `#dc2626` (darkened Error Red — 4.8:1 with white text at 13px; the status-dot red `#ef4444` stays unchanged)
 - **Position:** `position: fixed`, above all content (z-index 30)
 - **Typography:** 13px, weight 800, centered
 
@@ -298,7 +298,7 @@ Temporary guidance element; shown once per browser session when multi-day data f
 - **Do** use the system font stack exclusively. No custom fonts. No Google Fonts. No icon fonts.
 - **Do** use Signal Blue (`#3b82f6`) and Action Blue (`#2563eb`) for all interactive affordances: borders, fills, focus rings. There is no second accent color.
 - **Do** use `backdrop-filter: blur(12px)` only on chrome that is `position: sticky` with content scrolling behind it (header, tab strip). Nowhere else.
-- **Do** stagger section entrance animations by 55ms per section. The entree appears first (0ms delay), then secondary sections in order.
+- **Do** stagger section entrance animations by 100ms per section (0.6s duration). The entree renders statically, then secondary sections float in order; the trio must settle within the 2-second glance budget.
 - **Do** honor `prefers-reduced-motion` with the global `animation: none !important` override already in the stylesheet.
 - **Do** give every status color a semantic purpose. Fresh green = data is current. Amber = data is stale. Red = offline or error. These colors mean specific things; their specificity is their value.
 - **Do** use the `clamp()` scale for display and title text. Fixed sizes only for label and caption (0.6875rem) and the brand header.

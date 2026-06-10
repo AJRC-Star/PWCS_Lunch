@@ -94,7 +94,6 @@ export const DayTabs: React.FC<Props> = ({ days, selectedIndex, onSelect }) => {
         const ariaLabel = [
           visibleLabel,
           fullDate,
-          selected ? 'selected' : null,
           day.today ? 'today' : null,
         ].filter(Boolean).join(', ');
         const tabId = getMenuDayTabId(day.iso);

@@ -28,10 +28,12 @@ describe('DayTabs', () => {
 
     expect(screen.getByRole('tablist', { name: /menu days/i })).toBeInTheDocument();
 
+    // Selection is conveyed by aria-selected alone; repeating "selected" in the
+    // label would make screen readers announce it twice.
     const selected = screen.getByRole('tab', {
-      name: /TUE 26, Tuesday, May 26, selected, today/,
+      name: /TUE 26, Tuesday, May 26, today/,
     });
-    expect(selected).toHaveAttribute('aria-label', 'TUE 26, Tuesday, May 26, selected, today');
+    expect(selected).toHaveAttribute('aria-label', 'TUE 26, Tuesday, May 26, today');
     expect(selected).toHaveTextContent('TUE 26');
     expect(selected).toHaveAttribute('type', 'button');
     expect(selected).toHaveAttribute('aria-selected', 'true');
@@ -63,7 +65,7 @@ describe('DayTabs', () => {
       />,
     );
 
-    screen.getByRole('tab', { name: /TUE 26, Tuesday, May 26, selected, today/ }).focus();
+    screen.getByRole('tab', { name: /TUE 26, Tuesday, May 26, today/ }).focus();
 
     await user.keyboard('{ArrowRight}');
     expect(onSelect).toHaveBeenLastCalledWith(2);
