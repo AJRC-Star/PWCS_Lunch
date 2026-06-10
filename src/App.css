@@ -8,9 +8,6 @@
   --accent-fill: #2563eb;
   --accent-fill-text: #ffffff;
   --accent-text: #60a5fa;
-  --surface: rgba(255, 255, 255, 0.03);
-  --surface-strong: rgba(255,255,255,0.045);
-  --surface-soft: rgba(255,255,255,0.015);
   --header-bg: rgba(8, 8, 15, 0.97);
   --tabs-bg: rgba(8, 8, 15, 0.95);
   --toggle-bg: rgba(255, 255, 255, 0.06);
@@ -31,9 +28,6 @@
   --muted: rgba(0, 0, 0, 0.64);
   --line: rgba(0, 0, 0, 0.08);
   --accent-text: #1d4ed8;
-  --surface: rgba(0, 0, 0, 0.02);
-  --surface-strong: rgba(255, 255, 255, 0.96);
-  --surface-soft: rgba(236, 239, 244, 0.88);
   --header-bg: rgba(245, 245, 247, 0.95);
   --tabs-bg: rgba(245, 245, 247, 0.92);
   --toggle-bg: rgba(17, 17, 17, 0.06);
