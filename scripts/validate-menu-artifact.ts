@@ -17,7 +17,14 @@ function readArtifact(): SharedMenuResponse {
 
 function main(): void {
   const artifact = readArtifact();
-  validateMenuArtifact(artifact);
+  // enforcePlausibility is deliberately off: plausibility is a *freshness*
+  // property judged against the current clock, so leaving it on makes the
+  // committed artifact age into a CI failure that blocks PRs touching no data
+  // at all — and, because deploy.yml gates on a green CI, blocks the very
+  // refresh that would fix it.  Freshness is owned by check-artifact-freshness
+  // (the dedicated watchdog) and by fetch-menu at write time; this gate checks
+  // that the committed artifact is structurally and semantically well-formed.
+  validateMenuArtifact(artifact, undefined, { enforcePlausibility: false });
   console.log(`Artifact validation passed for ${artifactPath}`);
 }
 

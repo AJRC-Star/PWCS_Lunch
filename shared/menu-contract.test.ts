@@ -215,3 +215,45 @@ describe('menu artifact contract', () => {
     ).toBeGreaterThan(thirtyDaysFromNow);
   });
 });
+
+// ── Contract must not contradict the classifier ───────────────────────────────
+// validateSectionFamilies previously forbade Entree for any bun/roll/bagel/
+// biscuit/pita item, while categorizeMealViewerItem classified exactly those
+// names as Entree when they carried a protein — so an ordinary menu item made
+// validateMenuArtifact throw and took down the whole snapshot.
+
+describe('validateSectionFamilies vs categorizeMealViewerItem', () => {
+  function artifactWithEntree(item: string): SharedMenuResponse {
+    const artifact = makeArtifact();
+    return {
+      ...artifact,
+      days: artifact.days.map((day) =>
+        day.iso === '2026-04-20'
+          ? { ...day, sections: [{ title: 'Entree', items: [item], wide: true }] }
+          : day,
+      ),
+    };
+  }
+
+  it.each([
+    'Chicken Biscuit',
+    'Sausage Roll',
+    'Turkey & Cheese Bagel',
+    'Beef Pita',
+  ])('accepts %s in Entree', (item) => {
+    expect(() =>
+      validateMenuArtifact(artifactWithEntree(item), undefined, { enforcePlausibility: false }),
+    ).not.toThrow();
+  });
+
+  it('still rejects bare bread placed in Entree', () => {
+    // "Dinner Roll" is deliberately absent from REQUIRED_ARTIFACT_ITEM_SECTIONS
+    // so this exercises validateSectionFamilies rather than the curated-drift
+    // check, which would otherwise fire first and mask the rule under test.
+    expect(() =>
+      validateMenuArtifact(artifactWithEntree('Dinner Roll'), undefined, {
+        enforcePlausibility: false,
+      }),
+    ).toThrow(/should not be in Entree/);
+  });
+});

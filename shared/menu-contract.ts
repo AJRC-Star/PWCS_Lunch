@@ -1,4 +1,5 @@
 import {
+  ENTREE_NAME_PATTERN,
   isPlausibleMenuSnapshot,
   MENU_SCHEMA_VERSION,
   SCHOOL_ID,
@@ -268,7 +269,17 @@ function validateSectionFamilies(data: SharedMenuResponse): void {
         if (/\b(meat sauce|spaghetti)\b/.test(name)) {
           assert(section.title === 'Entree', `"${item}" should be in Entree, not ${section.title} (${day.iso}).`);
         }
-        if (/\b(bun|roll|bagel|biscuit|pita)\b/.test(name) && !/\bsandwich\b/.test(name)) {
+        // Bread on its own ("Hamburger Bun") is a Grain, not the main dish —
+        // but bread carrying a protein ("Chicken Biscuit", "Sausage Roll") is a
+        // legitimate entree, and categorizeMealViewerItem classifies it as one.
+        // Exempting ENTREE_NAME_PATTERN derives the exception from the
+        // classifier instead of restating it; without this the two layers
+        // contradict each other and an ordinary menu item fails the artifact.
+        if (
+          /\b(bun|roll|bagel|biscuit|pita)\b/.test(name)
+          && !/\bsandwich\b/.test(name)
+          && !ENTREE_NAME_PATTERN.test(name)
+        ) {
           assert(section.title !== 'Entree', `"${item}" should not be in Entree (${day.iso}).`);
         }
       }

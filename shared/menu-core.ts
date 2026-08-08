@@ -301,6 +301,14 @@ function uniqueMenuItems(items: string[]): string[] {
 // that the built artifact has placed each item in the expected section.  Adding
 // a new entry here without a matching entry there means the override is applied
 // but never verified in the committed artifact.
+// Item-name tokens that identify a dish as the main course.  Exported so the
+// artifact contract can exempt these from its "bread items are not entrees"
+// rule instead of restating the classifier and contradicting it: without the
+// exemption an ordinary "Chicken Biscuit" is classified Entree here and then
+// rejected there, which fails the whole artifact.
+const ENTREE_NAME_PATTERN =
+  /\b(chicken|beef|turkey|pizza|burger|sandwich|quesadilla|wings|lasagna|falafel|meatballs|pupusas|drumstick|sausage|fillet|nuggets|chili|spaghetti)\b/;
+
 const ITEM_CATEGORY_OVERRIDES: Record<string, string> = {
   'american cheese slice': 'Condiments',
   'applesauce cup': 'Fruit',
@@ -329,14 +337,18 @@ function categorizeMealViewerItem(food: FoodItem): string {
   }
   if (/\b(juice|milk|water)\b/.test(rawName)) return 'Drink';
   if (/\b(applesauce|applesauce cup)\b/.test(rawName)) return 'Fruit';
-  if (/\b(chicken|beef|turkey|pizza|burger|sandwich|quesadilla|wings|lasagna|falafel|meatballs|pupusas|drumstick|sausage|fillet|nuggets|chili|spaghetti)\b/.test(rawName)) {
+  if (ENTREE_NAME_PATTERN.test(rawName)) {
     return 'Entree';
+  }
+  // Must precede the Condiments rule: that pattern matches "ranch"/"dip"
+  // unanchored, so "Crispy Chickpeas with Ranch" would otherwise land in
+  // Condiments — a placement validateSectionFamilies rejects outright, which
+  // takes down the whole snapshot over one renamed side dish.
+  if (/\b(grape tomatoes?|chickpeas?)\b/.test(rawName)) {
+    return 'Sides';
   }
   if (/(dipping sauce|bbq sauce|barbecue sauce|gravy|dressing|syrup|packet|dip|hummus|mustard|mayo|ketchup|ranch|marinara sauce)/.test(rawName)) {
     return 'Condiments';
-  }
-  if (/\b(grape tomatoes?|chickpeas?)\b/.test(rawName)) {
-    return 'Sides';
   }
   if (/\b(apple|orange|pear|peach|berry|berries|mandarin|fruit|pineapple|banana|grape|clementine|kiwi|mango)\b/.test(rawName)) {
     return 'Fruit';
@@ -398,11 +410,19 @@ function normalizeMealViewerDay(
   if (!iso) return null;
 
   const allBlocks = Array.isArray(schedule.menuBlocks) ? schedule.menuBlocks : [];
-  const blockNames = allBlocks.map((block) => String(block?.blockName || '').trim().toLowerCase());
   const isOfficialNoSchoolDay = isPWCSNoSchoolDate(iso);
-  const isNoSchoolDay = isOfficialNoSchoolDay || blockNames.some((name) =>
-    /no school|holiday|teacher workday|school closed|student holiday/.test(name)
-  );
+  // A closure block is an empty placeholder ("No School - Holiday").  Requiring
+  // it to carry no food items stops a real meal whose name merely contains a
+  // closure word — "Holiday Lunch" — from flagging the day no_school while its
+  // items still populate sections.  That combination is self-contradictory,
+  // validateMenuDay rejects it, and fetch-menu then aborts the whole refresh.
+  const isNoSchoolDay = isOfficialNoSchoolDay || allBlocks.some((block) => {
+    const name = String(block?.blockName || '').trim().toLowerCase();
+    if (!/no school|holiday|teacher workday|school closed|student holiday/.test(name)) {
+      return false;
+    }
+    return getFoodItemsForBlock(block).length === 0;
+  });
 
   const nonBreakfastBlocks = allBlocks.filter((block) => {
     const name = String(block?.blockName || '').trim().toLowerCase();
@@ -545,6 +565,7 @@ function normalizeMenuResponse(
 }
 
 export {
+  ENTREE_NAME_PATTERN,
   isPlausibleMenuSnapshot,
   MENU_SCHEMA_VERSION,
   SCHOOL_ID,

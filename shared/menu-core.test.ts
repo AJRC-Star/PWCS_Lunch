@@ -596,3 +596,58 @@ describe('menu-core', () => {
     expect(isPlausibleMenuSnapshot(next.days, base.days, '2026-04-13')).toBe(false);
   });
 });
+
+// ── Producer/contract agreement regressions ───────────────────────────────────
+// Each case below previously produced an artifact that validateMenuArtifact
+// rejected, which makes fetch-menu exit 1 and silently stops the weekly refresh.
+
+describe('menu-core does not produce artifacts its own contract rejects', () => {
+  it('classifies bread carrying a protein as an entree', () => {
+    expect(categorizeMealViewerItem({ item_Name: 'Chicken Biscuit', item_Type: '' })).toBe('Entree');
+    expect(categorizeMealViewerItem({ item_Name: 'Sausage Roll', item_Type: '' })).toBe('Entree');
+    expect(categorizeMealViewerItem({ item_Name: 'Turkey & Cheese Bagel', item_Type: '' })).toBe('Entree');
+    expect(categorizeMealViewerItem({ item_Name: 'Beef Pita', item_Type: '' })).toBe('Entree');
+  });
+
+  it('still keeps bare bread out of the entree section', () => {
+    expect(categorizeMealViewerItem({ item_Name: 'Dinner Roll', item_Type: '' })).toBe('Grains');
+    expect(categorizeMealViewerItem({ item_Name: 'Hamburger Bun', item_Type: '' })).toBe('Grains');
+  });
+
+  it('keeps chickpeas in Sides even when the name mentions a condiment', () => {
+    // Only the exact override key used to survive; any rename fell through to
+    // the unanchored Condiments regex, which the contract then rejected.
+    expect(categorizeMealViewerItem({ item_Name: 'Crispy Chickpeas with Ranch', item_Type: '' })).toBe('Sides');
+    expect(categorizeMealViewerItem({ item_Name: 'Ranch Chickpeas', item_Type: '' })).toBe('Sides');
+    expect(categorizeMealViewerItem({ item_Name: 'Crispy Chickpeas, Ranch', item_Type: 'Condiment' })).toBe('Sides');
+  });
+
+  it('does not flag a real meal as no-school just because its block name says "Holiday"', () => {
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [makeSchedule('2026-04-14', 'Holiday Lunch', PIZZA_ITEMS)],
+      },
+      { todayISO: '2026-04-14' },
+    );
+
+    expect(result.days).toHaveLength(1);
+    // no_school with non-empty sections is the self-contradiction that
+    // validateMenuDay rejects outright.
+    expect(result.days[0].no_school).toBe(false);
+    expect(result.days[0].sections.length).toBeGreaterThan(0);
+  });
+
+  it('still treats an empty closure block as no-school', () => {
+    const result = normalizeMenuResponse(
+      {
+        schoolName: 'TEST',
+        menuSchedules: [makeSchedule('2026-04-14', 'No School - Holiday', [])],
+      },
+      { todayISO: '2026-04-14' },
+    );
+
+    expect(result.days[0].no_school).toBe(true);
+    expect(result.days[0].no_information_provided).toBe(false);
+  });
+});

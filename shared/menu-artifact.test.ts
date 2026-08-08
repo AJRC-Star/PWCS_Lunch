@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { describe, expect, it } from 'vitest';
-import type { SharedMenuResponse } from './menu-core.ts';
+import { ENTREE_NAME_PATTERN, type SharedMenuResponse } from './menu-core.ts';
 import { getPWCSNoSchoolDatesBetween, isPWCSNoSchoolDate } from './pwcs-calendar.ts';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -43,7 +43,13 @@ describe('published menu artifact', () => {
           if (/\b(meat sauce|spaghetti)\b/.test(name)) {
             expect(section.title).toBe('Entree');
           }
-          if (/\b(bun|roll|bagel|biscuit|pita)\b/.test(name) && !/\bsandwich\b/.test(name)) {
+          // Mirrors validateSectionFamilies: bread carrying a protein
+          // ("Chicken Biscuit") is a legitimate entree and is exempt.
+          if (
+            /\b(bun|roll|bagel|biscuit|pita)\b/.test(name)
+            && !/\bsandwich\b/.test(name)
+            && !ENTREE_NAME_PATTERN.test(name)
+          ) {
             expect(section.title).not.toBe('Entree');
           }
         }
