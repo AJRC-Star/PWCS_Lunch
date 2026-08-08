@@ -1,16 +1,16 @@
 {
-  "name": "Colgan Lunch Menu",
-  "short_name": "Colgan Lunch",
+  "name": "CHS Lunch Menu",
+  "short_name": "CHS Lunch",
   "description": "School lunch menu for Colgan High School",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "theme_color": "#3b82f6",
-  "background_color": "#08080f",
+  "theme_color": "#041e42",
+  "background_color": "#05101e",
   "icons": [
     {
-      "src": "./icon.svg?v=4",
+      "src": "./icon.svg?v=5",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"

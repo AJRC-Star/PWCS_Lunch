@@ -1,15 +1,23 @@
 ---
-name: Colgan Lunch
+name: CHS Lunch
 description: Mobile-first school lunch menu viewer — answers "what's for lunch today?" in under two seconds.
 colors:
-  accent: "#3b82f6"
-  accent-fill: "#2563eb"
-  accent-text-dark: "#60a5fa"
-  accent-text-light: "#1d4ed8"
-  bg-dark: "#08080f"
-  bg-light: "#f5f5f7"
+  # Colgan High School's three published school colors.
+  brand-colgan-blue: "#041e42"
+  brand-caribbean-blue: "#69b3e7"
+  brand-shark-gray: "#706f6f"
+  # Derived mid-tone. Caribbean Blue only reaches 2.0:1 on the light surface,
+  # so light mode needs a darker brand blue for text, borders and focus rings.
+  accent-dark: "#69b3e7"
+  accent-light: "#0f5aa0"
+  accent-fill-dark: "#69b3e7"
+  accent-fill-light: "#041e42"
+  accent-fill-text-dark: "#041e42"
+  accent-fill-text-light: "#ffffff"
+  bg-dark: "#05101e"
+  bg-light: "#f2f5fa"
   text-dark: "#ffffff"
-  text-light: "#111111"
+  text-light: "#0d1b2a"
   status-fresh: "#22c55e"
   status-stale: "#f59e0b"
   status-error: "#ef4444"
@@ -46,6 +54,12 @@ rounded:
   md: "16px"
   sm: "14px"
   chip: "12px"
+  # Two small radii that were always in the CSS but never recorded here.
+  # Both are deliberate, not drift: skeleton bars sit a touch tighter than the
+  # content they stand in for, and confetti must stay near-square — at any of
+  # the larger radii a 10px piece becomes a disc.
+  xs: "10px"
+  hairline: "2px"
 spacing:
   xs: "8px"
   sm: "12px"
@@ -59,13 +73,13 @@ components:
     rounded: "{rounded.chip}"
     padding: "8px 16px"
   day-chip-active:
-    backgroundColor: "{colors.accent-fill}"
-    textColor: "{colors.text-dark}"
+    backgroundColor: "{colors.accent-fill-dark}"
+    textColor: "{colors.accent-fill-text-dark}"
     rounded: "{rounded.chip}"
     padding: "8px 16px"
   day-chip-today:
     backgroundColor: "transparent"
-    textColor: "{colors.accent-text-dark}"
+    textColor: "{colors.accent-dark}"
     rounded: "{rounded.chip}"
   entree-block:
     backgroundColor: "rgba(255,255,255,0.065)"
@@ -82,24 +96,24 @@ components:
     width: "42px"
     height: "42px"
   retry-button:
-    backgroundColor: "{colors.accent-fill}"
-    textColor: "{colors.text-dark}"
+    backgroundColor: "{colors.accent-fill-dark}"
+    textColor: "{colors.accent-fill-text-dark}"
     rounded: "{rounded.sm}"
     padding: "12px 16px"
   today-shortcut:
     backgroundColor: "transparent"
-    textColor: "{colors.accent-text-dark}"
+    textColor: "{colors.accent-dark}"
     rounded: "{rounded.pill}"
     padding: "2px 8px"
 ---
 
-# Design System: Colgan Lunch
+# Design System: CHS Lunch
 
 ## 1. Overview
 
 **Creative North Star: "The Quiet Instrument"**
 
-This system disappears into its task. The interface exists to deliver one piece of information — what is for lunch today — and then yield. Every design decision is evaluated against that principle: does this help the student glance and go, or does it demand attention the task doesn't warrant? The answer governs everything from the near-black background (no ambient glow to compete with the entree text) to the decision to use the system font stack (native rendering, zero download cost, familiar weight at every size).
+This system disappears into its task. The interface exists to deliver one piece of information — what is for lunch today — and then yield. Every design decision is evaluated against that principle: does this help the student glance and go, or does it demand attention the task doesn't warrant? The answer governs everything from the deep navy background (no ambient glow to compete with the entree text) to the decision to use the system font stack (native rendering, zero download cost, familiar weight at every size).
 
 The system is calm at rest and confident in motion. Transitions confirm selection rather than decorate it; the countdown number flips like a physical display rather than fading; confetti erupts exactly once per school year. Playfulness is rationed. The emoji category icons earn their place because they function: they speed scanning by making each food group pattern-matchable at a glance, not because they add personality for its own sake.
 
@@ -113,31 +127,41 @@ The dual theme (dark default, light optional) honors the physical context. Stude
 - Motion is confirmatory, not choreographic: transitions answer "did that work?" not "isn't this nice?"
 - Reduced motion honored globally; all animations have an instant alternative
 
-## 2. Colors: The Deep Signal Palette
+## 2. Colors: The Colgan Palette
 
-Two surfaces, one signal. The palette is near-black or near-white with a single blue accent that carries all interactive meaning.
+Two surfaces, one signal — now carrying the school's own identity. The palette is Colgan High School's three published colors, applied so that the brand reads at a glance without the app turning into an institutional portal.
+
+### Brand
+Colgan High School publishes three colors. They are the source of truth for everything below.
+
+- **Colgan Blue** (`#041e42`): The primary navy. Fills the selected state in light theme, letters it in dark theme, and is the PWA `theme_color`.
+- **Caribbean Blue** (`#69b3e7`): The bright accent. Carries all interactive meaning in dark theme.
+- **Shark Gray** (`#706f6f`): Reserved for neutral, non-text surfaces (the light-theme skeleton). It reaches only 4.47:1 on the light background — just under the 4.5:1 body-text floor — so it is never used for text.
+
+The blues are water colors by design: the school chose them to complement its two-pool aquatic center, which is also why the app icon is a fin cutting a surface.
 
 ### Primary
-- **Signal Blue** (`#3b82f6` / `--c`): The brand accent. Used as: the `border-top` stripe on the active day card, day chip active fill, focus rings, today chip border, countdown widget border tint. Appears in ≤10% of any given screen. Its rarity is the point.
-- **Action Blue** (`#2563eb` / `--accent-fill`): Darker, filled variant. Used exclusively for primary action backgrounds: the active day chip fill, the Refresh Menu button, and the retry button. Never used for text.
-- **Accessible Blue — Dark** (`#60a5fa` / `--accent-text`): Lighter blue, passes 4.5:1 on the dark background. Used for accent text, section labels on entree blocks, day weekday labels, today shortcut text. Dark theme only.
-- **Accessible Blue — Light** (`#1d4ed8` / `--accent-text` in light theme): Darker blue, passes 4.5:1 on the light background. Swaps in via `[data-theme='light']`.
+- **Accent — Dark** (`#69b3e7` / `--c`, `--accent-text`): Caribbean Blue. The `border-top` stripe on the active day card, focus rings, today chip border, countdown border tint, accent text. 8.0:1 on the dark surface. Appears in ≤10% of any screen; its rarity is the point.
+- **Accent — Light** (`#0f5aa0` / `--c`, `--accent-text` in light theme): A mid-tone derived from Colgan Blue. It exists because Caribbean Blue reaches only 2.0:1 on the light surface and cannot carry text or borders there. 6.5:1 on the light surface.
+- **Selected fill** (`--accent-fill` / `--accent-fill-text`): The two brand blues swap roles by theme so the selected state always has maximum contrast against its own surface — dark theme fills Caribbean and letters Colgan (7.2:1); light theme fills Colgan and letters white (16:1).
 
 ### Neutral
-- **Deep Void** (`#08080f` / `--bg` dark): The dark body background. Not pure black; a near-black with a very slight violet cast. Prevents the pure-black harshness while still reading as dark.
-- **Apple Silver** (`#f5f5f7` / `--bg` light): The light body background. Apple's canonical gray — familiar, neutral, slightly cool.
-- **Glass Surface** (`rgba(255,255,255,0.065)` / `--card-bg` dark): All cards and section blocks in dark theme. Transparent enough to let the near-black breathe.
-- **Solid Surface** (`rgba(255,255,255,0.82)` / `--card-bg` light): Cards in light theme. Opaque white against the silver background creates clear card lift.
-- **Primary Text** (`#ffffff` dark / `#111111` light / `--text`): Body and display text.
-- **Muted Text** (`rgba(255,255,255,0.68)` dark / `rgba(0,0,0,0.64)` light / `--muted`): Secondary text: captions, meta labels, countdown labels, list items at 0.75 opacity. Always verify 4.5:1 before applying to small text.
-- **Divider** (`rgba(255,255,255,0.08)` dark / `rgba(0,0,0,0.08)` light / `--line`): Borders, separators, chip outlines at rest.
+- **Deep Navy** (`#05101e` / `--bg` dark): The dark body background. Colgan Blue driven down in lightness, so the app reads navy rather than neutral black, without the pure-black harshness.
+- **Pale Tide** (`#f2f5fa` / `--bg` light): The light body background. A cool near-white tinted toward the brand's own hue rather than toward default warmth.
+- **Glass Surface** (`rgba(255,255,255,0.065)` / `--card-bg` dark): All cards and section blocks in dark theme. Transparent enough to let the navy breathe.
+- **Solid Surface** (`rgba(255,255,255,0.86)` / `--card-bg` light): Cards in light theme. Opaque white against the tinted background creates clear card lift.
+- **Primary Text** (`#ffffff` dark / `#0d1b2a` light / `--text`): Body and display text. The light-theme ink is a very dark navy rather than pure black, so text sits in the brand family.
+- **Muted Text** (`rgba(255,255,255,0.68)` dark / `rgba(4,30,66,0.68)` light / `--muted`): Secondary text: captions, meta labels, countdown labels. 5.3:1 in light theme. Always verify 4.5:1 before applying to small text.
+- **Divider** (`rgba(255,255,255,0.08)` dark / `rgba(4,30,66,0.10)` light / `--line`): Borders, separators, chip outlines at rest.
 
 ### Status
 - **Fresh Green** (`#22c55e`): Status dot — data is current. Never used decoratively.
 - **Stale Amber** (`#f59e0b`): Status dot — data is past its TTL. Never used decoratively.
 - **Error Red** (`#ef4444`): Status dot (offline). The error banner uses the darkened `#dc2626` for 4.5:1 text contrast. Never used as a text color on its own.
 
-**The One Accent Rule.** Signal Blue (`#3b82f6`) and Action Blue (`#2563eb`) are variants of one accent, not two separate accents. Treat them as a single brand identity with a filled and a text-safe form. No second accent hue is permitted. No purple, no teal, no orange alongside them.
+Status colors stay outside the brand palette deliberately. Fresh/stale/offline must be readable as universal semantics; recoloring them into school blues would make state indistinguishable from accent.
+
+**The One Accent Rule.** Colgan Blue and Caribbean Blue are two forms of one brand identity — a filled form and a text-safe form — not two accents. `#0f5aa0` is a contrast-driven derivation of Colgan Blue, not a third color. No other accent hue is permitted. No purple, no teal, no orange alongside them.
 
 **The Status-Only Rule.** Green, amber, and red are semantic status colors exclusively. They appear on the 6×6px status dot and the error banner background. They are prohibited on cards, section labels, chip backgrounds, or any decorative surface.
 
@@ -156,7 +180,7 @@ No custom font is loaded. SF Pro renders on Apple devices at native quality; sys
 - **Title** (weight 700, `clamp(15px, 4.5vw, 21px)`, line-height 1.2): Entree items — the most important food content. Heavier than body because the entree is what 90% of users open the app to read.
 - **Body** (weight 400 / 600 implicit, `clamp(12px, 3.2vw, 15px)`, line-height 1.35): Section list items (sides, fruit, drink, etc.). Lighter weight signals secondary priority. Color is `--list-text` (75% white / 72% black).
 - **Label** (weight 700-900, `clamp(0.625rem, 2.5vw, 0.6875rem)`, ALL CAPS, letter-spacing 0.06–0.12em): Section eyebrows (`🍗 ENTREE`, `🥗 SIDES`), chip weekday abbreviations (`MON`), caption text (freshness label), today badge. This is the only context where all-caps is used and the copy is always ≤2 words.
-- **Brand Header** (weight 800, `clamp(14px, 3.8vw, 16px)`, letter-spacing -0.5px): The "Colgan Lunch" `h1` in the sticky header. Deliberately small — the brand does not compete with the menu.
+- **Brand Header** (weight 800, `clamp(14px, 3.8vw, 16px)`, letter-spacing -0.5px): The "CHS Lunch" `h1` in the sticky header. Deliberately small — the brand does not compete with the menu.
 
 **The Label Cap Rule.** ALL CAPS is reserved for labels of ≤4 words at label scale (≤11px). No sentence-case text is set in all-caps. No body copy is uppercased. The uppercase budget is spent entirely on: chip weekday abbreviations, section category eyebrows, the "TODAY" badge, and the today-shortcut "↩ Today" label (mixed case there by exception).
 

@@ -1,4 +1,4 @@
-# Colgan Lunch
+# CHS Lunch
 
 ## Register
 product

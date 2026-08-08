@@ -192,7 +192,7 @@ describe('App', () => {
       expect(apiMocks.getFreshData).toHaveBeenCalledTimes(1);
     });
 
-    expect(screen.getByRole('heading', { name: /colgan lunch/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /chs lunch/i })).toBeInTheDocument();
     expect(screen.queryByText('Nothing to show')).not.toBeInTheDocument();
     expect(document.querySelector('.skeleton-card')).not.toBeNull();
 
@@ -469,7 +469,7 @@ describe('App', () => {
     expect(document.documentElement.dataset.theme).toBe('dark');
     expect(document.documentElement.style.colorScheme).toBe('dark');
     expect(window.localStorage.getItem('bms-lunch-theme-preference')).toBe('dark');
-    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#08080f');
+    expect(document.querySelector('meta[name="theme-color"]')?.getAttribute('content')).toBe('#05101e');
   });
 
   it('prefers a stored theme choice over the device preference', async () => {

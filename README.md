@@ -1,4 +1,4 @@
-# Colgan Lunch Menu
+# CHS Lunch Menu
 
 A mobile-first web app that displays the school lunch menu for Colgan High School. Designed to feel like a native app — no page scrolling, fluid layout, instant navigation.
 

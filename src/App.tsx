@@ -14,9 +14,11 @@ type ThemePreference = Theme | 'system';
 const THEME_STORAGE_KEY = 'bms-lunch-theme-preference';
 const THEME_META_SELECTOR = 'meta[name="theme-color"]';
 const DATE_QUERY_PARAM = 'date';
+// Must track --bg in App.css for each theme, so the browser chrome matches the
+// app surface rather than banding against it.
 const THEME_COLORS: Record<Theme, string> = {
-  dark: '#08080f',
-  light: '#f5f5f7',
+  dark: '#05101e',
+  light: '#f2f5fa',
 };
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -420,7 +422,7 @@ function App() {
 
       <header>
         <div className="title">
-          <h1>Colgan Lunch</h1>
+          <h1>CHS Lunch</h1>
           <div className="meta-row">
             <span className="caption">
               {data?.meta ? (
