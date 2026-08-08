@@ -10,8 +10,20 @@
     <meta name="apple-mobile-web-app-title" content="CHS Lunch" />
     <title>CHS Lunch</title>
     <link rel="manifest" href="./manifest.json" />
-    <link rel="icon" type="image/svg+xml" href="./icon.svg" />
-    <link rel="apple-touch-icon" href="./icon-192.png" />
+    <!--
+      The ?v= query is load-bearing, not decoration.  Browsers cache favicons and
+      touch icons in a store of their own that ignores ordinary HTTP cache
+      headers, so a returning visitor keeps painting the icon it fetched the
+      first time no matter how many deploys land.  Changing the URL is the only
+      reliable way to force a re-fetch.
+
+      manifest.json already versions its icon entries, which is why an installed
+      home-screen app picked up the Colgan "CHS" mark while browser tabs stayed
+      on the old burger.  Bump the number here and in manifest.json together
+      whenever public/icon.svg or the generated PNGs change.
+    -->
+    <link rel="icon" type="image/svg+xml" href="./icon.svg?v=5" />
+    <link rel="apple-touch-icon" href="./icon-192.png?v=5" />
   </head>
   <body>
     <div id="root"></div>
