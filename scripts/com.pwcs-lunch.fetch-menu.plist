@@ -1,5 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+    Local fallback scheduler for the weekly menu refresh.
+
+    REQUIRES FULL DISK ACCESS. This repo lives inside iCloud Drive
+    (~/Library/Mobile Documents), which macOS protects with TCC. A launchd
+    agent runs with no TCC consent of its own, so without Full Disk Access it
+    can stat and cd into the repo but cannot read a single file in it — every
+    run dies immediately with:
+
+        /bin/bash: .../scripts/local-fetch.sh: Operation not permitted
+
+    Verified 2026-08-08: a wrapper script stored outside iCloud does NOT work
+    around this; the restriction is on reading iCloud contents, not on where
+    the invoked script lives.
+
+    To enable:
+      System Settings > Privacy & Security > Full Disk Access > add /bin/bash
+    then reinstall:
+      cp scripts/com.pwcs-lunch.fetch-menu.plist ~/Library/LaunchAgents/
+      launchctl bootout   gui/$(id -u)/com.pwcs-lunch.fetch-menu 2>/dev/null
+      launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.pwcs-lunch.fetch-menu.plist
+    and verify with a real run:
+      launchctl kickstart -k gui/$(id -u)/com.pwcs-lunch.fetch-menu
+
+    Column 2 of `launchctl list | grep pwcs` is the last exit status: 0 is
+    success, 126 is the TCC failure above, 78 means launchd could not even
+    open the log paths.
+
+    If the repo ever moves, update the three absolute paths below and
+    reinstall — a stale path fails the same way.
+
+    Logs deliberately live outside iCloud: launchd cannot create them inside
+    the protected volume, and it fails before running anything (exit 78), so
+    there is no log explaining why.
+-->
 <plist version="1.0">
 <dict>
     <key>Label</key>
@@ -23,9 +58,9 @@
     </dict>
 
     <key>StandardOutPath</key>
-    <string>/Users/ajstaranowicz/Library/Mobile Documents/com~apple~CloudDocs/Development/PWCS Lunch/logs/fetch.log</string>
+    <string>/Users/ajstaranowicz/Library/Logs/pwcs-lunch/fetch.log</string>
     <key>StandardErrorPath</key>
-    <string>/Users/ajstaranowicz/Library/Mobile Documents/com~apple~CloudDocs/Development/PWCS Lunch/logs/fetch-error.log</string>
+    <string>/Users/ajstaranowicz/Library/Logs/pwcs-lunch/fetch-error.log</string>
 
     <!-- Run missed jobs when the Mac wakes up after the scheduled time -->
     <key>RunAtLoad</key>
