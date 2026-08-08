@@ -12,7 +12,12 @@ env:
 
 concurrency:
   group: deployment
-  cancel-in-progress: true
+  # Never cancel a production deploy in flight.  Cancelling mid-deploy-pages can
+  # leave the github-pages environment with a stuck deployment, and because this
+  # group covers the whole workflow it also tears down an in-progress build.
+  # Queueing instead costs a little latency when pushes land close together and
+  # is what GitHub's own Pages workflow does.
+  cancel-in-progress: false
 
 jobs:
   build:
