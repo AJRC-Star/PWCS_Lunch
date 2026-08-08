@@ -191,15 +191,15 @@ No custom font is loaded. SF Pro renders on Apple devices at native quality; sys
 This system uses **tonal layering with selective backdrop-blur**, not traditional drop shadows. Depth is established by surface opacity, not shadow casting.
 
 ### Surface Layers (dark theme, bottom to top)
-- **Base** (`--bg: #08080f`): The body background. Deepest layer.
-- **Glass Chrome** (`--header-bg: rgba(8,8,15,0.97)`, `--tabs-bg: rgba(8,8,15,0.95)` + `backdrop-filter: blur(12px)`): The sticky header and tab strip. Nearly opaque dark glass — content scrolls behind it but reads as blurred, not visible. The blur makes the chrome feel native iOS, not decorative.
-- **Card Surface** (`--card-bg: rgba(255,255,255,0.065)`): Menu content cards. The lightest layer, making cards subtly legible against the near-black base.
-- **Active State** (`--accent-fill: #2563eb`): The selected day chip. Only fully opaque non-base layer. Makes the selection unmistakably clear.
+- **Base** (`--bg: #05101e`): The body background. Deepest layer. Colgan Blue driven down in lightness, so the app reads navy rather than neutral black.
+- **Glass Chrome** (`--header-bg: rgba(5,16,30,0.97)`, `--tabs-bg: rgba(5,16,30,0.95)` + `backdrop-filter: blur(12px)`): The sticky header and tab strip. Nearly opaque dark glass — content scrolls behind it but reads as blurred, not visible. The blur makes the chrome feel native iOS, not decorative.
+- **Card Surface** (`--card-bg: rgba(255,255,255,0.065)`): Menu content cards. The lightest layer, making cards subtly legible against the deep navy base.
+- **Active State** (`--accent-fill`): The selected day chip. Only fully opaque non-base layer. Makes the selection unmistakably clear. Caribbean Blue on dark, Colgan Blue on light — see The One Accent Rule.
 
 ### Shadow Vocabulary
 - **Card inset highlight** (`inset 0 1px 0 rgba(255,255,255,0.09)`): Applied to cards in dark theme. Simulates a top-edge specular highlight, adding a slight sense of physical presence to the glass card.
 - **Card ambient drop** (`0 2px 8px rgba(0,0,0,0.20), 0 8px 24px rgba(0,0,0,0.12)`): Applied to cards in dark theme. Subtle two-layer depth. Not structural — purely ambient.
-- **Toggle ambient** (`0 10px 30px rgba(0,0,0,0.18)` dark / `0 10px 30px rgba(59,130,246,0.12)` light): The theme toggle button. In light mode, a blue-tinted glow links the button to the brand accent.
+- **Toggle ambient** (`0 10px 30px rgba(0,0,0,0.18)` dark / `0 10px 30px rgba(4,30,66,0.12)` light): The theme toggle button. In light mode, a Colgan Blue tinted glow links the button to the brand accent.
 
 **The Blur-is-Chrome Rule.** `backdrop-filter: blur(12px)` is used only on header and tabs — the chrome elements that must read as floating above content as the user scrolls. Cards do not blur their backgrounds. New surfaces should default to tonal layering; reach for blur only when the element is positionally sticky and content scrolls behind it.
 
@@ -213,8 +213,8 @@ The week navigation. Compact, scrollable, keyboard-accessible tablist.
 
 - **Shape:** Softly rounded (12px) rectangle
 - **Default:** Transparent background, muted text (`rgba(255,255,255,0.68)`), 1px `--line` border. Padding `8px 16px` (clamps with viewport)
-- **Today (unselected):** Signal Blue border, accent-text color, pulsing glow (`todayPulse` 2.4s ease-in-out infinite — opacity on a static-shadow `::after` layer, compositor-only)
-- **Active (selected):** Action Blue fill (`#2563eb`), white text, `chipSpring` entrance (scale 0.86 → 1, `cubic-bezier(0.22, 1, 0.36, 1)`, 0.28s)
+- **Today (unselected):** Accent border (`--c`), accent-text color, pulsing glow (`todayPulse` 2.4s ease-in-out infinite — opacity on a static-shadow `::after` layer, compositor-only)
+- **Active (selected):** `--accent-fill` background with `--accent-fill-text` letters — Caribbean Blue on Colgan Blue in dark theme, Colgan Blue on white in light. `chipSpring` entrance (scale 0.86 → 1, `cubic-bezier(0.22, 1, 0.36, 1)`, 0.28s). Despite the name this is an ease-out-quint settle, not a bounce: both y control points are 1, so it never overshoots.
 - **Layout:** Flex column; abbreviated weekday label on top (label scale, weight 800, uppercase), numeric date below (weight 900, `clamp(14px, 4vw, 18px)`)
 - **Keyboard:** Full ARIA tablist with `ArrowLeft/Right/Up/Down/Home/End` navigation; selected chip auto-scrolls into center
 - **Interaction:** `tabIndex={selected ? 0 : -1}` pattern — roving focus
@@ -254,7 +254,7 @@ Structural placeholder shown only when there is no cached data (no layout shift 
 
 Appears from May 1 through the last day of school each year.
 
-- **Shape:** Rounded rectangle (14px), 1px Signal Blue border tint (`color-mix(in srgb, var(--c) 35%, var(--line))`), blue-tinted card bg
+- **Shape:** Rounded rectangle (14px), 1px accent border tint (`color-mix(in srgb, var(--c) 35%, var(--line))`), blue-tinted card bg
 - **Content:** Plain-language label ("School ends in X days · Jun 12") with the exact end date inline. Accent text for the number (weight 900), muted for the label (weight 700)
 - **Flip animation:** When the day count changes, `flipCount` fires (rotateX 0 → 90 → -90 → 0deg, 0.38s ease-in-out) — simulates a split-flap display
 - **Perspective:** `perspective: 300px` on the container so the 3D rotation is legible
@@ -266,7 +266,7 @@ Appears from May 1 through the last day of school each year.
 Circular button in the header, top-right corner.
 
 - **Shape:** 42×42px circle (border-radius 999px)
-- **Background:** Semi-transparent (`rgba(255,255,255,0.06)` dark / `rgba(17,17,17,0.06)` light), 1px `--line` border
+- **Background:** Semi-transparent (`rgba(255,255,255,0.06)` dark / `rgba(4,30,66,0.06)` light), 1px `--line` border
 - **Icon:** Emoji (`☀️` / `🌙`), 18px, aria-hidden. Button carries the accessible label
 - **Hover:** `translateY(-1px)` — subtle lift, 0.15s ease
 - **Active:** `translateY(0)` — returns to baseline
@@ -285,9 +285,9 @@ Circular button in the header, top-right corner.
 
 Appears in the meta-row when the selected day is not today.
 
-- **Shape:** Pill (border-radius 999px), 1px Signal Blue border. Visual pill is ~21px tall; an invisible `::before` overlay (`inset: -12px -8px`) extends the tap target to ≥44px
+- **Shape:** Pill (border-radius 999px), 1px accent border (`--c`). Visual pill is ~21px tall; an invisible `::before` overlay (`inset: -12px -8px`) extends the tap target to ≥44px
 - **Text:** "↩ Today", 0.625rem, weight 800, accent-text color — the arrow signals navigation, not status
-- **Hover:** Fills with Action Blue, white text — matching the day chip active state
+- **Hover:** Fills with `--accent-fill` and letters with `--accent-fill-text` — matching the day chip active state
 - **Purpose:** One-tap and keyboard-accessible path back to today's menu from any day view
 
 ### Confetti
@@ -320,7 +320,7 @@ Temporary guidance element; shown once per browser session when multi-day data f
 ### Do:
 - **Do** keep the entree as the first and largest content block on every day view. If a day has no entree, the empty state still uses the entree block's position and shape.
 - **Do** use the system font stack exclusively. No custom fonts. No Google Fonts. No icon fonts.
-- **Do** use Signal Blue (`#3b82f6`) and Action Blue (`#2563eb`) for all interactive affordances: borders, fills, focus rings. There is no second accent color.
+- **Do** use the brand blues for all interactive affordances — borders, fills, focus rings — via the `--c` / `--accent-fill` / `--accent-text` tokens rather than literal hex, so the light theme's darker blue swaps in automatically. There is no second accent color.
 - **Do** use `backdrop-filter: blur(12px)` only on chrome that is `position: sticky` with content scrolling behind it (header, tab strip). Nowhere else.
 - **Do** stagger section entrance animations by 100ms per section (0.6s duration). The entree renders statically, then secondary sections float in order; the trio must settle within the 2-second glance budget.
 - **Do** honor `prefers-reduced-motion` with the global `animation: none !important` override already in the stylesheet.
@@ -332,7 +332,8 @@ Temporary guidance element; shown once per browser session when multi-day data f
 ### Don't:
 - **Don't** add sidebar navigation, widget grids, or any layout pattern from a generic dashboard template. This app has no nav; the week tabs are the only navigation surface. (Anti-reference: "Generic dashboard templates.")
 - **Don't** add photography, hero images, or marketing chrome. The content is text. Decoration competes with the entree. (Anti-reference: "Consumer food apps — too much photography/marketing chrome.")
-- **Don't** introduce a second accent color. No purple, teal, orange, or red alongside Signal Blue for interactive surfaces. Status colors (green/amber/red) are semantic-only and never used as accent.
+- **Don't** introduce a second accent color. No purple, teal, orange, or red alongside the Colgan blues for interactive surfaces. Status colors (green/amber/red) are semantic-only and never used as accent.
+- **Don't** hardcode Caribbean Blue (`#69b3e7`) as text or a border in light theme. It reaches only 2.1:1 there and fails AA outright — that is what the derived `#0f5aa0` exists for, and why `App.css.test.ts` asserts real contrast ratios rather than literal hex values.
 - **Don't** apply `backdrop-filter: blur()` to cards or decorative surfaces. Blur is chrome-only. (See: The Blur-is-Chrome Rule.)
 - **Don't** use `border-left` or `border-right` greater than 1px as a colored stripe on any card or list item. The day card's `border-top: 3px solid var(--c)` is the single permitted structural use of a colored border stripe.
 - **Don't** add gradient text (`background-clip: text` with a gradient). Use solid accent colors for emphasis.

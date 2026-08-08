@@ -12,6 +12,11 @@ const apiMocks = vi.hoisted(() => ({
 
 vi.mock('./api', () => apiMocks);
 
+// Seed value for the theme-color meta tag. Intentionally a colour that appears
+// nowhere in the design system, so a test asserting the app set theme-color
+// cannot pass by coincidence on whatever was already there.
+const THEME_COLOR_SEED = '#ff00ff';
+
 // Controls the calendar date App sees for summer-mode detection without
 // touching the real clock.  Defaults to a regular school day.
 const todayISOMock = vi.hoisted(() => ({ value: '2026-04-13' }));
@@ -149,7 +154,10 @@ describe('App', () => {
     if (!document.querySelector('meta[name="theme-color"]')) {
       const meta = document.createElement('meta');
       meta.name = 'theme-color';
-      meta.content = '#3b82f6';
+      // Deliberately a colour the app never uses, so a test asserting the
+      // theme-color meta cannot pass on the seed value by coincidence. Not a
+      // stale brand colour — it must NOT be one of the real theme values.
+      meta.content = THEME_COLOR_SEED;
       document.head.appendChild(meta);
     }
     Object.defineProperty(window, 'matchMedia', {
@@ -174,7 +182,7 @@ describe('App', () => {
     document.documentElement.style.colorScheme = '';
     document
       .querySelector('meta[name="theme-color"]')
-      ?.setAttribute('content', '#3b82f6');
+      ?.setAttribute('content', THEME_COLOR_SEED);
   });
 
   // ── Existing tests ─────────────────────────────────────────────────────────

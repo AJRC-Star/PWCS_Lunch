@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 
-const COLORS = ['#3b82f6', '#f59e0b', '#ef4444', '#10b981', '#a855f7', '#ec4899', '#f97316'];
+// Deliberately a multi-colour celebration palette, exempt from the one-accent
+// rule — but the blue is Caribbean Blue so the brand leads the burst.
+const COLORS = ['#69b3e7', '#f59e0b', '#ef4444', '#10b981', '#a855f7', '#ec4899', '#f97316'];
 const PIECE_COUNT = 48;
 
 export const Confetti: React.FC = () => {
