@@ -26,3 +26,10 @@ dist-ssr
 # Deployment
 .env.local
 .env
+
+# Claude Code
+# launch.json IS committed — it's the shared dev-server config.
+# settings.local.json is not: it holds personal permission grants (including
+# auto-approve for git push / commit / gh pr) plus absolute paths to this
+# machine's home directory. Note `*.local` above does not match `*.local.json`.
+.claude/settings.local.json
