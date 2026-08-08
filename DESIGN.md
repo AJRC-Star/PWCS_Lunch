@@ -1,5 +1,5 @@
 ---
-name: BMS Lunch
+name: Colgan Lunch
 description: Mobile-first school lunch menu viewer — answers "what's for lunch today?" in under two seconds.
 colors:
   accent: "#3b82f6"
@@ -93,7 +93,7 @@ components:
     padding: "2px 8px"
 ---
 
-# Design System: BMS Lunch
+# Design System: Colgan Lunch
 
 ## 1. Overview
 
@@ -156,7 +156,7 @@ No custom font is loaded. SF Pro renders on Apple devices at native quality; sys
 - **Title** (weight 700, `clamp(15px, 4.5vw, 21px)`, line-height 1.2): Entree items — the most important food content. Heavier than body because the entree is what 90% of users open the app to read.
 - **Body** (weight 400 / 600 implicit, `clamp(12px, 3.2vw, 15px)`, line-height 1.35): Section list items (sides, fruit, drink, etc.). Lighter weight signals secondary priority. Color is `--list-text` (75% white / 72% black).
 - **Label** (weight 700-900, `clamp(0.625rem, 2.5vw, 0.6875rem)`, ALL CAPS, letter-spacing 0.06–0.12em): Section eyebrows (`🍗 ENTREE`, `🥗 SIDES`), chip weekday abbreviations (`MON`), caption text (freshness label), today badge. This is the only context where all-caps is used and the copy is always ≤2 words.
-- **Brand Header** (weight 800, `clamp(14px, 3.8vw, 16px)`, letter-spacing -0.5px): The "BMS Lunch" `h1` in the sticky header. Deliberately small — the brand does not compete with the menu.
+- **Brand Header** (weight 800, `clamp(14px, 3.8vw, 16px)`, letter-spacing -0.5px): The "Colgan Lunch" `h1` in the sticky header. Deliberately small — the brand does not compete with the menu.
 
 **The Label Cap Rule.** ALL CAPS is reserved for labels of ≤4 words at label scale (≤11px). No sentence-case text is set in all-caps. No body copy is uppercased. The uppercase budget is spent entirely on: chip weekday abbreviations, section category eyebrows, the "TODAY" badge, and the today-shortcut "↩ Today" label (mixed case there by exception).
 

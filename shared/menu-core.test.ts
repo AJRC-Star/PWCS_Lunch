@@ -42,7 +42,7 @@ describe('menu-core', () => {
   it('falls back to non-breakfast blocks when lunch is named differently', () => {
     const result = normalizeMenuResponse(
       {
-        schoolName: 'BENTONMIDDLE',
+        schoolName: 'COLGANHIGH',
         menuSchedules: [makeSchedule('2026-04-13', 'Main Line', [
           { item_Name: 'Chicken Sandwich', item_Type: 'Main' },
           { item_Name: 'Garden Salad', item_Type: 'Vegetable' },
@@ -74,7 +74,7 @@ describe('menu-core', () => {
   it('normalizes internal whitespace in item names from MealViewer', () => {
     const result = normalizeMenuResponse(
       {
-        schoolName: 'BENTONMIDDLE',
+        schoolName: 'COLGANHIGH',
         menuSchedules: [
           makeSchedule('2026-05-26', 'Lunch', [
             { item_Name: 'Fruit Juice Cup -  Strawberry Pomegranate', item_Type: '' },
@@ -94,7 +94,7 @@ describe('menu-core', () => {
   it('keeps tricky items in the intended sections when MealViewer raw types are misleading', () => {
     const result = normalizeMenuResponse(
       {
-        schoolName: 'BENTONMIDDLE',
+        schoolName: 'COLGANHIGH',
         menuSchedules: [
           makeSchedule('2026-05-01', 'Lunch', [
             { item_Name: 'Falafel Nuggets', item_Type: 'Main' },

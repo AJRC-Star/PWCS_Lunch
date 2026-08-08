@@ -42,7 +42,7 @@ function makeArtifact(overrides: Partial<SharedMenuResponse> = {}): SharedMenuRe
       schemaVersion: MENU_SCHEMA_VERSION,
       snapshotGeneratedAt: '2026-04-18T10:00:00.000Z',
       expectedNextRefreshAt: '2026-04-25T10:00:00.000Z',
-      schoolName: 'BENTONMIDDLE',
+      schoolName: 'COLGANHIGH',
     },
   };
 

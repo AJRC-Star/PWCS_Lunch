@@ -58,7 +58,7 @@ function makeMenuData(): MenuData {
       isStale: false,
       isOffline: false,
       isPreview: false,
-      schoolName: 'BENTONMIDDLE',
+      schoolName: 'COLGANHIGH',
     },
   };
 }
@@ -108,7 +108,7 @@ function makeCachedMenuData(): MenuData {
       lastUpdated: '09:00 AM',
       isOffline: false,
       isPreview: true,
-      schoolName: 'BENTONMIDDLE',
+      schoolName: 'COLGANHIGH',
       isStale: false,
       clientFetchedAt: Date.now() - 1000,
     },
@@ -124,7 +124,7 @@ function makeEmptyPreview(): MenuData {
       lastUpdated: '09:59 AM',
       isOffline: false,
       isPreview: true,
-      schoolName: 'BENTONMIDDLE',
+      schoolName: 'COLGANHIGH',
     },
   };
 }
@@ -192,7 +192,7 @@ describe('App', () => {
       expect(apiMocks.getFreshData).toHaveBeenCalledTimes(1);
     });
 
-    expect(screen.getByRole('heading', { name: /bms lunch/i })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /colgan lunch/i })).toBeInTheDocument();
     expect(screen.queryByText('Nothing to show')).not.toBeInTheDocument();
     expect(document.querySelector('.skeleton-card')).not.toBeNull();
 
@@ -214,7 +214,7 @@ describe('App', () => {
           lastUpdated: '10:01 AM',
           isOffline: true,
           isPreview: false,
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
         error: 'No internet and no cache.',
       })
@@ -247,7 +247,7 @@ describe('App', () => {
           lastUpdated: '10:01 AM',
           isOffline: true,
           isPreview: false,
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
         error: 'No internet and no cache.',
       })
@@ -418,7 +418,7 @@ describe('App', () => {
         lastUpdated: '10:00 AM',
         isOffline: false,
         isPreview: false,
-        schoolName: 'BENTONMIDDLE',
+        schoolName: 'COLGANHIGH',
       },
     };
 
@@ -441,7 +441,7 @@ describe('App', () => {
         lastUpdated: '10:00 AM',
         isOffline: false,
         isPreview: false,
-        schoolName: 'BENTONMIDDLE',
+        schoolName: 'COLGANHIGH',
       },
       error: 'Published weekly menu snapshot unavailable right now. Please try again later.',
       errorType: 'snapshot_unavailable',

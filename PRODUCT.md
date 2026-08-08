@@ -1,10 +1,10 @@
-# BMS Lunch
+# Colgan Lunch
 
 ## Register
 product
 
 ## Purpose
-Mobile-first web app that lets Benton Middle School students, parents, and staff instantly see the school lunch menu for any day of the current week. Primary goal: answer "what's for lunch today?" in under two seconds, from any device.
+Mobile-first web app that lets Colgan High School students, parents, and staff instantly see the school lunch menu for any day of the current week. Primary goal: answer "what's for lunch today?" in under two seconds, from any device.
 
 ## Users
 - **Students** (primary): checking during homeroom or the walk to the cafeteria. One-handed, glancing, fast. They want the entree first.
@@ -18,7 +18,7 @@ Mobile-first web app that lets Benton Middle School students, parents, and staff
 4. Work offline after a first load.
 
 ## Brand personality
-Utility-first. Feels like a native iOS app on mobile. Clean, precise, no chrome. The school branding is implicit (PWCS/BMS context) — no heavy institutional look. Slightly playful through emoji category icons and the end-of-year countdown, but the baseline is calm and purposeful.
+Utility-first. Feels like a native iOS app on mobile. Clean, precise, no chrome. The school branding is implicit (PWCS/Colgan context) — no heavy institutional look. Slightly playful through emoji category icons and the end-of-year countdown, but the baseline is calm and purposeful.
 
 ## Anti-references
 - Heavy school-district portals (cluttered, dated, desktop-first)

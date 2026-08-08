@@ -1,7 +1,7 @@
 {
-  "name": "BMS Lunch Menu",
-  "short_name": "BMS Lunch",
-  "description": "School lunch menu for Benton Middle School",
+  "name": "Colgan Lunch Menu",
+  "short_name": "Colgan Lunch",
+  "description": "School lunch menu for Colgan High School",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

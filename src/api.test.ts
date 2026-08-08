@@ -75,7 +75,7 @@ describe('api', () => {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
           expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       }),
     } as Response);
@@ -132,7 +132,7 @@ describe('api', () => {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-14T10:00:00.000Z',
           expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       }),
     } as Response);
@@ -156,7 +156,7 @@ describe('api', () => {
           days: [],
           meta: {
             lastUpdated: '2026-04-13T10:00:00.000Z',
-            schoolName: 'BENTONMIDDLE',
+            schoolName: 'COLGANHIGH',
           },
         }),
       } as Response)
@@ -215,7 +215,7 @@ describe('api', () => {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-12T10:00:00.000Z',
           expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       }),
     } as Response);
@@ -263,7 +263,7 @@ describe('api', () => {
           lastUpdated: '09:00 AM',
           snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
           expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       },
       fetchedAt: Date.parse('2026-04-13T16:00:00.000Z'),
@@ -310,7 +310,7 @@ describe('api', () => {
           source: 'artifact',
           lastUpdated: '09:00 AM',
           snapshotGeneratedAt: '2026-04-14T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       },
       fetchedAt: Date.parse('2026-04-14T16:00:00.000Z'),
@@ -344,7 +344,7 @@ describe('api', () => {
             lastUpdated: '09:00 AM',
             snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
             expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
-            schoolName: 'BENTONMIDDLE',
+            schoolName: 'COLGANHIGH',
           },
         },
         fetchedAt: Date.parse('2026-04-13T12:00:00.000Z'),
@@ -389,7 +389,7 @@ describe('api', () => {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
           expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       }),
     } as Response);
@@ -446,7 +446,7 @@ describe('api', () => {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-15T10:00:00.000Z',
           expectedNextRefreshAt: '2030-01-01T00:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       }),
     } as Response);
@@ -478,7 +478,7 @@ describe('api', () => {
           lastUpdated: '09:00 AM',
           snapshotGeneratedAt: '2026-04-12T10:00:00.000Z',
           expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       },
       fetchedAt: Date.parse('2026-04-15T12:00:00.000Z'),
@@ -529,7 +529,7 @@ describe('api', () => {
           lastUpdated: '09:00 AM',
           snapshotGeneratedAt: '2026-04-12T10:00:00.000Z',
           expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       },
       fetchedAt: Date.parse('2026-04-15T12:00:00.000Z'),
@@ -573,7 +573,7 @@ describe('api', () => {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
           expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       }),
     } as Response);
@@ -627,7 +627,7 @@ describe('api', () => {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-15T10:00:00.000Z',
           expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       }),
     } as Response);
@@ -702,7 +702,7 @@ describe('api', () => {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-13T10:00:00.000Z',
           expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       }),
     } as Response);
@@ -730,7 +730,7 @@ describe('api', () => {
         days: [],
         meta: {
           lastUpdated: '2026-04-13T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       }),
     } as Response);
@@ -779,7 +779,7 @@ describe('api', () => {
           schemaVersion: MENU_SCHEMA_VERSION,
           snapshotGeneratedAt: '2026-04-18T10:00:00.000Z',
           expectedNextRefreshAt: '2026-04-25T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       }),
     } as Response);
@@ -833,7 +833,7 @@ describe('api', () => {
           lastUpdated: '09:00 AM',
           snapshotGeneratedAt: '2026-04-12T10:00:00.000Z',
           expectedNextRefreshAt: '2026-04-18T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       },
       fetchedAt: Date.parse('2026-04-15T12:00:00.000Z'),
@@ -851,7 +851,7 @@ describe('api', () => {
         days: [],
         meta: {
           lastUpdated: '2026-04-13T10:00:00.000Z',
-          schoolName: 'BENTONMIDDLE',
+          schoolName: 'COLGANHIGH',
         },
       }),
     } as Response);

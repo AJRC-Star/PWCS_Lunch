@@ -1,6 +1,6 @@
-# BMS Lunch Menu
+# Colgan Lunch Menu
 
-A mobile-first web app that displays the school lunch menu for Benton Middle School. Designed to feel like a native app — no page scrolling, fluid layout, instant navigation.
+A mobile-first web app that displays the school lunch menu for Colgan High School. Designed to feel like a native app — no page scrolling, fluid layout, instant navigation.
 
 **Live:** https://ajrc-star.github.io/PWCS_Lunch/
 
@@ -28,7 +28,7 @@ A mobile-first web app that displays the school lunch menu for Benton Middle Sch
 Menu data is pulled from the MealViewer public API:
 
 ```
-https://api.mealviewer.com/api/v4/school/BENTONMIDDLE/{startDate}/{endDate}
+https://api.mealviewer.com/api/v4/school/COLGANHIGH/{startDate}/{endDate}
 ```
 
 The app fetches 21 days of data starting from today (using the school's local timezone, `America/New_York`). Items are categorized with curated high-confidence overrides and token-aware rules before falling back to MealViewer `item_Type`, and the published artifact is validated against semantic sentinel checks based on the committed artifact itself instead of only re-running the classifier on itself.

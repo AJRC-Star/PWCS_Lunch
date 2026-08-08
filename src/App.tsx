@@ -420,7 +420,7 @@ function App() {
 
       <header>
         <div className="title">
-          <h1>BMS Lunch</h1>
+          <h1>Colgan Lunch</h1>
           <div className="meta-row">
             <span className="caption">
               {data?.meta ? (

@@ -26,7 +26,7 @@ If guidance conflicts, explain the conflict and follow the highest-priority sour
 
 ## Repository Context
 
-- Mobile-first React/Vite app for the Benton Middle School lunch menu.
+- Mobile-first React/Vite app for the Colgan High School lunch menu.
 - Production site is GitHub Pages at `https://ajrc-star.github.io/PWCS_Lunch/`.
 - The app uses the committed `public/menu-data.json` artifact as the published source of truth.
 - Meal data is fetched from MealViewer and normalized by `scripts/fetch-menu.ts`.

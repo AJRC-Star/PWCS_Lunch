@@ -6,7 +6,7 @@ import {
   isPWCSSummerBreak,
 } from './pwcs-calendar.ts';
 
-const SCHOOL_ID = 'BENTONMIDDLE';
+const SCHOOL_ID = 'COLGANHIGH';
 const SCHOOL_TIMEZONE = 'America/New_York';
 const MENU_SCHEMA_VERSION = 2;
 const MIN_PLAUSIBLE_DAYS = 3;
