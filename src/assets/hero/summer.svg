@@ -27,27 +27,33 @@
 
   <circle cx="96" cy="96" r="96" fill="url(#summerGround)" />
 
-  <circle cx="96" cy="72" r="24" fill="#F4FAFE" />
+  <circle cx="96" cy="82" r="30" fill="#F4FAFE" />
 
-  <!-- Rays every 45°, drawn between r=34 and r=44 about the sun's centre. -->
+  <!--
+    Rays span the upper arc only (180° through 0°), not a full radial burst, so
+    the sun reads as rising out of the water rather than floating above it.  The
+    framing is lifted from a generated comp that arrived at it independently and
+    made the full burst look flat by comparison.  Drawn between r=40 and r=52
+    about the sun's centre at 30° intervals.
+  -->
   <g stroke="#69B3E7" stroke-width="8" stroke-linecap="round">
-    <path d="M130 72h10" />
-    <path d="M120.0 96.0l7.1 7.1" />
-    <path d="M96 106v10" />
-    <path d="M72.0 96.0l-7.1 7.1" />
-    <path d="M62 72H52" />
-    <path d="M72.0 48.0l-7.1-7.1" />
-    <path d="M96 38V28" />
-    <path d="M120.0 48.0l7.1-7.1" />
+    <path d="M136 82h12" />
+    <path d="M130.6 62.0l10.4-6" />
+    <path d="M116.0 47.4l6-10.4" />
+    <path d="M96 42V30" />
+    <path d="M76.0 47.4l-6-10.4" />
+    <path d="M61.4 62.0l-10.4-6" />
+    <path d="M56 82H44" />
   </g>
 
   <!--
-    Waves sit at y=134 and y=154.  The chord of a 96-radius circle is 78px
-    half-width at y=154, so the strokes stop at x=162 to stay clear of the
-    badge edge once the ±6 crest is added.
+    Waves sit at y=128 and y=150, close enough under the sun to close the dead
+    space an earlier, higher composition left in the middle of the badge.  The
+    chord of a 96-radius circle is 75px half-width at the lower wave's y=156
+    crest, so the strokes stop at x=166 to stay clear of the badge edge.
   -->
   <g fill="none" stroke="#69B3E7" stroke-width="8" stroke-linecap="round">
-    <path d="M34 134q16-12 32 0t32 0t32 0" />
-    <path d="M34 154q16-12 32 0t32 0t32 0" />
+    <path d="M30 128q17-12 34 0t34 0t34 0" />
+    <path d="M30 150q17-12 34 0t34 0t34 0" />
   </g>
 </svg>
