@@ -91,8 +91,28 @@ header {
   z-index: 20;
   padding: max(14px, env(safe-area-inset-top)) 20px 10px;
   background: var(--header-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /*
+    Deliberately no backdrop-filter, and it should not come back.
+
+    Backdrop-filter only affects what is painted *behind* an element, and in this
+    layout nothing ever is: #app is a flex column with overflow:hidden, the header
+    is a plain flex item rather than position:sticky or :fixed, and .day-tabs and
+    main are siblings laid out below it, not underneath it.  Scrolling happens
+    inside .day-card, well clear of the chrome.  The backdrop is therefore just
+    the flat body colour, and blurring a flat colour returns the same flat colour.
+    --header-bg is 95-97% opaque besides, so even a real backdrop would be
+    invisible through it.
+
+    What the property did do was force this element onto its own compositing
+    layer, which iOS Safari rasterised at the wrong scale — roughly 1x upscaled to
+    3x — leaving the title, the sub-label and the theme toggle visibly soft while
+    everything else on screen stayed crisp.  A no-op effect was costing legibility
+    of the one piece of persistent chrome.
+
+    DESIGN.md's Blur-is-Chrome Rule already restricted blur to sticky chrome with
+    content scrolling behind it; this element met neither condition, so the CSS
+    had drifted from the documented intent rather than the intent being wrong.
+  */
   border-bottom: 1px solid var(--line);
   display: flex;
   align-items: flex-start;
@@ -229,8 +249,9 @@ header h1 {
   overflow-x: auto;
   padding: 10px clamp(14px, 3.5vw, 20px);
   background: var(--tabs-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  /* No backdrop-filter, for the same reason as the header — see the comment
+     there. This strip escaped the iOS rasterisation artefact because overflow-x
+     gives it its own scrolling layer, but the effect was equally a no-op. */
   border-bottom: 1px solid var(--line);
   scrollbar-width: none;
 }

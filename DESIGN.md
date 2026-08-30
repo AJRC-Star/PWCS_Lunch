@@ -193,11 +193,11 @@ No custom font is loaded. SF Pro renders on Apple devices at native quality; sys
 
 ## 4. Elevation
 
-This system uses **tonal layering with selective backdrop-blur**, not traditional drop shadows. Depth is established by surface opacity, not shadow casting.
+This system uses **tonal layering**, not traditional drop shadows and not backdrop-blur. Depth is established by surface opacity, not shadow casting.
 
 ### Surface Layers (dark theme, bottom to top)
 - **Base** (`--bg: #05101e`): The body background. Deepest layer. Colgan Blue driven down in lightness, so the app reads navy rather than neutral black.
-- **Glass Chrome** (`--header-bg: rgba(5,16,30,0.97)`, `--tabs-bg: rgba(5,16,30,0.95)` + `backdrop-filter: blur(12px)`): The sticky header and tab strip. Nearly opaque dark glass — content scrolls behind it but reads as blurred, not visible. The blur makes the chrome feel native iOS, not decorative.
+- **Chrome** (`--header-bg: rgba(5,16,30,0.97)`, `--tabs-bg: rgba(5,16,30,0.95)`): The header and tab strip. Nearly opaque dark surfaces separated from content by a hairline border. They are ordinary flex items in a non-scrolling column, not sticky overlays — content scrolls *below* them, inside `.day-card`, never behind them.
 - **Card Surface** (`--card-bg: rgba(255,255,255,0.065)`): Menu content cards. The lightest layer, making cards subtly legible against the deep navy base.
 - **Active State** (`--accent-fill`): The selected day chip. Only fully opaque non-base layer. Makes the selection unmistakably clear. Caribbean Blue on dark, Colgan Blue on light — see The One Accent Rule.
 
@@ -206,7 +206,7 @@ This system uses **tonal layering with selective backdrop-blur**, not traditiona
 - **Card ambient drop** (`0 2px 8px rgba(0,0,0,0.20), 0 8px 24px rgba(0,0,0,0.12)`): Applied to cards in dark theme. Subtle two-layer depth. Not structural — purely ambient.
 - **Toggle ambient** (`0 10px 30px rgba(0,0,0,0.18)` dark / `0 10px 30px rgba(4,30,66,0.12)` light): The theme toggle button. In light mode, a Colgan Blue tinted glow links the button to the brand accent.
 
-**The Blur-is-Chrome Rule.** `backdrop-filter: blur(12px)` is used only on header and tabs — the chrome elements that must read as floating above content as the user scrolls. Cards do not blur their backgrounds. New surfaces should default to tonal layering; reach for blur only when the element is positionally sticky and content scrolls behind it.
+**The No-Blur Rule.** `backdrop-filter` is used nowhere in this stylesheet. It was previously set on the header and tab strip, which never satisfied the condition that made it meaningful: neither is `position: sticky`, and `#app`'s flex column means nothing is ever painted behind them, so the filter had only the flat body colour to blur. The visible cost was real — the compositing layer it forced was rasterised at the wrong scale by iOS Safari, leaving the header title and theme toggle soft while the rest of the screen stayed sharp. Default to tonal layering. Reach for blur only if an element is genuinely `position: sticky` or `fixed` with content passing underneath it, and verify on a real iOS device before keeping it.
 
 **The Flat-Card Rule.** Cards are flat at rest. The inset highlight and ambient drop shadow are passive; they do not change on hover. Only the entree/section block's `:active` state fires (scale 0.97 press feedback). Hover elevation lift is prohibited.
 
@@ -338,7 +338,7 @@ Temporary guidance element; shown once per browser session when multi-day data f
 - **Do** keep the entree as the first and largest content block on every day view. If a day has no entree, the empty state still uses the entree block's position and shape.
 - **Do** use the system font stack exclusively. No custom fonts. No Google Fonts. No icon fonts.
 - **Do** use the brand blues for all interactive affordances — borders, fills, focus rings — via the `--c` / `--accent-fill` / `--accent-text` tokens rather than literal hex, so the light theme's darker blue swaps in automatically. There is no second accent color.
-- **Do** use `backdrop-filter: blur(12px)` only on chrome that is `position: sticky` with content scrolling behind it (header, tab strip). Nowhere else.
+- **Do** leave `backdrop-filter` out. Nothing in the current layout scrolls behind anything, so it has no backdrop to act on. If a future overlay genuinely needs it, confirm the element is `position: sticky` or `fixed` with content passing underneath, and check the result on a real iOS device — a wrongly-rasterised compositing layer shows up as blurry text, not a blurry backdrop. (See: The No-Blur Rule.)
 - **Do** stagger section entrance animations by 100ms per section (0.6s duration). The entree renders statically, then secondary sections float in order; the trio must settle within the 2-second glance budget.
 - **Do** honor `prefers-reduced-motion` with the global `animation: none !important` override already in the stylesheet.
 - **Do** give every status color a semantic purpose. Fresh green = data is current. Amber = data is stale. Red = offline or error. These colors mean specific things; their specificity is their value.
@@ -351,7 +351,7 @@ Temporary guidance element; shown once per browser session when multi-day data f
 - **Don't** add photography, hero images, or marketing chrome. The content is text. Decoration competes with the entree. (Anti-reference: "Consumer food apps — too much photography/marketing chrome.")
 - **Don't** introduce a second accent color. No purple, teal, orange, or red alongside the Colgan blues for interactive surfaces. Status colors (green/amber/red) are semantic-only and never used as accent.
 - **Don't** hardcode Caribbean Blue (`#69b3e7`) as text or a border in light theme. It reaches only 2.1:1 there and fails AA outright — that is what the derived `#0f5aa0` exists for, and why `App.css.test.ts` asserts real contrast ratios rather than literal hex values.
-- **Don't** apply `backdrop-filter: blur()` to cards or decorative surfaces. Blur is chrome-only. (See: The Blur-is-Chrome Rule.)
+- **Don't** re-add `backdrop-filter` to the header, the tab strip, cards, or decorative surfaces. It was removed because it did nothing but blur the header's own text on iOS. (See: The No-Blur Rule.)
 - **Don't** use `border-left` or `border-right` greater than 1px as a colored stripe on any card or list item. The day card's `border-top: 3px solid var(--c)` is the single permitted structural use of a colored border stripe.
 - **Don't** add gradient text (`background-clip: text` with a gradient). Use solid accent colors for emphasis.
 - **Don't** animate layout properties. The stagger uses `opacity` and `transform` only. Animating `height`, `padding`, `margin`, or `width` causes reflow.
