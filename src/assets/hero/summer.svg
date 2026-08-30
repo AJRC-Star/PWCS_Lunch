@@ -1,0 +1,53 @@
+<svg viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    Summer-break hero — sun over water.
+
+    Drawn as a self-contained badge on its own navy ground rather than as loose
+    artwork on the page background.  The app ships a dark and a light theme, and
+    this file is referenced through <img>, so no CSS variable or currentColor can
+    reach inside it to retint per theme.  A single mid-tone palette would have to
+    survive both #05101e and #f2f5fa, and nothing in the brand does: Caribbean
+    Blue clears 7.9:1 on the dark surface but only ~2:1 on the light one.  Giving
+    the illustration its own ground makes it read identically in both themes —
+    the same reasoning that makes public/icon.svg an opaque tile.
+
+    Palette is strictly DESIGN.md: no warm yellow was invented for the sun.  The
+    obvious sun colour would be a gold, but the only warm value in the system is
+    status-stale #f59e0b, which already means "this menu snapshot is old" a few
+    inches up the screen in the freshness dot.  Reusing it here would make a
+    decorative sun and a staleness warning the same colour.  The sun is instead
+    the icon's off-white, reading as a light source against the navy.
+  -->
+  <defs>
+    <linearGradient id="summerGround" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B4078" />
+      <stop offset="100%" stop-color="#041E42" />
+    </linearGradient>
+  </defs>
+
+  <circle cx="96" cy="96" r="96" fill="url(#summerGround)" />
+
+  <circle cx="96" cy="72" r="24" fill="#F4FAFE" />
+
+  <!-- Rays every 45°, drawn between r=34 and r=44 about the sun's centre. -->
+  <g stroke="#69B3E7" stroke-width="8" stroke-linecap="round">
+    <path d="M130 72h10" />
+    <path d="M120.0 96.0l7.1 7.1" />
+    <path d="M96 106v10" />
+    <path d="M72.0 96.0l-7.1 7.1" />
+    <path d="M62 72H52" />
+    <path d="M72.0 48.0l-7.1-7.1" />
+    <path d="M96 38V28" />
+    <path d="M120.0 48.0l7.1-7.1" />
+  </g>
+
+  <!--
+    Waves sit at y=134 and y=154.  The chord of a 96-radius circle is 78px
+    half-width at y=154, so the strokes stop at x=162 to stay clear of the
+    badge edge once the ±6 crest is added.
+  -->
+  <g fill="none" stroke="#69B3E7" stroke-width="8" stroke-linecap="round">
+    <path d="M34 134q16-12 32 0t32 0t32 0" />
+    <path d="M34 154q16-12 32 0t32 0t32 0" />
+  </g>
+</svg>

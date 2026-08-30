@@ -1,0 +1,43 @@
+<svg viewBox="0 0 192 192" xmlns="http://www.w3.org/2000/svg">
+  <!--
+    No-school-week hero — a cleared calendar week.
+
+    Deliberately not a second sun.  This state and the summer state render the
+    same component a few lines apart in App.tsx, and both previously used a sun
+    emoji (☀️ and 🏖️), which made "no school this week" and "school's out for
+    summer" hard to tell apart at a glance.  A calendar reads as a week, which
+    is the actual distinction being drawn.
+
+    Same self-contained-badge reasoning as summer.svg — see the comment there
+    for why the illustration carries its own ground instead of inheriting the
+    theme surface.
+  -->
+  <defs>
+    <linearGradient id="breakGround" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B4078" />
+      <stop offset="100%" stop-color="#041E42" />
+    </linearGradient>
+  </defs>
+
+  <circle cx="96" cy="96" r="96" fill="url(#breakGround)" />
+
+  <!-- Binder rings, drawn first so the calendar body overlaps their lower half. -->
+  <g fill="#F4FAFE">
+    <rect x="68" y="40" width="9" height="22" rx="4.5" />
+    <rect x="115" y="40" width="9" height="22" rx="4.5" />
+  </g>
+
+  <rect x="44" y="54" width="104" height="90" rx="14" fill="#F4FAFE" />
+
+  <!-- Header band: rounded on the top two corners only, square where it meets the body. -->
+  <path d="M44 68a14 14 0 0 1 14-14h76a14 14 0 0 1 14 14v13H44z" fill="#69B3E7" />
+
+  <path
+    d="M71 109l16 16 34-36"
+    fill="none"
+    stroke="#0B4078"
+    stroke-width="12"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+</svg>

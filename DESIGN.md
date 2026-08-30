@@ -105,6 +105,11 @@ components:
     textColor: "{colors.accent-dark}"
     rounded: "{rounded.pill}"
     padding: "2px 8px"
+  no-school-hero:
+    artSize: "clamp(112px, 30vw, 168px)"
+    artGround: "linear-gradient(#0B4078, #041E42)"
+    artAccent: "{colors.brand-caribbean-blue}"
+    artHighlight: "#F4FAFE"
 ---
 
 # Design System: CHS Lunch
@@ -297,6 +302,18 @@ Full-viewport overlay on the last day of school. `aria-hidden="true"` — purely
 - **48 pieces**, each 6-14px, random horizontal position, brand palette colors plus green/purple/pink
 - **Fall animation:** `cubic-bezier(0.55, 0, 1, 0.45)` easing — accelerates like gravity
 - **Duration:** 2.2–4.2s per piece, delay 0–1.8s — staggered to feel organic
+
+### No-School Hero
+
+The illustration shown when there is no menu to show and that is the correct answer: summer break, and a week with every day cancelled. Rendered by `NoSchoolHero` from `src/assets/hero/`, resolved by glob so a missing file degrades to the emoji each state used previously rather than breaking the build.
+
+- **Art size:** `clamp(112px, 30vw, 168px)` — larger than the `clamp(56px, 16vw, 80px)` emoji it replaces. An emoji is a glyph tuned to read at text scale; an illustration carries interior detail that turns to mush at 80px
+- **Self-contained ground:** each illustration is an opaque badge carrying its own navy gradient, not loose artwork on the theme surface. Referenced through `<img>`, no CSS variable or `currentColor` can reach inside to retint per theme, and no single brand value survives both surfaces — Caribbean Blue clears 7.9:1 on `--bg` dark but only ~2:1 on light. Same reasoning as `public/icon.svg`
+- **No warm accent:** the obvious sun colour is a gold, but the only warm value in the system is Status Stale `#f59e0b`, which already means "this snapshot is old" in the freshness dot inches above. The sun is `#F4FAFE` instead, reading as a light source against the navy
+- **Distinct per state:** summer is a sun over water, a cancelled week is a cleared calendar. Both states previously used a sun emoji (🏖️ / ☀️) and were hard to tell apart at a glance; a calendar reads as *a week*, which is the actual distinction
+- **Motion:** `heroFloat` — a 4s ±8px vertical drift, not the emoji's `sunPulse`. That animation rotates ±4deg, invisible on a radially symmetric emoji but visibly skewing a badge with a straight-edged calendar in it
+- **Accessibility:** `alt=""`. The `h2.no-school-title` directly below states the same thing, so alt text would make a screen reader say it twice
+- **Delivery:** excluded from Vite's inline limit in `vite.config.ts` so the art stays an external file. Inlined it added ~5.3KB of base64 to the entry chunk every visitor downloads, for artwork that never renders on an ordinary school day
 
 ### Error Banner
 

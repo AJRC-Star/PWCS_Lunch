@@ -5,6 +5,7 @@ import { getPWCSNextSchoolYearStart, isPWCSSummerBreak } from '../shared/pwcs-ca
 import type { MenuData } from './types';
 import { DayCard } from './components/DayCard';
 import { DayTabs } from './components/DayTabs';
+import { NoSchoolHero } from './components/NoSchoolHero';
 import { SkeletonLoader } from './components/SkeletonLoader';
 import './App.css';
 
@@ -474,18 +475,14 @@ function App() {
       <main ref={mainRef}>
         {loading && <SkeletonLoader />}
         {!loading && summerMode && (
-          <div className="no-school-week">
-            <span className="no-school-emoji">🏖️</span>
-            <h2 className="no-school-title">School's Out for Summer</h2>
-            <p className="sub">{getSummerSubMessage(todayISO)}</p>
-          </div>
+          <NoSchoolHero variant="summer" fallbackEmoji="🏖️" title="School's Out for Summer">
+            {getSummerSubMessage(todayISO)}
+          </NoSchoolHero>
         )}
         {!loading && !summerMode && allNoSchool && (
-          <div className="no-school-week">
-            <span className="no-school-emoji">☀️</span>
-            <h2 className="no-school-title">No School This Week</h2>
-            <p className="sub">Enjoy the break — see you when school's back!</p>
-          </div>
+          <NoSchoolHero variant="break" fallbackEmoji="☀️" title="No School This Week">
+            Enjoy the break — see you when school's back!
+          </NoSchoolHero>
         )}
         {!loading && !summerMode && days.length > 0 && !allNoSchool && days[selectedIndex] && (
           <DayCard

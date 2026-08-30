@@ -601,6 +601,31 @@ header,
   animation: sunPulse 3s ease-in-out infinite;
 }
 
+/*
+  Artwork runs larger than the emoji it replaces.  An emoji is a glyph tuned to
+  read at text sizes; an illustration carries interior detail (rays, a header
+  band, a checkmark) that turns to mush at 80px, so the slot grows to 168px at
+  the cap.  `.no-school-week` is a centred flex column with `flex: 1`, and at the
+  320px floor the clamp still resolves to 112px, which leaves the heading and
+  sub-text room without scrolling.
+*/
+.no-school-art {
+  width: clamp(112px, 30vw, 168px);
+  height: auto;
+  /*
+    Not sunPulse.  That animation rotates ±4deg, which is invisible on a radially
+    symmetric emoji but visibly skews a badge with a straight-edged calendar
+    inside it.  A vertical drift reads as the same kind of idle motion without
+    tilting the artwork.  The global prefers-reduced-motion rule disables this.
+  */
+  animation: heroFloat 4s ease-in-out infinite;
+}
+
+@keyframes heroFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-8px); }
+}
+
 .no-school-title {
   font-size: clamp(22px, 6vw, 28px);
   font-weight: 900;

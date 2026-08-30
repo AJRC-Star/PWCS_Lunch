@@ -79,6 +79,8 @@ src/
     DayTabs.tsx           # Horizontal scrollable day-selector chip row
     DayCard.tsx           # Full-screen menu display for a single day
     SkeletonLoader.tsx    # Animated placeholder shown during load
+    NoSchoolHero.tsx      # Illustrated empty state for summer break / cancelled weeks
+  assets/hero/            # Hero illustrations, resolved by glob (drop-in replaceable)
 shared/
   menu-core.ts            # Shared normalization logic (used by app and scripts)
 scripts/
