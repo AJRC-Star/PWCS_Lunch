@@ -613,6 +613,13 @@ header,
   width: clamp(112px, 30vw, 168px);
   height: auto;
   /*
+    No-op for the checked-in SVGs, which already draw themselves as circles on a
+    transparent square.  It exists for the drop-in path: a raster export arrives
+    as a filled square, and without this it would render with visible corners
+    against the app surface instead of matching the badge shape.
+  */
+  border-radius: 50%;
+  /*
     Not sunPulse.  That animation rotates ±4deg, which is invisible on a radially
     symmetric emoji but visibly skews a badge with a straight-edged calendar
     inside it.  A vertical drift reads as the same kind of idle motion without
