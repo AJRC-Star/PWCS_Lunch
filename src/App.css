@@ -90,18 +90,26 @@ header {
   flex-shrink: 0;
   z-index: 20;
   /*
-    DIAGNOSTIC (temporary, 2026-08-31) — the +24px is under test, not a design
-    choice, and should be tuned or reverted once the question below is answered.
+    The +24px past the safe-area inset is load-bearing, not slack.
 
-    Only the h1 renders blurred, and only in an installed standalone PWA; the
-    sub-label 30px beneath it inside this same element is sharp. The h1 is the
-    topmost text in the app and sits right at the safe-area boundary, and
-    apple-mobile-web-app-status-bar-style: black-translucent makes content render
-    underneath the iOS status bar. This pushes the h1 clear of that band to
-    distinguish a position-bound blur from an element-bound one: if the title
-    goes sharp, the status bar overlay is responsible and the real fix is here or
-    in the status-bar meta; if it stays blurred at the new offset, the cause
-    travels with the element and the status bar is exonerated.
+    index.html sets apple-mobile-web-app-status-bar-style: black-translucent, so
+    in an installed standalone PWA the page renders *underneath* the iOS status
+    bar, and iOS blurs the content in that band to keep the clock and battery
+    legible.  That band reaches somewhat past the inset value it reports: with
+    padding-top at exactly env(safe-area-inset-top), the h1's glyphs began around
+    10pt below the inset and were still visibly blurred, while the sub-label
+    ~30px further down rendered sharp.  Confirmed on device — shifting the title
+    down by 24px resolved it, which is also what proved the blur was bound to the
+    screen position rather than to the element.
+
+    So the inset is where the status bar *ends*, not where text becomes safe.
+    Anything positioned against env(safe-area-inset-top) needs clearance beyond
+    it.  Do not trim this back to the bare inset; the blur returns.
+
+    This is not a compositing or font-weight problem, though both were
+    investigated first: backdrop-filter and an unused transform transition were
+    each removed from this element without affecting the symptom.  Those removals
+    stand on their own merits, but they were not the cause.
   */
   padding: max(14px, calc(env(safe-area-inset-top) + 24px)) 20px 10px;
   background: var(--header-bg);
@@ -117,11 +125,11 @@ header {
     --header-bg is 95-97% opaque besides, so even a real backdrop would be
     invisible through it.
 
-    What the property did do was force this element onto its own compositing
-    layer, which iOS Safari rasterised at the wrong scale — roughly 1x upscaled to
-    3x — leaving the title, the sub-label and the theme toggle visibly soft while
-    everything else on screen stayed crisp.  A no-op effect was costing legibility
-    of the one piece of persistent chrome.
+    It was removed while chasing a blurred header title, on the theory that the
+    compositing layer it forces was being rasterised at the wrong scale.  That
+    theory was wrong — the real cause was the iOS status bar band, see the padding
+    comment above — so this removal fixed nothing.  It stays out anyway on the
+    no-op grounds above: an effect that cannot render is not worth a layer.
 
     DESIGN.md's Blur-is-Chrome Rule already restricted blur to sticky chrome with
     content scrolling behind it; this element met neither condition, so the CSS
@@ -540,7 +548,14 @@ main {
 /* ── Error banner ── */
 .error-banner {
   position: fixed;
-  top: max(16px, env(safe-area-inset-top));
+  /*
+    Clearance past the inset for the same reason as the header — see the comment
+    there.  This banner is role="alert" and carries offline and stale-data
+    warnings, so it is the element in the app that can least afford to be
+    unreadable.  Its own 12px padding puts its text 12px inside this offset, so
+    +12px here lands the text at the same inset+24px the header title needed.
+  */
+  top: max(16px, calc(env(safe-area-inset-top) + 12px));
   left: 16px;
   right: 16px;
   background: #dc2626; /* 4.8:1 with white at 13px — #ef4444 was 3.8:1 */
