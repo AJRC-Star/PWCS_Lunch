@@ -89,7 +89,21 @@ html, body {
 header {
   flex-shrink: 0;
   z-index: 20;
-  padding: max(14px, env(safe-area-inset-top)) 20px 10px;
+  /*
+    DIAGNOSTIC (temporary, 2026-08-31) — the +24px is under test, not a design
+    choice, and should be tuned or reverted once the question below is answered.
+
+    Only the h1 renders blurred, and only in an installed standalone PWA; the
+    sub-label 30px beneath it inside this same element is sharp. The h1 is the
+    topmost text in the app and sits right at the safe-area boundary, and
+    apple-mobile-web-app-status-bar-style: black-translucent makes content render
+    underneath the iOS status bar. This pushes the h1 clear of that band to
+    distinguish a position-bound blur from an element-bound one: if the title
+    goes sharp, the status bar overlay is responsible and the real fix is here or
+    in the status-bar meta; if it stays blurred at the new offset, the cause
+    travels with the element and the status bar is exonerated.
+  */
+  padding: max(14px, calc(env(safe-area-inset-top) + 24px)) 20px 10px;
   background: var(--header-bg);
   /*
     Deliberately no backdrop-filter, and it should not come back.
