@@ -590,9 +590,31 @@ main {
 /* ── Smooth theme crossfade ── */
 header,
 .day-tabs,
+.school-countdown,
 .section-block,
-.entree-block,
-.school-countdown {
+.entree-block {
+  transition: background 0.4s ease, background-color 0.4s ease,
+              border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease;
+}
+
+/*
+  The transform transition belongs only to the two blocks that actually
+  transform — the :active press below.  header, .day-tabs and .school-countdown
+  never set a transform (the countdown's flip is on the .school-countdown-value
+  child, not the container), so listing transform for them transitioned a
+  property that never changes.
+
+  That was not merely dead CSS.  A declared transform transition is a hint to
+  WebKit that the element is about to animate, and it will hold such an element
+  on its own composited layer in anticipation.  A wrongly-rasterised layer is
+  what makes text look soft while everything around it stays sharp, and the
+  header is the one place in this app where that was reported — in an installed
+  standalone PWA specifically, where iOS resolves layer scale differently than
+  it does in a Safari tab.  Removing backdrop-filter took away the first reason
+  this element was being composited; this takes away the last one.
+*/
+.section-block,
+.entree-block {
   transition: background 0.4s ease, background-color 0.4s ease,
               border-color 0.4s ease, color 0.4s ease, box-shadow 0.4s ease,
               transform 0.1s ease;
